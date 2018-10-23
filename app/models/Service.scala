@@ -6,6 +6,9 @@ final case class Service(host: String, port: String, protocol: String) {
 
   def baseUrl: String =
     s"$protocol://$host:$port"
+
+  override def toString: String =
+    baseUrl
 }
 
 object Service {
