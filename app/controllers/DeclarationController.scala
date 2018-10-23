@@ -1,27 +1,46 @@
 package controllers
 
 import com.google.inject.{Inject, Singleton}
+import connectors.HODConnector
 import models.ChargeReference
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import repositories.DeclarationsRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
-@Singleton
-class DeclarationController @Inject() (cc: ControllerComponents) extends BackendController(cc) {
+import scala.concurrent.Future
 
-  def submit: Action[JsValue] = Action(parse.tolerantJson) {
+@Singleton
+class DeclarationController @Inject() (
+                                        cc: ControllerComponents,
+                                        repository: DeclarationsRepository,
+                                        connector: HODConnector
+                                      ) extends BackendController(cc) {
+
+  def submit(): Action[JsValue] = Action.async(parse.tolerantJson) {
     implicit request =>
 
       Json.fromJson[ChargeReference](request.body) match {
-        case JsSuccess(_, _) =>
-          Accepted
+        case JsSuccess(chargeReference, _) =>
+          repository.insert(chargeReference, request.body).map {
+            _ =>
+              Accepted
+          }
         case JsError(_) =>
-          BadRequest
+          Future.successful(BadRequest)
       }
   }
 
-  def update: Action[JsValue] = Action.async(parse.tolerantJson) {
+  def update(chargeReference: ChargeReference): Action[AnyContent] = Action.async {
     implicit request =>
-      ???
+      repository.get(chargeReference).flatMap {
+        _.map {
+          json =>
+            for {
+              _ <- connector.submit(json)
+              _ <- repository.remove(chargeReference)
+            } yield Accepted
+        }.getOrElse(Future.successful(NotFound))
+      }
   }
 }
