@@ -2,59 +2,75 @@ package repositories
 
 import com.google.inject.{Inject, Singleton}
 import models.ChargeReference
-import org.joda.time.{DateTime, DateTimeZone}
-import play.api.libs.json.{Format, JsValue, Json}
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.commands.WriteResult
+import play.api.Configuration
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.BSONObjectID
-import reactivemongo.play.json.collection.JSONBatchCommands.FindAndModifyCommand
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import reactivemongo.play.json.collection.JSONCollection
+import services.ChargeReferenceService
 
 import scala.concurrent.{ExecutionContext, Future}
-
-object DeclarationsRepository {
-
-  final case class Data(id: String, data: JsValue, timestamp: DateTime = DateTime.now(DateTimeZone.UTC))
-
-  object Data {
-
-    implicit val formats: Format[Data] = ReactiveMongoFormats.mongoEntity {
-      implicit val dateTimeFormat: Format[DateTime] = ReactiveMongoFormats.dateTimeFormats
-      Json.format[Data]
-    }
-  }
-}
+import scala.language.implicitConversions
 
 @Singleton
-class DeclarationsRepository @Inject() (
-                                          component: ReactiveMongoComponent
-                                       )(implicit ec: ExecutionContext) extends ReactiveRepository[DeclarationsRepository.Data, BSONObjectID](
-                                          collectionName = "",
-                                          mongo = component.mongoConnector.db,
-                                          domainFormat = DeclarationsRepository.Data.formats
-                                        ) {
+class DefaultDeclarationsRepository @Inject() (
+                                                mongo: ReactiveMongoApi,
+                                                chargeReferenceService: ChargeReferenceService,
+                                                config: Configuration
+                                              )(implicit ec: ExecutionContext) extends DeclarationsRepository {
 
-  import DeclarationsRepository.Data
-  import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+  private val collectionName: String = config.get[String]("mongodb.collections.declarations")
+
+  private def collection: Future[JSONCollection] =
+    mongo.database.map(_.collection[JSONCollection](collectionName))
 
   private val index = Index(
     key     = Seq("lastUpdated" -> IndexType.Ascending),
     name    = Some("declarations-index")
-//    options = BSONDocument("expireAfterSeconds" -> cacheTtl)
+    //    options = BSONDocument("expireAfterSeconds" -> cacheTtl)
   )
 
-  collection.indexesManager.ensure(index)
+  val started: Future[_] = {
+    collection.flatMap {
+      _.indexesManager.ensure(index)
+    }
+  }
 
-  def insert(id: ChargeReference, data: JsValue): Future[WriteResult] =
-    insert(Data(id.value, data))
+  override def insert(data: JsObject): Future[ChargeReference] = {
 
-  def get(id: ChargeReference): Future[Option[JsValue]] =
-    collection.find(Json.obj("id" -> id.value), None)
-      .one[Data]
-      .map(_.map(_.data))
+    for {
+      id <- chargeReferenceService.nextChargeReference()
+      _  <- collection.flatMap(_.insert(Json.obj(
+        "_id"  -> id.value,
+        "data" -> (data ++ id)
+      )))
+    } yield id
+  }
 
-  def remove(id: ChargeReference): Future[FindAndModifyCommand.FindAndModifyResult] =
-    collection.findAndRemove(Json.obj("id" -> id.value))
+  override def get(id: ChargeReference): Future[Option[JsValue]] =
+    collection.flatMap(_.find(Json.obj("_id" -> id.value), None).one[JsValue])
+
+  override def remove(id: ChargeReference): Future[Option[JsValue]] =
+    collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.value)).map(_.result[JsValue]))
+
+  private implicit def toJson(chargeReference: ChargeReference): JsObject = {
+    Json.obj(
+      "simpleDeclarationRequest" -> Json.obj(
+        "requestDetail" -> Json.obj(
+          "declarationHeader" -> Json.obj(
+            "chargeReference" -> chargeReference.value
+          )
+        )
+      )
+    )
+  }
+}
+
+trait DeclarationsRepository {
+
+  val started: Future[_]
+  def insert(data: JsObject): Future[ChargeReference]
+  def get(id: ChargeReference): Future[Option[JsValue]]
+  def remove(id: ChargeReference): Future[Option[JsValue]]
 }

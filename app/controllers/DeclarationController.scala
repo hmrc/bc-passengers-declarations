@@ -3,7 +3,7 @@ package controllers
 import com.google.inject.{Inject, Singleton}
 import connectors.HODConnector
 import models.ChargeReference
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import repositories.DeclarationsRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
@@ -20,14 +20,9 @@ class DeclarationController @Inject() (
   def submit(): Action[JsValue] = Action.async(parse.tolerantJson) {
     implicit request =>
 
-      Json.fromJson[ChargeReference](request.body) match {
-        case JsSuccess(chargeReference, _) =>
-          repository.insert(chargeReference, request.body).map {
-            _ =>
-              Accepted
-          }
-        case JsError(_) =>
-          Future.successful(BadRequest)
+      repository.insert(request.body.as[JsObject]).map {
+        chargeReference =>
+          Accepted(Json.obj("chargeReference" -> chargeReference.value.toString))
       }
   }
 
