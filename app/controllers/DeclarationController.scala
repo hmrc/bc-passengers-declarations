@@ -22,7 +22,7 @@ class DeclarationController @Inject() (
 
       repository.insert(request.body.as[JsObject]).map {
         chargeReference =>
-          Accepted(Json.obj("chargeReference" -> chargeReference.value.toString))
+          Accepted(Json.toJson(chargeReference))
       }
   }
 
