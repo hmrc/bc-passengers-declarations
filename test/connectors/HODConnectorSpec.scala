@@ -9,6 +9,7 @@ import utils.WireMockHelper
 import play.api.test.Helpers._
 import com.github.tomakehurst.wiremock.client.WireMock._
 import models.{ChargeReference, Declaration}
+import play.api.http.ContentTypes
 import play.api.libs.json.Json
 import play.api.test.Injecting
 import uk.gov.hmrc.http.HeaderCarrier
@@ -36,6 +37,11 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
 
       server.stubFor(
         post(urlEqualTo("/declarations/passengerdeclaration/v1"))
+          .withHeader(CONTENT_TYPE, matching(ContentTypes.JSON))
+          .withHeader(ACCEPT, matching(ContentTypes.JSON))
+          .withHeader("X-Correlation-ID", matching("^.+$"))
+          .withHeader("X-Forwarded-Host", matching("MDTP"))
+          .withHeader(DATE, matching("^.+$"))
           .withRequestBody(equalTo(Json.stringify(Json.toJson(declaration))))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )

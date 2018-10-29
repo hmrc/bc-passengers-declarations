@@ -9,6 +9,7 @@ import repositories.DeclarationsRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class DeclarationController @Inject() (
