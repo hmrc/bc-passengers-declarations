@@ -10,7 +10,6 @@ class ServiceSpec extends FreeSpec with MustMatchers {
     "must be read from config" in {
 
       val config = Configuration(
-        "host" -> "foo",
         "service.host"     -> "localhost",
         "service.port"     -> "443",
         "service.protocol" -> "https"

@@ -9,10 +9,10 @@ class ChargeReferenceSpec extends FreeSpec with MustMatchers with EitherValues {
 
     "must be bound from a url path" in {
 
-      val chargeReference = ChargeReference("1234567890asdf")
+      val chargeReference = ChargeReference("1234567890")
 
       val result = implicitly[PathBindable[ChargeReference]]
-        .bind("chargeReference", "1234567890asdf")
+        .bind("chargeReference", "1234567890")
 
       result.right.value mustEqual chargeReference
     }

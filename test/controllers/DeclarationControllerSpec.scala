@@ -2,9 +2,9 @@ package controllers
 
 import connectors.HODConnector
 import models.ChargeReference
-import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito
+import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
@@ -14,9 +14,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import reactivemongo.api.commands.WriteResult
 import repositories.DeclarationsRepository
-import reactivemongo.play.json.collection.JSONBatchCommands
 import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.Future
@@ -48,33 +46,26 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
       "and mongo is available" - {
 
-        "must return ACCEPTED" in {
+        "must return ACCEPTED and a ChargeReference" in {
 
-          val chargeReference = ChargeReference("1234567890asdf")
+          val chargeReference = ChargeReference("1234567890")
 
-          val requestBody = Json.obj(
-            "simpleDeclarationRequest" -> Json.obj(
-              "requestDetail" -> Json.obj(
-                "declarationHeader" -> Json.obj(
-                  "chargeReference" -> chargeReference.value
-                )
-              )
-            )
-          )
+          val requestBody = Json.obj()
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody)
 
-          when(repository.insert(chargeReference, requestBody))
-            .thenReturn(Future.successful(mock[WriteResult]))
+          when(repository.insert(requestBody))
+            .thenReturn(Future.successful(chargeReference))
 
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
+          contentAsJson(result) mustBe Json.toJson(chargeReference)
 
           whenReady(result) {
             _ =>
-              verify(repository, times(1)).insert(chargeReference, requestBody)
+              verify(repository, times(1)).insert(requestBody)
           }
         }
       }
@@ -83,22 +74,12 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         "must throw an exception" in {
 
-          val chargeReference = ChargeReference("1234567890asdf")
-
-          val requestBody = Json.obj(
-            "simpleDeclarationRequest" -> Json.obj(
-              "requestDetail" -> Json.obj(
-                "declarationHeader" -> Json.obj(
-                  "chargeReference" -> chargeReference.value
-                )
-              )
-            )
-          )
+          val requestBody = Json.obj()
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody)
 
-          when(repository.insert(chargeReference, requestBody))
+          when(repository.insert(requestBody))
             .thenReturn(Future.failed(new Exception()))
 
           val result = route(app, request).value
@@ -109,16 +90,6 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         }
       }
     }
-
-    "must return BAD_REQUEST when given an invalid request" in {
-
-      val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-        .withJsonBody(Json.obj())
-
-      val result = route(app, request).value
-
-      status(result) mustBe BAD_REQUEST
-    }
   }
 
   "update" - {
@@ -127,22 +98,14 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
       "must return ACCEPTED" in {
 
-        val chargeReference = ChargeReference("1234567890asdf")
+        val chargeReference = ChargeReference("1234567890")
 
-        val requestBody = Json.obj(
-          "simpleDeclarationRequest" -> Json.obj(
-            "requestDetail" -> Json.obj(
-              "declarationHeader" -> Json.obj(
-                "chargeReference" -> chargeReference.value
-              )
-            )
-          )
-        )
+        val requestBody = Json.obj()
 
         when(repository.get(chargeReference))
           .thenReturn(Future.successful(Some(requestBody)))
         when(repository.remove(chargeReference))
-          .thenReturn(Future.successful(mock[JSONBatchCommands.FindAndModifyCommand.FindAndModifyResult]))
+          .thenReturn(Future.successful(Some(requestBody)))
         when(connector.submit(eqTo(requestBody))(any()))
           .thenReturn(Future.successful(mock[HttpResponse]))
 
@@ -164,7 +127,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
       "must return NOT_FOUND" in {
 
-        val chargeReference = ChargeReference("1234567890asdf")
+        val chargeReference = ChargeReference("1234567890")
 
         when(repository.get(chargeReference))
           .thenReturn(Future.successful(None))
