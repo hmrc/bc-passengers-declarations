@@ -12,8 +12,6 @@ lazy val microservice = Project(appName, file("."))
     majorVersion                                  := 0,
     libraryDependencies                           ++= AppDependencies.compile ++ AppDependencies.test,
     RoutesKeys.routesImport                       += "models.ChargeReference"
-//    parallelExecution in IntegrationTest          := false,
-//    unmanagedSourceDirectories in IntegrationTest := Seq((baseDirectory in IntegrationTest).value / "it")
   )
   .settings(publishingSettings: _*)
   .settings(resolvers += Resolver.jcenterRepo)

@@ -2,7 +2,6 @@ package services
 
 import com.google.inject.{Inject, Singleton}
 import models.ChargeReference
-import play.api.Configuration
 import play.api.libs.json.{Json, Reads}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.LastError
@@ -13,7 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class SequentialChargeReferenceService @Inject() (
-                                                   config: Configuration,
                                                    mongo: ReactiveMongoApi
                                                  )(implicit ec: ExecutionContext) extends ChargeReferenceService {
 
@@ -27,7 +25,7 @@ class SequentialChargeReferenceService @Inject() (
     }
   }
 
-  private val collectionName: String = config.get[String]("mongodb.collections.charge-reference")
+  private val collectionName: String = "charge-reference"
   private val id: String = "counter"
 
   private def collection: Future[JSONCollection] =

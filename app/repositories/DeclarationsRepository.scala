@@ -2,7 +2,6 @@ package repositories
 
 import com.google.inject.{Inject, Singleton}
 import models.ChargeReference
-import play.api.Configuration
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -16,11 +15,10 @@ import scala.language.implicitConversions
 @Singleton
 class DefaultDeclarationsRepository @Inject() (
                                                 mongo: ReactiveMongoApi,
-                                                chargeReferenceService: ChargeReferenceService,
-                                                config: Configuration
+                                                chargeReferenceService: ChargeReferenceService
                                               )(implicit ec: ExecutionContext) extends DeclarationsRepository {
 
-  private val collectionName: String = config.get[String]("mongodb.collections.declarations")
+  private val collectionName: String = "declarations"
 
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))

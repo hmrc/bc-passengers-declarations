@@ -44,7 +44,7 @@ class ChargeReferenceServiceSpec extends FreeSpec with MustMatchers with MongoSu
             _ =>
               db.collection[JSONCollection]("charge-reference")
                 .insert(Json.obj(
-                  "_id"   -> 0,
+                  "_id"             -> "counter",
                   "chargeReference" -> 10
                 ))
           }
