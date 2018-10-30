@@ -1,9 +1,8 @@
 package connectors
 
 import com.google.inject.{Inject, Singleton}
-import models.Service
+import models.{Declaration, Service}
 import play.api.Configuration
-import play.api.libs.json.JsValue
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
@@ -17,6 +16,6 @@ class HODConnector @Inject() (
 
   private val baseUrl = config.get[Service]("microservice.services.des")
 
-  def submit(request: JsValue)(implicit hc: HeaderCarrier): Future[HttpResponse] =
-    http.POST[JsValue, HttpResponse](s"$baseUrl/declarations/passengerdeclaration/v1", request)
+  def submit(declaration: Declaration)(implicit hc: HeaderCarrier): Future[HttpResponse] =
+    http.POST[Declaration, HttpResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration)
 }

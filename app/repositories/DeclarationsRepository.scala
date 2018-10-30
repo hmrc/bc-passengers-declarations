@@ -1,7 +1,7 @@
 package repositories
 
 import com.google.inject.{Inject, Singleton}
-import models.ChargeReference
+import models.{ChargeReference, Declaration}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -26,7 +26,6 @@ class DefaultDeclarationsRepository @Inject() (
   private val index = Index(
     key     = Seq("lastUpdated" -> IndexType.Ascending),
     name    = Some("declarations-index")
-    //    options = BSONDocument("expireAfterSeconds" -> cacheTtl)
   )
 
   val started: Future[_] = {
@@ -39,18 +38,15 @@ class DefaultDeclarationsRepository @Inject() (
 
     for {
       id <- chargeReferenceService.nextChargeReference()
-      _  <- collection.flatMap(_.insert(Json.obj(
-        "_id"  -> id.value,
-        "data" -> (data ++ id)
-      )))
+      _  <- collection.flatMap(_.insert(Declaration(id, data ++ id)))
     } yield id
   }
 
-  override def get(id: ChargeReference): Future[Option[JsValue]] =
-    collection.flatMap(_.find(Json.obj("_id" -> id.value), None).one[JsValue])
+  override def get(id: ChargeReference): Future[Option[Declaration]] =
+    collection.flatMap(_.find(Json.obj("_id" -> id.value), None).one[Declaration])
 
-  override def remove(id: ChargeReference): Future[Option[JsValue]] =
-    collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.value)).map(_.result[JsValue]))
+  override def remove(id: ChargeReference): Future[Option[Declaration]] =
+    collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.value)).map(_.result[Declaration]))
 
   private implicit def toJson(chargeReference: ChargeReference): JsObject = {
     Json.obj(
@@ -69,6 +65,6 @@ trait DeclarationsRepository {
 
   val started: Future[_]
   def insert(data: JsObject): Future[ChargeReference]
-  def get(id: ChargeReference): Future[Option[JsValue]]
-  def remove(id: ChargeReference): Future[Option[JsValue]]
+  def get(id: ChargeReference): Future[Option[Declaration]]
+  def remove(id: ChargeReference): Future[Option[Declaration]]
 }
