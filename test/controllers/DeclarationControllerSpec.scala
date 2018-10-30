@@ -1,7 +1,7 @@
 package controllers
 
 import connectors.HODConnector
-import models.ChargeReference
+import models.{ChargeReference, Declaration}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito
 import org.mockito.Mockito._
@@ -100,13 +100,13 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val chargeReference = ChargeReference("1234567890")
 
-        val requestBody = Json.obj()
+        val declaration = Declaration(chargeReference, Json.obj())
 
         when(repository.get(chargeReference))
-          .thenReturn(Future.successful(Some(requestBody)))
+          .thenReturn(Future.successful(Some(declaration)))
         when(repository.remove(chargeReference))
-          .thenReturn(Future.successful(Some(requestBody)))
-        when(connector.submit(eqTo(requestBody))(any()))
+          .thenReturn(Future.successful(Some(declaration)))
+        when(connector.submit(eqTo(declaration))(any()))
           .thenReturn(Future.successful(mock[HttpResponse]))
 
         val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
@@ -117,7 +117,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         whenReady(result) {
           _ =>
             verify(repository, times(1)).get(chargeReference)
-            verify(connector, times(1)).submit(eqTo(requestBody))(any())
+            verify(connector, times(1)).submit(eqTo(declaration))(any())
             verify(repository, times(1)).remove(chargeReference)
         }
       }

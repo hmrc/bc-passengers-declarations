@@ -30,9 +30,9 @@ class DeclarationController @Inject() (
     implicit request =>
       repository.get(chargeReference).flatMap {
         _.map {
-          json =>
+          declaration =>
             for {
-              _ <- connector.submit(json)
+              _ <- connector.submit(declaration)
               _ <- repository.remove(chargeReference)
             } yield Accepted
         }.getOrElse(Future.successful(NotFound))

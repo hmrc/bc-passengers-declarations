@@ -1,5 +1,6 @@
 package repositories
 
+import models.Declaration
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -13,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
 class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
-  with ScalaFutures with IntegrationPatience with OptionValues {
+  with ScalaFutures with IntegrationPatience with OptionValues with Inside {
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -31,24 +32,26 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         val repository = app.injector.instanceOf[DeclarationsRepository]
 
         repository.started.futureValue
-        val id       = repository.insert(Json.obj()).futureValue
-        val document = repository.get(id).futureValue.value
+        val chargeReference = repository.insert(Json.obj()).futureValue
+        val document        = repository.get(chargeReference).futureValue.value
 
-        document mustEqual Json.obj(
-          "_id"  -> id.value.toString,
-          "data" -> Json.obj(
-            "simpleDeclarationRequest" -> Json.obj(
-              "requestDetail" -> Json.obj(
-                "declarationHeader" -> Json.obj(
-                  "chargeReference" -> id.value.toString
+        inside(document) {
+          case Declaration(id, data, _) =>
+
+            id mustEqual chargeReference
+            data mustEqual Json.obj(
+              "simpleDeclarationRequest" -> Json.obj(
+                "requestDetail" -> Json.obj(
+                  "declarationHeader" -> Json.obj(
+                    "chargeReference" -> chargeReference.value.toString
+                  )
                 )
               )
             )
-          )
-        )
+        }
 
-        repository.remove(id).futureValue
-        repository.get(id).futureValue mustNot be (defined)
+        repository.remove(chargeReference).futureValue
+        repository.get(chargeReference).futureValue mustNot be (defined)
       }
     }
 
