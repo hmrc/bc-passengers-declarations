@@ -1,0 +1,88 @@
+package repositories
+
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers.running
+import reactivemongo.api.indexes.IndexType
+import reactivemongo.bson.BSONDocument
+import reactivemongo.play.json.collection.JSONCollection
+import suite.MongoSuite
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
+  with ScalaFutures with IntegrationPatience with OptionValues {
+
+  private lazy val builder: GuiceApplicationBuilder =
+    new GuiceApplicationBuilder()
+
+  "a lock repository" - {
+
+    "must provide a lock for an id when that id is not already locked" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[LockRepository]
+
+        repository.started.futureValue
+        val result = repository.lock("id").futureValue
+
+        result mustEqual true
+      }
+    }
+
+    "must not provide a lock for an id when that id is already locked" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[LockRepository]
+
+        repository.started.futureValue
+        repository.lock("id").futureValue
+
+        val result = repository.lock("id").futureValue
+
+        result mustEqual false
+      }
+    }
+  }
+
+  "must ensure indices" in {
+
+    database.flatMap(_.drop()).futureValue
+
+    val ttl = 123
+    val app =
+      builder
+        .configure("mongodb.collections.locks.ttl" -> ttl)
+        .build()
+
+    running(app) {
+
+      val repository = app.injector.instanceOf[DeclarationsRepository]
+
+      repository.started.futureValue
+
+      val indices = database.flatMap {
+        _.collection[JSONCollection]("locks")
+          .indexesManager.list()
+      }.futureValue
+
+      indices.find {
+        index =>
+          index.name.contains("locks-index") &&
+            index.key == Seq("lastUpdated" -> IndexType.Ascending) &&
+            index.options == BSONDocument("expireAfterSeconds" -> ttl)
+      } mustBe defined
+    }
+  }
+}
