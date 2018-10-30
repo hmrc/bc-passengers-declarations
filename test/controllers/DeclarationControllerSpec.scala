@@ -106,7 +106,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           .thenReturn(Future.successful(Some(declaration)))
         when(repository.remove(chargeReference))
           .thenReturn(Future.successful(Some(declaration)))
-        when(connector.submit(eqTo(declaration))(any()))
+        when(connector.submit(eqTo(declaration)))
           .thenReturn(Future.successful(mock[HttpResponse]))
 
         val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
@@ -117,7 +117,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         whenReady(result) {
           _ =>
             verify(repository, times(1)).get(chargeReference)
-            verify(connector, times(1)).submit(eqTo(declaration))(any())
+            verify(connector, times(1)).submit(eqTo(declaration))
             verify(repository, times(1)).remove(chargeReference)
         }
       }
