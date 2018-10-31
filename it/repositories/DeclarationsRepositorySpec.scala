@@ -89,7 +89,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap(_.drop()).futureValue
 
-      val app = builder.configure("mongodb.collections.declarations.payment-no-response-timeout" -> "1 minute").build()
+      val app = builder.configure("declarations.payment-no-response-timeout" -> "1 minute").build()
 
       running(app) {
 

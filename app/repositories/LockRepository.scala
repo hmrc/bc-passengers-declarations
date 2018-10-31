@@ -3,11 +3,13 @@ package repositories
 import javax.inject.{Inject, Singleton}
 import models.Lock
 import play.api.Configuration
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.commands.LastError
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.collection.JSONCollection
+import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,7 +23,7 @@ class DefaultLockRepository @Inject()(
 
   private lazy val documentExistsErrorCode = Some(11000)
 
-  private val cacheTtl = config.get[Int]("mongodb.collections.locks.ttl")
+  private val cacheTtl = config.get[Int]("locks.ttl")
 
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
@@ -47,10 +49,17 @@ class DefaultLockRepository @Inject()(
       case e: LastError if e.code == documentExistsErrorCode =>
         false
       }
+
+  override def isLocked(id: String): Future[Boolean] =
+    collection
+      .flatMap{
+        _.find(Json.obj("_id" -> id), None).one[Lock]
+      }.map(_.isDefined)
 }
 
 trait LockRepository {
 
   val started: Future[_]
   def lock(id: String): Future[Boolean]
+  def isLocked(id: String): Future[Boolean]
 }

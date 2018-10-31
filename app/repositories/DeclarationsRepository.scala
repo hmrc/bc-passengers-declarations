@@ -8,7 +8,7 @@ import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
 import models.{ChargeReference, Declaration}
 import play.api.Configuration
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.akkastream.{State, cursorProducer}
@@ -32,7 +32,7 @@ class DefaultDeclarationsRepository @Inject() (
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  private val paymentTimeout = config.get[Duration]("mongodb.collections.declarations.payment-no-response-timeout")
+  private val paymentTimeout = config.get[Duration]("declarations.payment-no-response-timeout")
 
   private val index = Index(
     key     = Seq("lastUpdated" -> IndexType.Ascending),
