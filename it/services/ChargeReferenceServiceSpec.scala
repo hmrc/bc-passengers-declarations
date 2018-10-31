@@ -28,7 +28,8 @@ class ChargeReferenceServiceSpec extends FreeSpec with MustMatchers with MongoSu
 
         val service = app.injector.instanceOf[ChargeReferenceService]
 
-        service.started.futureValue
+        started(app).futureValue
+
         val first  = service.nextChargeReference().futureValue
         val second = service.nextChargeReference().futureValue
 
@@ -55,7 +56,7 @@ class ChargeReferenceServiceSpec extends FreeSpec with MustMatchers with MongoSu
       running(app) {
 
         val service = app.injector.instanceOf[ChargeReferenceService]
-        service.started.futureValue
+        started(app).futureValue
       }
     }
   }

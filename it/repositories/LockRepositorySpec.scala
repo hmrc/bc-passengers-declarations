@@ -29,7 +29,8 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
         val repository = app.injector.instanceOf[LockRepository]
 
-        repository.started.futureValue
+        started(app).futureValue
+
         val result = repository.lock("id").futureValue
 
         result mustEqual true
@@ -46,7 +47,8 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
         val repository = app.injector.instanceOf[LockRepository]
 
-        repository.started.futureValue
+        started(app).futureValue
+
         repository.lock("id").futureValue
 
         val result = repository.lock("id").futureValue
@@ -70,7 +72,7 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
       val repository = app.injector.instanceOf[DeclarationsRepository]
 
-      repository.started.futureValue
+      started(app).futureValue
 
       val indices = database.flatMap {
         _.collection[JSONCollection]("locks")
