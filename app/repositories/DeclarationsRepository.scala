@@ -3,6 +3,7 @@ package repositories
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
+import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
@@ -12,6 +13,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.akkastream.{State, cursorProducer}
+import reactivemongo.api.Cursor
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import services.ChargeReferenceService
@@ -39,10 +41,10 @@ class DefaultDeclarationsRepository @Inject() (
     name    = Some("declarations-index")
   )
 
-  val started: Future[_] = {
+  val started: Future[Unit] = {
     collection.flatMap {
       _.indexesManager.ensure(index)
-    }
+    }.map(_ => ())
   }
 
   override def insert(data: JsObject): Future[ChargeReference] = {
@@ -71,7 +73,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
-          .documentSource()
+          .documentSource(err = Cursor.ContOnError())
       }
     }
   }
@@ -91,7 +93,7 @@ class DefaultDeclarationsRepository @Inject() (
 
 trait DeclarationsRepository {
 
-  val started: Future[_]
+  val started: Future[Unit]
   def insert(data: JsObject): Future[ChargeReference]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]

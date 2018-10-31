@@ -34,10 +34,10 @@ class DefaultLockRepository @Inject()(
     options = BSONDocument("expireAfterSeconds" -> cacheTtl)
   )
 
-  val started: Future[_] = {
+  val started: Future[Unit] = {
     collection.flatMap {
       _.indexesManager.ensure(index)
-    }
+    }.map(_ => ())
   }
 
   override def lock(id: String): Future[Boolean] =
@@ -59,7 +59,7 @@ class DefaultLockRepository @Inject()(
 
 trait LockRepository {
 
-  val started: Future[_]
+  val started: Future[Unit]
   def lock(id: String): Future[Boolean]
   def isLocked(id: String): Future[Boolean]
 }

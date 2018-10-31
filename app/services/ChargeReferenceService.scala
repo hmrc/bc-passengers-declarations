@@ -31,7 +31,7 @@ class SequentialChargeReferenceService @Inject() (
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  val started: Future[_] = {
+  val started: Future[Unit] = {
 
     lazy val documentExistsErrorCode = Some(11000)
 
@@ -73,6 +73,6 @@ class SequentialChargeReferenceService @Inject() (
 
 trait ChargeReferenceService {
 
-  val started: Future[_]
+  val started: Future[Unit]
   def nextChargeReference(): Future[ChargeReference]
 }
