@@ -8,7 +8,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import utils.WireMockHelper
 import play.api.test.Helpers._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.Declaration
 import play.api.http.ContentTypes
 import play.api.libs.json.Json
 import play.api.test.Injecting

@@ -1,7 +1,8 @@
-package models
+package models.declarations
 
 import java.time.LocalDateTime
 
+import models.ChargeReference
 import play.api.libs.json._
 
 final case class Declaration (

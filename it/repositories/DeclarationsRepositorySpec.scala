@@ -4,7 +4,8 @@ import java.time.LocalDateTime
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.Declaration
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import play.api.inject.guice.GuiceApplicationBuilder

@@ -6,7 +6,8 @@ import java.time.temporal.ChronoUnit
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.Declaration
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi

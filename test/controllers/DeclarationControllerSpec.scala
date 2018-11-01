@@ -1,7 +1,8 @@
 package controllers
 
 import connectors.HODConnector
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.Declaration
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito
 import org.mockito.Mockito._

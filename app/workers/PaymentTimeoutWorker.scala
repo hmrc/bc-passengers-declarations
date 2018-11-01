@@ -3,7 +3,7 @@ package workers
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import javax.inject.Inject
-import models.Declaration
+import models.declarations.Declaration
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 

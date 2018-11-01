@@ -4,7 +4,8 @@ import java.time.LocalDateTime
 
 import ch.qos.logback.classic.Level
 import logger.TestLoggerAppender
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.Declaration
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
