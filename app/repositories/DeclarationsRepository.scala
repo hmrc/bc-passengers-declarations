@@ -3,6 +3,7 @@ package repositories
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
+import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
@@ -11,7 +12,7 @@ import models.declarations.{Declaration, State}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.akkastream.{cursorProducer, State => MongoState}
+import reactivemongo.akkastream.cursorProducer
 import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
@@ -65,7 +66,7 @@ class DefaultDeclarationsRepository @Inject() (
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
 
-  def staleDeclarations: Source[Declaration, Future[Future[MongoState]]] = {
+  def staleDeclarations: Source[Declaration, Future[NotUsed]] = {
 
     val timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
 
@@ -79,6 +80,7 @@ class DefaultDeclarationsRepository @Inject() (
         _.find(query, None)
           .cursor[Declaration]()
           .documentSource(err = Cursor.ContOnError())
+          .mapMaterializedValue(_ => NotUsed.notUsed)
       }
     }
   }
@@ -102,5 +104,5 @@ trait DeclarationsRepository {
   def insert(data: JsObject): Future[ChargeReference]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
-  def staleDeclarations: Source[Declaration, Future[Future[MongoState]]]
+  def staleDeclarations: Source[Declaration, Future[NotUsed]]
 }
