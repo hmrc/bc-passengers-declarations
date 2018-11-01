@@ -100,8 +100,10 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
 
         val declarations = List(
           Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.PendingPayment, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Failed, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.PendingPayment, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.PendingPayment, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {

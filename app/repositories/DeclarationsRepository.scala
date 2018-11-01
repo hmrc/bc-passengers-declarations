@@ -70,7 +70,8 @@ class DefaultDeclarationsRepository @Inject() (
     val timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
 
     val query = Json.obj(
-      "lastUpdated" -> Json.obj("$lt" -> timeout)
+      "lastUpdated" -> Json.obj("$lt" -> timeout),
+      "state"       -> State.PendingPayment
     )
 
     Source.fromFutureSource {
