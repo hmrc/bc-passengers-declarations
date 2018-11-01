@@ -3,7 +3,6 @@ package repositories
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
@@ -11,9 +10,9 @@ import models.{ChargeReference, Declaration}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.akkastream.{State, cursorProducer}
 import reactivemongo.api.Cursor
+import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import services.ChargeReferenceService
