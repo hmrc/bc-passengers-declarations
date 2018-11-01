@@ -7,6 +7,12 @@
         </encoder>
     </appender>
 
+    <appender name="TEST_APPENDER" class="logger.TestLoggerAppender"/>
+
+    <logger name="workers.PaymentTimeoutWorker" level="INFO" additivity="false">
+        <appender-ref ref="TEST_APPENDER"/>
+    </logger>
+
     <root level="OFF">
         <appender-ref ref="STDOUT"/>
     </root>

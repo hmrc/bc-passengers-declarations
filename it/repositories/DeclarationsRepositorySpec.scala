@@ -1,6 +1,10 @@
 package repositories
 
-import models.Declaration
+import java.time.LocalDateTime
+
+import akka.stream.Materializer
+import akka.stream.scaladsl.Sink
+import models.{ChargeReference, Declaration}
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -31,7 +35,8 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
 
         val repository = app.injector.instanceOf[DeclarationsRepository]
 
-        repository.started.futureValue
+        started(app).futureValue
+
         val chargeReference = repository.insert(Json.obj()).futureValue
         val document        = repository.get(chargeReference).futureValue.value
 
@@ -65,7 +70,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
 
         val repository = app.injector.instanceOf[DeclarationsRepository]
 
-        repository.started.futureValue
+        started(app).futureValue
 
         val indices = database.flatMap {
           _.collection[JSONCollection]("declarations")
@@ -77,6 +82,39 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
             index.name.contains("declarations-index") &&
             index.key == Seq("lastUpdated" -> IndexType.Ascending)
         } mustBe defined
+      }
+    }
+
+    "must provide a stream of stale declarations" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.configure("declarations.payment-no-response-timeout" -> "1 minute").build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarations = List(
+          Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference("2"), Json.obj(), LocalDateTime.now)
+        )
+
+        database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .insert[Declaration](ordered = true)
+            .many(declarations)
+        }.futureValue
+
+        implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+
+        val staleDeclarations = repository.staleDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+
+        staleDeclarations.size mustEqual 1
+        staleDeclarations.map(_.chargeReference) must contain only ChargeReference("0")
       }
     }
   }

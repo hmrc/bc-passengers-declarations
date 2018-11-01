@@ -29,7 +29,8 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
         val repository = app.injector.instanceOf[LockRepository]
 
-        repository.started.futureValue
+        started(app).futureValue
+
         val result = repository.lock("id").futureValue
 
         result mustEqual true
@@ -46,7 +47,8 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
         val repository = app.injector.instanceOf[LockRepository]
 
-        repository.started.futureValue
+        started(app).futureValue
+
         repository.lock("id").futureValue
 
         val result = repository.lock("id").futureValue
@@ -54,35 +56,55 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
         result mustEqual false
       }
     }
-  }
 
-  "must ensure indices" in {
+    "must ensure indices" in {
 
-    database.flatMap(_.drop()).futureValue
+      database.flatMap(_.drop()).futureValue
 
-    val ttl = 123
-    val app =
-      builder
-        .configure("mongodb.collections.locks.ttl" -> ttl)
-        .build()
+      val ttl = 123
+      val app =
+        builder
+          .configure("locks.ttl" -> ttl)
+          .build()
 
-    running(app) {
+      running(app) {
 
-      val repository = app.injector.instanceOf[DeclarationsRepository]
+        val repository = app.injector.instanceOf[DeclarationsRepository]
 
-      repository.started.futureValue
+        started(app).futureValue
 
-      val indices = database.flatMap {
-        _.collection[JSONCollection]("locks")
-          .indexesManager.list()
-      }.futureValue
+        val indices = database.flatMap {
+          _.collection[JSONCollection]("locks")
+            .indexesManager.list()
+        }.futureValue
 
-      indices.find {
-        index =>
-          index.name.contains("locks-index") &&
-            index.key == Seq("lastUpdated" -> IndexType.Ascending) &&
-            index.options == BSONDocument("expireAfterSeconds" -> ttl)
-      } mustBe defined
+        indices.find {
+          index =>
+            index.name.contains("locks-index") &&
+              index.key == Seq("lastUpdated" -> IndexType.Ascending) &&
+              index.options == BSONDocument("expireAfterSeconds" -> ttl)
+        } mustBe defined
+      }
+    }
+
+    "must return the lock status for an id" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[LockRepository]
+
+        started(app).futureValue
+
+        repository.isLocked("id").futureValue mustEqual false
+
+        repository.lock("id").futureValue
+
+        repository.isLocked("id").futureValue mustEqual true
+      }
     }
   }
 }
