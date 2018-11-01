@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import ch.qos.logback.classic.Level
 import logger.TestLoggerAppender
 import models.ChargeReference
-import models.declarations.Declaration
+import models.declarations.{Declaration, State}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
@@ -22,6 +22,7 @@ import suite.MongoSuite
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
   with ScalaFutures with IntegrationPatience with OptionValues with MockitoSugar {
@@ -48,9 +49,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.PendingPayment, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -61,7 +62,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
-        val declaration = worker.tap.pull.futureValue.value
+        worker.tap.pull.futureValue.value
 
         val logEvent = TestLoggerAppender.queue.dequeue()
 
@@ -83,9 +84,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PendingPayment, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -116,9 +117,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PendingPayment, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -153,8 +154,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
         val declarations = List(
-          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5))
+          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5))
         )
 
         database.flatMap {
@@ -175,8 +176,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+        Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5))
       )
 
       database.flatMap {
@@ -211,8 +212,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+        Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5))
       )
 
       database.flatMap {

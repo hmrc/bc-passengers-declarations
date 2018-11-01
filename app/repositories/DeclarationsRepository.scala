@@ -7,11 +7,11 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
 import models.ChargeReference
-import models.declarations.Declaration
+import models.declarations.{Declaration, State}
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.akkastream.{State, cursorProducer}
+import reactivemongo.akkastream.{cursorProducer, State => MongoState}
 import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
@@ -51,7 +51,11 @@ class DefaultDeclarationsRepository @Inject() (
 
     for {
       id <- chargeReferenceService.nextChargeReference()
-      _  <- collection.flatMap(_.insert(Declaration(id, data ++ id)))
+      _  <- collection.flatMap(_.insert(Declaration(
+        chargeReference = id,
+        state           = State.PendingPayment,
+        data            = data ++ id
+      )))
     } yield id
   }
 
@@ -61,7 +65,7 @@ class DefaultDeclarationsRepository @Inject() (
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
 
-  def staleDeclarations: Source[Declaration, Future[Future[State]]] = {
+  def staleDeclarations: Source[Declaration, Future[Future[MongoState]]] = {
 
     val timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
 
@@ -97,5 +101,5 @@ trait DeclarationsRepository {
   def insert(data: JsObject): Future[ChargeReference]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
-  def staleDeclarations: Source[Declaration, Future[Future[State]]]
+  def staleDeclarations: Source[Declaration, Future[Future[MongoState]]]
 }
