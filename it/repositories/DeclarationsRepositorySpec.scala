@@ -38,26 +38,25 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
 
         started(app).futureValue
 
-        val chargeReference = repository.insert(Json.obj()).futureValue
-        val document = repository.get(chargeReference).futureValue.value
+        val document = repository.insert(Json.obj()).futureValue
 
         inside(document) {
           case Declaration(id, _, data, _) =>
 
-            id mustEqual chargeReference
+            id mustEqual document.chargeReference
             data mustEqual Json.obj(
               "simpleDeclarationRequest" -> Json.obj(
                 "requestDetail" -> Json.obj(
                   "declarationHeader" -> Json.obj(
-                    "chargeReference" -> chargeReference.toString
+                    "chargeReference" -> document.chargeReference.toString
                   )
                 )
               )
             )
         }
 
-        repository.remove(chargeReference).futureValue
-        repository.get(chargeReference).futureValue mustNot be(defined)
+        repository.remove(document.chargeReference).futureValue
+        repository.get(document.chargeReference).futureValue mustNot be(defined)
       }
     }
 
@@ -133,11 +132,11 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
 
         started(app).futureValue
 
-        val chargeReference = repository.insert(Json.obj()).futureValue
+        val declaration = repository.insert(Json.obj()).futureValue
 
-        val declaration = repository.setState(chargeReference, State.Paid).futureValue
+        val updatedDeclaration = repository.setState(declaration.chargeReference, State.Paid).futureValue
 
-        declaration.state mustEqual State.Paid
+        updatedDeclaration.state mustEqual State.Paid
       }
     }
 

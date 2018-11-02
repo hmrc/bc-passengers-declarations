@@ -21,8 +21,8 @@ class DeclarationController @Inject() (
     implicit request =>
 
       repository.insert(request.body.as[JsObject]).map {
-        chargeReference =>
-          Accepted(Json.toJson(chargeReference))
+        declaration =>
+          Accepted(Json.toJson(declaration))
       }
   }
 

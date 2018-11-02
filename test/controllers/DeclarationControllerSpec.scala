@@ -42,9 +42,11 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
       "and mongo is available" - {
 
-        "must return ACCEPTED and a ChargeReference" in {
+        "must return ACCEPTED and a Declaration" in {
 
           val chargeReference = ChargeReference(1234567890)
+
+          val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
 
           val requestBody = Json.obj()
 
@@ -52,12 +54,12 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
             .withJsonBody(requestBody)
 
           when(repository.insert(requestBody))
-            .thenReturn(Future.successful(chargeReference))
+            .thenReturn(Future.successful(declaration))
 
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
-          contentAsJson(result) mustBe Json.toJson(chargeReference)
+          contentAsJson(result) mustBe Json.toJson(declaration)
 
           whenReady(result) {
             _ =>
