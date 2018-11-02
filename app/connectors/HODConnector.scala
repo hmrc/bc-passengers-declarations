@@ -3,7 +3,8 @@ package connectors
 import java.util.UUID
 
 import com.google.inject.{Inject, Singleton}
-import models.{Declaration, Service}
+import models.Service
+import models.declarations.Declaration
 import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}

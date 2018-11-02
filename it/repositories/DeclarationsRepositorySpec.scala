@@ -4,7 +4,8 @@ import java.time.LocalDateTime
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.{Declaration, State}
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -41,7 +42,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         val document        = repository.get(chargeReference).futureValue.value
 
         inside(document) {
-          case Declaration(id, data, _) =>
+          case Declaration(id, _, data, _) =>
 
             id mustEqual chargeReference
             data mustEqual Json.obj(
@@ -98,9 +99,11 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Failed, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.PendingPayment, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.PendingPayment, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {

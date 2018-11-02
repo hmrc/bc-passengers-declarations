@@ -8,7 +8,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import utils.WireMockHelper
 import play.api.test.Helpers._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.{Declaration, State}
 import play.api.http.ContentTypes
 import play.api.libs.json.Json
 import play.api.test.Injecting
@@ -33,7 +34,7 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
 
     "must call the HOD" in {
 
-      val declaration = Declaration(ChargeReference(123), Json.obj())
+      val declaration = Declaration(ChargeReference(123), State.PendingPayment, Json.obj())
 
       server.stubFor(
         post(urlEqualTo("/declarations/passengerdeclaration/v1"))

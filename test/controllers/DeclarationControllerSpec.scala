@@ -1,7 +1,8 @@
 package controllers
 
 import connectors.HODConnector
-import models.{ChargeReference, Declaration}
+import models.ChargeReference
+import models.declarations.{Declaration, State}
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.mockito.Mockito
 import org.mockito.Mockito._
@@ -100,7 +101,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val chargeReference = ChargeReference(1234567890)
 
-        val declaration = Declaration(chargeReference, Json.obj())
+        val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
 
         when(repository.get(chargeReference))
           .thenReturn(Future.successful(Some(declaration)))
