@@ -14,14 +14,14 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
       val lastUpdated = LocalDateTime.now
 
       val json = Json.obj(
-        "_id" -> "123",
+        "_id" -> "XHPR1234567890",
         "data" -> Json.obj(),
         "lastUpdated" -> Json.toJson(lastUpdated)
       )
 
       json.as[Declaration] mustEqual
         Declaration(
-          ChargeReference("123"),
+          ChargeReference(1234567890),
           Json.obj(),
           lastUpdated
         )
@@ -32,12 +32,12 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
       val lastUpdated = LocalDateTime.now
 
       val json = Json.obj(
-        "_id" -> "123",
+        "_id" -> "XHPR1234567890",
         "data" -> Json.obj(),
         "lastUpdated" -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference("123"), Json.obj(), lastUpdated)) mustEqual json
+      Json.toJson(Declaration(ChargeReference(1234567890), Json.obj(), lastUpdated)) mustEqual json
     }
   }
 }

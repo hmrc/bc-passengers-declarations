@@ -48,7 +48,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
               "simpleDeclarationRequest" -> Json.obj(
                 "requestDetail" -> Json.obj(
                   "declarationHeader" -> Json.obj(
-                    "chargeReference" -> chargeReference.value.toString
+                    "chargeReference" -> chargeReference.toString
                   )
                 )
               )
@@ -98,9 +98,9 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference("2"), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -114,7 +114,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         val staleDeclarations = repository.staleDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
         staleDeclarations.size mustEqual 1
-        staleDeclarations.map(_.chargeReference) must contain only ChargeReference("0")
+        staleDeclarations.map(_.chargeReference) must contain only ChargeReference(0)
       }
     }
   }

@@ -33,7 +33,7 @@ class ChargeReferenceServiceSpec extends FreeSpec with MustMatchers with MongoSu
         val first  = service.nextChargeReference().futureValue
         val second = service.nextChargeReference().futureValue
 
-        (second.value.toInt - first.value.toInt) mustEqual 1
+        (second.value - first.value) mustEqual 1
       }
     }
 

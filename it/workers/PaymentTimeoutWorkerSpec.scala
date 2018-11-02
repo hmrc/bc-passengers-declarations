@@ -47,9 +47,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference("2"), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -82,9 +82,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference("2"), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -95,12 +95,12 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val lockRepository = app.injector.instanceOf[LockRepository]
 
-        lockRepository.lock("0")
+        lockRepository.lock(0)
 
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
         val declaration = worker.tap.pull.futureValue.value
-        declaration.chargeReference.value mustEqual "1"
+        declaration.chargeReference.value mustEqual 1
       }
     }
 
@@ -115,9 +115,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference("2"), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -133,9 +133,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val lockRepository = app.injector.instanceOf[LockRepository]
 
-        lockRepository.isLocked("0").futureValue mustEqual true
-        lockRepository.isLocked("1").futureValue mustEqual true
-        lockRepository.isLocked("2").futureValue mustEqual false
+        lockRepository.isLocked(0).futureValue mustEqual true
+        lockRepository.isLocked(1).futureValue mustEqual true
+        lockRepository.isLocked(2).futureValue mustEqual false
       }
     }
 
@@ -152,8 +152,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
         val declarations = List(
-          Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now.minusMinutes(5))
+          Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5))
         )
 
         database.flatMap {
@@ -174,8 +174,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+        Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5))
       )
 
       database.flatMap {
@@ -200,8 +200,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference("1")
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference("0")
+        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(1)
+        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(0)
       }
     }
 
@@ -210,8 +210,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference("0"), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference("1"), Json.obj(), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+        Declaration(ChargeReference(1), Json.obj(), LocalDateTime.now.minusMinutes(5))
       )
 
       database.flatMap {
@@ -227,13 +227,13 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference("0")
+        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(0)
 
         val mongo = app.injector.instanceOf[ReactiveMongoApi]
 
         mongo.driver.close(3 seconds)
 
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference("1")
+        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(1)
       }
     }
   }

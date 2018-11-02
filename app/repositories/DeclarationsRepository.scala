@@ -56,10 +56,10 @@ class DefaultDeclarationsRepository @Inject() (
   }
 
   override def get(id: ChargeReference): Future[Option[Declaration]] =
-    collection.flatMap(_.find(Json.obj("_id" -> id.value), None).one[Declaration])
+    collection.flatMap(_.find(Json.obj("_id" -> id.toString), None).one[Declaration])
 
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
-    collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.value)).map(_.result[Declaration]))
+    collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
 
   def staleDeclarations: Source[Declaration, Future[Future[State]]] = {
 
@@ -83,7 +83,7 @@ class DefaultDeclarationsRepository @Inject() (
       "simpleDeclarationRequest" -> Json.obj(
         "requestDetail" -> Json.obj(
           "declarationHeader" -> Json.obj(
-            "chargeReference" -> chargeReference.value
+            "chargeReference" -> chargeReference.toString
           )
         )
       )

@@ -33,7 +33,7 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
 
     "must call the HOD" in {
 
-      val declaration = Declaration(ChargeReference("123"), Json.obj())
+      val declaration = Declaration(ChargeReference(123), Json.obj())
 
       server.stubFor(
         post(urlEqualTo("/declarations/passengerdeclaration/v1"))
