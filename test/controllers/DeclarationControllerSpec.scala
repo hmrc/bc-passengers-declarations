@@ -1,9 +1,7 @@
 package controllers
 
-import connectors.HODConnector
 import models.declarations.{Declaration, State}
-import models.{ChargeReference, SubmissionResponse}
-import org.mockito.Matchers.{eq => eqTo}
+import models.ChargeReference
 import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
@@ -23,10 +21,9 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
   with OptionValues with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
   private val repository = mock[DeclarationsRepository]
-  private val connector = mock[HODConnector]
 
   override def beforeEach(): Unit =
-    Mockito.reset(repository, connector)
+    Mockito.reset(repository)
 
   override lazy val app: Application = {
 
@@ -34,8 +31,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
     new GuiceApplicationBuilder()
       .overrides(
-        bind[DeclarationsRepository].toInstance(repository),
-        bind[HODConnector].toInstance(connector)
+        bind[DeclarationsRepository].toInstance(repository)
       )
       .build()
   }
@@ -96,29 +92,53 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
     "when a matching declaration is found" - {
 
-      "must return ACCEPTED" in {
+      "and updating its state fails" - {
 
-        val chargeReference = ChargeReference(1234567890)
+        "must throw an exception" in {
 
-        val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
+          val chargeReference = ChargeReference(1234567890)
 
-        when(repository.get(chargeReference))
-          .thenReturn(Future.successful(Some(declaration)))
-        when(repository.remove(chargeReference))
-          .thenReturn(Future.successful(Some(declaration)))
-        when(connector.submit(eqTo(declaration)))
-          .thenReturn(Future.successful(SubmissionResponse.Submitted))
+          val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
 
-        val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
-        val result = route(app, request).value
+          when(repository.get(chargeReference))
+            .thenReturn(Future.successful(Some(declaration)))
+          when(repository.setState(chargeReference, State.Paid))
+            .thenReturn(Future.failed(new Exception))
 
-        status(result) mustBe ACCEPTED
+          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
 
-        whenReady(result) {
-          _ =>
-            verify(repository, times(1)).get(chargeReference)
-            verify(connector, times(1)).submit(eqTo(declaration))
-            verify(repository, times(1)).remove(chargeReference)
+          val result = route(app, request).value
+
+          intercept[Exception] {
+            status(result)
+          }
+        }
+      }
+
+      "and updating its state succeeds" - {
+
+        "must return ACCEPTED" in {
+
+          val chargeReference = ChargeReference(1234567890)
+
+          val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
+          val updatedDeclaration = declaration copy (state = State.Paid)
+
+          when(repository.get(chargeReference))
+            .thenReturn(Future.successful(Some(declaration)))
+          when(repository.setState(chargeReference, State.Paid))
+            .thenReturn(Future.successful(updatedDeclaration))
+
+          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+          val result = route(app, request).value
+
+          status(result) mustBe ACCEPTED
+
+          whenReady(result) {
+            _ =>
+              verify(repository, times(1)).get(chargeReference)
+              verify(repository, times(1)).setState(chargeReference, State.Paid)
+          }
         }
       }
     }

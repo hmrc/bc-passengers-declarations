@@ -1,8 +1,8 @@
 package controllers
 
 import com.google.inject.{Inject, Singleton}
-import connectors.HODConnector
 import models.ChargeReference
+import models.declarations.State
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import repositories.DeclarationsRepository
@@ -14,8 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @Singleton
 class DeclarationController @Inject() (
                                         cc: ControllerComponents,
-                                        repository: DeclarationsRepository,
-                                        connector: HODConnector
+                                        repository: DeclarationsRepository
                                       ) extends BackendController(cc) {
 
   def submit(): Action[JsValue] = Action.async(parse.tolerantJson) {
@@ -31,11 +30,8 @@ class DeclarationController @Inject() (
     implicit request =>
       repository.get(chargeReference).flatMap {
         _.map {
-          declaration =>
-            for {
-              _ <- connector.submit(declaration)
-              _ <- repository.remove(chargeReference)
-            } yield Accepted
+          _ =>
+            repository.setState(chargeReference, State.Paid).map(_ => Accepted)
         }.getOrElse(Future.successful(NotFound))
       }
   }
