@@ -8,7 +8,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import utils.WireMockHelper
 import play.api.test.Helpers._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import models.ChargeReference
+import models.{ChargeReference, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import play.api.http.ContentTypes
 import play.api.libs.json.Json
@@ -48,7 +48,7 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
       )
 
       whenReady(connector.submit(declaration)) {
-        _.status mustBe NO_CONTENT
+        _ mustBe SubmissionResponse.Submitted
       }
     }
   }
