@@ -120,5 +120,25 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         staleDeclarations.map(_.chargeReference) must contain only ChargeReference(0)
       }
     }
+
+    "must set the state of a declaration" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val chargeReference = repository.insert(Json.obj()).futureValue
+
+        val declaration = repository.setState(chargeReference, State.Paid).futureValue
+
+        declaration.state mustEqual State.Paid
+      }
+    }
   }
 }
