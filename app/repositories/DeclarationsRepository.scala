@@ -48,16 +48,19 @@ class DefaultDeclarationsRepository @Inject() (
     }.map(_ => ())
   }
 
-  override def insert(data: JsObject): Future[ChargeReference] = {
+  override def insert(data: JsObject): Future[Declaration] = {
 
-    for {
-      id <- chargeReferenceService.nextChargeReference()
-      _  <- collection.flatMap(_.insert(Declaration(
-        chargeReference = id,
-        state           = State.PendingPayment,
-        data            = data ++ id
-      )))
-    } yield id
+    chargeReferenceService.nextChargeReference().flatMap{
+      id =>
+
+        val declaration = Declaration(
+          chargeReference = id,
+          state           = State.PendingPayment,
+          data            = data ++ id
+        )
+
+        collection.flatMap(_.insert(declaration)).map(_ => declaration)
+    }
   }
 
   override def get(id: ChargeReference): Future[Option[Declaration]] =
@@ -154,7 +157,7 @@ class DefaultDeclarationsRepository @Inject() (
 trait DeclarationsRepository {
 
   val started: Future[Unit]
-  def insert(data: JsObject): Future[ChargeReference]
+  def insert(data: JsObject): Future[Declaration]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def setState(id: ChargeReference, state: State): Future[Declaration]
