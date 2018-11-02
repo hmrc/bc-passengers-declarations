@@ -31,7 +31,7 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
         started(app).futureValue
 
-        val result = repository.lock("id").futureValue
+        val result = repository.lock(0).futureValue
 
         result mustEqual true
       }
@@ -49,9 +49,9 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
         started(app).futureValue
 
-        repository.lock("id").futureValue
+        repository.lock(0).futureValue
 
-        val result = repository.lock("id").futureValue
+        val result = repository.lock(0).futureValue
 
         result mustEqual false
       }
@@ -99,11 +99,11 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
 
         started(app).futureValue
 
-        repository.isLocked("id").futureValue mustEqual false
+        repository.isLocked(0).futureValue mustEqual false
 
-        repository.lock("id").futureValue
+        repository.lock(0).futureValue
 
-        repository.isLocked("id").futureValue mustEqual true
+        repository.isLocked(0).futureValue mustEqual true
       }
     }
   }

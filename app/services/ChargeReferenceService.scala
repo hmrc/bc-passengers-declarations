@@ -21,7 +21,7 @@ class SequentialChargeReferenceService @Inject() (
 
     (__ \ "chargeReference").read[Int].map {
       int =>
-        ChargeReference(int.toString)
+        ChargeReference(int)
     }
   }
 

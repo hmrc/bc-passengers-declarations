@@ -48,7 +48,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         "must return ACCEPTED and a ChargeReference" in {
 
-          val chargeReference = ChargeReference("1234567890")
+          val chargeReference = ChargeReference(1234567890)
 
           val requestBody = Json.obj()
 
@@ -98,7 +98,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
       "must return ACCEPTED" in {
 
-        val chargeReference = ChargeReference("1234567890")
+        val chargeReference = ChargeReference(1234567890)
 
         val declaration = Declaration(chargeReference, Json.obj())
 
@@ -127,7 +127,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
       "must return NOT_FOUND" in {
 
-        val chargeReference = ChargeReference("1234567890")
+        val chargeReference = ChargeReference(1234567890)
 
         when(repository.get(chargeReference))
           .thenReturn(Future.successful(None))

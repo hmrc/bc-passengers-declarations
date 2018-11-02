@@ -40,7 +40,7 @@ class DefaultLockRepository @Inject()(
     }.map(_ => ())
   }
 
-  override def lock(id: String): Future[Boolean] =
+  override def lock(id: Int): Future[Boolean] =
     collection
       .flatMap {
         _.insert(Lock(id))
@@ -50,7 +50,7 @@ class DefaultLockRepository @Inject()(
         false
       }
 
-  override def isLocked(id: String): Future[Boolean] =
+  override def isLocked(id: Int): Future[Boolean] =
     collection
       .flatMap{
         _.find(Json.obj("_id" -> id), None).one[Lock]
@@ -60,6 +60,6 @@ class DefaultLockRepository @Inject()(
 trait LockRepository {
 
   val started: Future[Unit]
-  def lock(id: String): Future[Boolean]
-  def isLocked(id: String): Future[Boolean]
+  def lock(id: Int): Future[Boolean]
+  def isLocked(id: Int): Future[Boolean]
 }
