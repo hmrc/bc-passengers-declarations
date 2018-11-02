@@ -223,6 +223,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       }.futureValue
 
       val app = builder.build()
+
       running(app) {
 
         started(app).futureValue

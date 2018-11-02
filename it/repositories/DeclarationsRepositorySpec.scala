@@ -39,7 +39,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         started(app).futureValue
 
         val chargeReference = repository.insert(Json.obj()).futureValue
-        val document        = repository.get(chargeReference).futureValue.value
+        val document = repository.get(chargeReference).futureValue.value
 
         inside(document) {
           case Declaration(id, _, data, _) =>
@@ -57,7 +57,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         }
 
         repository.remove(chargeReference).futureValue
-        repository.get(chargeReference).futureValue mustNot be (defined)
+        repository.get(chargeReference).futureValue mustNot be(defined)
       }
     }
 
@@ -81,7 +81,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         indices.find {
           index =>
             index.name.contains("declarations-index") &&
-            index.key == Seq("lastUpdated" -> IndexType.Ascending)
+              index.key == Seq("lastUpdated" -> IndexType.Ascending)
         } mustBe defined
       }
     }
@@ -138,6 +138,42 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         val declaration = repository.setState(chargeReference, State.Paid).futureValue
 
         declaration.state mustEqual State.Paid
+      }
+    }
+
+    "must provide a stream of paid declarations" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarations = List(
+          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Failed, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(3), State.Paid, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.Paid, Json.obj(), LocalDateTime.now)
+        )
+
+        database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .insert[Declaration](ordered = true)
+            .many(declarations)
+        }.futureValue
+
+        implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+
+        val paidDeclarations = repository.paidDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+
+        paidDeclarations.map(_.chargeReference) must contain only (
+          ChargeReference(1), ChargeReference(3), ChargeReference(4)
+        )
       }
     }
 
