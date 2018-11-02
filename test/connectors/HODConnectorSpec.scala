@@ -8,7 +8,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import utils.WireMockHelper
 import play.api.test.Helpers._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import models.ChargeReference
+import com.github.tomakehurst.wiremock.http.Fault
+import models.{ChargeReference, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import play.api.http.ContentTypes
 import play.api.libs.json.Json
@@ -48,7 +49,27 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
       )
 
       whenReady(connector.submit(declaration)) {
-        _.status mustBe NO_CONTENT
+        _ mustBe SubmissionResponse.Submitted
+      }
+    }
+
+    "must fall back to a SubmissionResponse.Failed when the downstream call fails" in {
+
+      val declaration = Declaration(ChargeReference(123), State.PendingPayment, Json.obj())
+
+      server.stubFor(
+        post(urlEqualTo("/declarations/passengerdeclaration/v1"))
+          .withHeader(CONTENT_TYPE, matching(ContentTypes.JSON))
+          .withHeader(ACCEPT, matching(ContentTypes.JSON))
+          .withHeader("X-Correlation-ID", matching("^.+$"))
+          .withHeader("X-Forwarded-Host", matching("MDTP"))
+          .withHeader(DATE, matching("^.+$"))
+          .withRequestBody(equalTo(Json.stringify(Json.toJson(declaration))))
+          .willReturn(aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE))
+      )
+
+      whenReady(connector.submit(declaration)) {
+        _ mustBe SubmissionResponse.Error
       }
     }
   }

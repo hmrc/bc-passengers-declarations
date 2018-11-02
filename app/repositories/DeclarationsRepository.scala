@@ -66,7 +66,7 @@ class DefaultDeclarationsRepository @Inject() (
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
 
-  def setState(id: ChargeReference, state: State): Future[Declaration] = {
+  override def setState(id: ChargeReference, state: State): Future[Declaration] = {
 
     val selector = Json.obj(
       "_id" -> id
@@ -87,7 +87,7 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
-  def staleDeclarations: Source[Declaration, Future[NotUsed]] = {
+  override def staleDeclarations: Source[Declaration, Future[NotUsed]] = {
 
     val timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
 
@@ -106,7 +106,23 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
-  def failedDeclarations: Source[Declaration, Future[NotUsed]] = {
+  override def paidDeclarations: Source[Declaration, Future[NotUsed]] = {
+
+    val query = Json.obj(
+      "state" -> State.Paid
+    )
+
+    Source.fromFutureSource {
+      collection.map {
+        _.find(query, None)
+          .cursor[Declaration]()
+          .documentSource(err = Cursor.ContOnError())
+          .mapMaterializedValue(_ => NotUsed.notUsed)
+      }
+    }
+  }
+
+  override def failedDeclarations: Source[Declaration, Future[NotUsed]] = {
 
    val query = Json.obj(
      "state" -> State.Failed
@@ -141,7 +157,8 @@ trait DeclarationsRepository {
   def insert(data: JsObject): Future[ChargeReference]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
-  def staleDeclarations: Source[Declaration, Future[NotUsed]]
   def setState(id: ChargeReference, state: State): Future[Declaration]
+  def staleDeclarations: Source[Declaration, Future[NotUsed]]
+  def paidDeclarations: Source[Declaration, Future[NotUsed]]
   def failedDeclarations: Source[Declaration, Future[NotUsed]]
 }

@@ -1,9 +1,9 @@
 package controllers
 
 import connectors.HODConnector
-import models.ChargeReference
 import models.declarations.{Declaration, State}
-import org.mockito.Matchers.{eq => eqTo, _}
+import models.{ChargeReference, SubmissionResponse}
+import org.mockito.Matchers.{eq => eqTo}
 import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
@@ -16,7 +16,6 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.DeclarationsRepository
-import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.Future
 
@@ -108,7 +107,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         when(repository.remove(chargeReference))
           .thenReturn(Future.successful(Some(declaration)))
         when(connector.submit(eqTo(declaration)))
-          .thenReturn(Future.successful(mock[HttpResponse]))
+          .thenReturn(Future.successful(SubmissionResponse.Submitted))
 
         val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
         val result = route(app, request).value

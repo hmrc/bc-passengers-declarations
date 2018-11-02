@@ -23,7 +23,7 @@ class PaymentTimeoutWorker @Inject()(
   private val interval = config.get[FiniteDuration]("workers.payment-timeout-worker.interval")
   private val parallelism = config.get[Int]("workers.payment-timeout-worker.parallelism")
 
-  private val decider: Supervision.Decider = {
+  private val supervisionStrategy: Supervision.Decider = {
     case NonFatal(_) => Supervision.resume
     case _           => Supervision.stop
   }
@@ -41,7 +41,7 @@ class PaymentTimeoutWorker @Inject()(
           declaration
       }.wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
-      .withAttributes(ActorAttributes.supervisionStrategy(decider))
+      .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
       .run()
 
   private def getLock(declaration: Declaration): Future[(Boolean, Declaration)] =

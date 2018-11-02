@@ -3,11 +3,11 @@ package connectors
 import java.util.UUID
 
 import com.google.inject.{Inject, Singleton}
-import models.Service
 import models.declarations.Declaration
+import models.{Service, SubmissionResponse}
 import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,7 +24,7 @@ class HODConnector @Inject() (
   private val FORWARDED_HOST: String = "X-Forwarded-Host"
   private val MDTP: String = "MDTP"
 
-  def submit(declaration: Declaration): Future[HttpResponse] = {
+  def submit(declaration: Declaration): Future[SubmissionResponse] = {
 
     implicit val hc: HeaderCarrier = {
 
@@ -38,6 +38,7 @@ class HODConnector @Inject() (
           FORWARDED_HOST -> MDTP)
     }
 
-    http.POST[Declaration, HttpResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration)
+    http.POST[Declaration, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration)
+      .fallbackTo(Future.successful(SubmissionResponse.Error))
   }
 }
