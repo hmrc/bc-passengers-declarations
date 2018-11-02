@@ -66,6 +66,27 @@ class DefaultDeclarationsRepository @Inject() (
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
 
+  def setState(id: ChargeReference, state: State): Future[Declaration] = {
+
+    val selector = Json.obj(
+      "_id" -> id
+    )
+
+    val update = Json.obj(
+      "$set" -> Json.obj(
+        "state" -> state
+      )
+    )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, update, fetchNewObject = true)
+        .map {
+          _.result[Declaration]
+            .getOrElse(throw new Exception(s"unable to update declaration $id"))
+        }
+    }
+  }
+
   def staleDeclarations: Source[Declaration, Future[NotUsed]] = {
 
     val timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
@@ -105,4 +126,5 @@ trait DeclarationsRepository {
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def staleDeclarations: Source[Declaration, Future[NotUsed]]
+  def setState(id: ChargeReference, state: State): Future[Declaration]
 }
