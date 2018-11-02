@@ -140,5 +140,39 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
         declaration.state mustEqual State.Paid
       }
     }
+
+    "must provide a stream of failed declarations" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarations = List(
+          Declaration(ChargeReference(0), State.Failed, Json.obj()),
+          Declaration(ChargeReference(1), State.Paid, Json.obj()),
+          Declaration(ChargeReference(2), State.Failed, Json.obj()),
+          Declaration(ChargeReference(3), State.PendingPayment, Json.obj())
+        )
+
+        database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .insert[Declaration](ordered = true)
+            .many(declarations)
+        }.futureValue
+
+        implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+
+        val failedDeclarations = repository.failedDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+
+        failedDeclarations.size mustEqual 2
+        failedDeclarations.map(_.chargeReference) must contain only (ChargeReference(0), ChargeReference(2))
+      }
+    }
   }
 }

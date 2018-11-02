@@ -106,6 +106,22 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
+  def failedDeclarations: Source[Declaration, Future[NotUsed]] = {
+
+   val query = Json.obj(
+     "state" -> State.Failed
+   )
+
+    Source.fromFutureSource {
+      collection.map {
+        _.find(query, None)
+          .cursor[Declaration]()
+          .documentSource(err = Cursor.ContOnError())
+          .mapMaterializedValue(_ => NotUsed.notUsed)
+      }
+    }
+  }
+
   private implicit def toJson(chargeReference: ChargeReference): JsObject = {
     Json.obj(
       "simpleDeclarationRequest" -> Json.obj(
@@ -127,4 +143,5 @@ trait DeclarationsRepository {
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def staleDeclarations: Source[Declaration, Future[NotUsed]]
   def setState(id: ChargeReference, state: State): Future[Declaration]
+  def failedDeclarations: Source[Declaration, Future[NotUsed]]
 }
