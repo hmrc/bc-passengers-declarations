@@ -1,7 +1,7 @@
 package models
 
-import uk.gov.hmrc.http.{HttpException, HttpReads, HttpResponse}
 import play.api.http.Status._
+import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 sealed trait SubmissionResponse
 
