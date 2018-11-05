@@ -1,6 +1,5 @@
 package workers
 
-import java.net.{InetSocketAddress, ServerSocket}
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
