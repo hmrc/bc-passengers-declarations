@@ -2,6 +2,8 @@ package connectors
 
 import java.util.UUID
 
+import akka.pattern.CircuitBreaker
+import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.Declaration
 import models.{Service, SubmissionResponse}
@@ -15,7 +17,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class HODConnector @Inject() (
                                http: HttpClient,
-                               config: Configuration
+                               config: Configuration,
+                               @Named("des") circuitBreaker: CircuitBreaker
                              )(implicit ec: ExecutionContext) extends HttpDate {
 
   private val baseUrl = config.get[Service]("microservice.services.des")
@@ -38,7 +41,11 @@ class HODConnector @Inject() (
           FORWARDED_HOST -> MDTP)
     }
 
-    http.POST[Declaration, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration)
+    def call: Future[SubmissionResponse] =
+      http.POST[Declaration, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration)
+        .filter(_ != SubmissionResponse.Error)
+
+    circuitBreaker.withCircuitBreaker(call)
       .fallbackTo(Future.successful(SubmissionResponse.Error))
   }
 }

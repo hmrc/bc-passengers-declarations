@@ -1,5 +1,6 @@
 package config
 
+import akka.pattern.CircuitBreaker
 import play.api.{Configuration, Environment}
 import play.api.inject.{Binding, Module}
 import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository, LockRepository}
@@ -11,7 +12,8 @@ class HmrcModule extends Module {
     Seq(
       bind[DeclarationsRepository].to[DefaultDeclarationsRepository].eagerly,
       bind[ChargeReferenceService].to[SequentialChargeReferenceService].eagerly,
-      bind[LockRepository].to[DefaultLockRepository].eagerly
+      bind[LockRepository].to[DefaultLockRepository].eagerly,
+      bind[CircuitBreaker].qualifiedWith("des").toProvider[DesCircuitBreakerProvider]
     )
   }
 }
