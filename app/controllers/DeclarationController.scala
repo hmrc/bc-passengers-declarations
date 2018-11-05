@@ -8,14 +8,13 @@ import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import repositories.DeclarationsRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DeclarationController @Inject() (
                                         cc: ControllerComponents,
                                         repository: DeclarationsRepository
-                                      ) extends BackendController(cc) {
+                                      )(implicit ec: ExecutionContext) extends BackendController(cc) {
 
   def submit(): Action[JsValue] = Action.async(parse.tolerantJson) {
     implicit request =>
