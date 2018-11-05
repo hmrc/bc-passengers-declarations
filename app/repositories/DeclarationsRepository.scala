@@ -13,7 +13,6 @@ import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
-import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
@@ -37,16 +36,25 @@ class DefaultDeclarationsRepository @Inject() (
 
   private val paymentTimeout = config.get[Duration]("declarations.payment-no-response-timeout")
 
-  private val index = Index(
+  private val lastUpdatedIndex = Index(
     key     = Seq("lastUpdated" -> IndexType.Ascending),
-    name    = Some("declarations-index")
+    name    = Some("declarations-last-updated-index")
   )
 
-  val started: Future[Unit] = {
+  private val stateIndex = Index(
+    key  = Seq("state" -> IndexType.Ascending),
+    name = Some("declarations-state-index")
+  )
+
+  val started: Future[Unit] =
     collection.flatMap {
-      _.indexesManager.ensure(index)
-    }.map(_ => ())
-  }
+      coll =>
+
+        for {
+          _ <- coll.indexesManager.ensure(lastUpdatedIndex)
+          _ <- coll.indexesManager.ensure(stateIndex)
+        } yield ()
+    }
 
   override def insert(data: JsObject): Future[Declaration] = {
 
@@ -103,7 +111,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
-          .documentSource(err = Cursor.ContOnError())
+          .documentSource()
           .mapMaterializedValue(_ => NotUsed.notUsed)
       }
     }
@@ -119,7 +127,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
-          .documentSource(err = Cursor.ContOnError())
+          .documentSource()
           .mapMaterializedValue(_ => NotUsed.notUsed)
       }
     }
@@ -135,7 +143,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
-          .documentSource(err = Cursor.ContOnError())
+          .documentSource()
           .mapMaterializedValue(_ => NotUsed.notUsed)
       }
     }

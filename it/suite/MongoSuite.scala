@@ -1,9 +1,9 @@
 package suite
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Suite
+import org.scalatest._
 import play.api.{Application, Configuration}
-import reactivemongo.api.{DefaultDB, MongoConnection, MongoDriver}
+import reactivemongo.api._
 import repositories.{DeclarationsRepository, LockRepository}
 import services.ChargeReferenceService
 
@@ -19,12 +19,12 @@ object MongoSuite {
     MongoConnection.parseURI(config.get[String]("mongodb.uri"))
   }
 
-  private lazy val connection =
+  lazy val connection =
     parsedUri.map(MongoDriver().connection)
 }
 
 trait MongoSuite {
-  self: Suite =>
+  self: TestSuite =>
 
   def started(app: Application): Future[_] = {
 
