@@ -14,6 +14,8 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import org.mockito.Matchers._
 import org.mockito.Mockito._
+import org.netcrusher.core.reactor.NioReactor
+import org.netcrusher.tcp.TcpCrusherBuilder
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.LockRepository
@@ -207,7 +209,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       }
     }
 
-    "must continue processing after a transient failure getting stale declarations" ignore {
+    "must continue processing after a transient failure getting stale declarations" in {
 
       database.flatMap(_.drop()).futureValue
 
@@ -217,27 +219,44 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
           .one(Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)))
       }.futureValue
 
-      val app = builder.build()
+      val reactor = new NioReactor()
 
-      running(app) {
+      val proxy = TcpCrusherBuilder.builder()
+        .withReactor(reactor)
+        .withBindAddress("localhost", 27018)
+        .withConnectAddress("localhost", 27017)
+        .buildAndOpen()
 
-        started(app).futureValue
+      val app = builder.configure(
+        "mongodb.uri" -> s"mongodb://localhost:${proxy.getBindAddress.getPort}/bc-passengers-declarations-integration"
+      ).build()
 
-        val worker = app.injector.instanceOf[PaymentTimeoutWorker]
+      try {
 
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(0)
+        running(app) {
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
-            .one(Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)))
-        }.futureValue
+          started(app).futureValue
 
-        val mongo = app.injector.instanceOf[ReactiveMongoApi]
+          val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
-        mongo.driver.close(3 seconds)
+          worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(0)
 
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(1)
+          proxy.close()
+
+          database.flatMap {
+            _.collection[JSONCollection]("declarations")
+              .insert[Declaration](ordered = true)
+              .one(Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)))
+          }.futureValue
+
+          proxy.open()
+
+          worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(1)
+        }
+      } finally {
+
+        proxy.close()
+        reactor.close()
       }
     }
   }

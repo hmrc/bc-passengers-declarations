@@ -1,21 +1,22 @@
 package workers
 
+import java.net.{InetSocketAddress, ServerSocket}
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.Timer
 
-import models.{ChargeReference, SubmissionResponse}
+import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
 import models.declarations.{Declaration, State}
+import models.{ChargeReference, SubmissionResponse}
+import org.mockito.Matchers._
+import org.mockito.Mockito._
+import org.netcrusher.core.reactor.NioReactor
+import org.netcrusher.tcp.TcpCrusherBuilder
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
-import org.mockito.Mockito._
-import org.mockito.Matchers._
-import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers._
-import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.{DeclarationsRepository, LockRepository}
 import suite.MongoSuite
@@ -23,7 +24,6 @@ import utils.WireMockHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
@@ -81,7 +81,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
       val app = builder.configure(
         "workers.declaration-submission-worker.throttle.elements" -> "1",
-        "workers.declaration-submission-worker.throttle.per"      -> "1 second"
+        "workers.declaration-submission-worker.throttle.per" -> "1 second"
       ).build()
 
       running(app) {
@@ -252,7 +252,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         val (declaration, result) = worker.tap.pull.futureValue.value
         result mustEqual SubmissionResponse.Error
 
-        repository.get(declaration.chargeReference).futureValue must be (defined)
+        repository.get(declaration.chargeReference).futureValue must be(defined)
       }
     }
 
@@ -360,7 +360,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
       }
     }
 
-    "must continue processing after a transient failure getting paid declarations" ignore {
+    "must continue processing after a transient failure getting paid declarations" in {
 
       database.flatMap(_.drop()).futureValue
 
@@ -370,27 +370,44 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
           .one(Declaration(ChargeReference(0), State.Paid, Json.obj()))
       }.futureValue
 
-      val app = builder.build()
+      val reactor = new NioReactor()
 
-      running(app) {
+      val proxy = TcpCrusherBuilder.builder()
+        .withReactor(reactor)
+        .withBindAddress("localhost", 27018)
+        .withConnectAddress("localhost", 27017)
+        .buildAndOpen()
 
-        started(app).futureValue
+      val app = builder.configure(
+        "mongodb.uri" -> s"mongodb://localhost:${proxy.getBindAddress.getPort}/bc-passengers-declarations-integration"
+      ).build()
 
-        val worker = app.injector.instanceOf[DeclarationSubmissionWorker]
+      try {
 
-        worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(0)
+        running(app) {
 
-        val mongo = app.injector.instanceOf[ReactiveMongoApi]
+          started(app).futureValue
 
-        mongo.driver.close(3 seconds)
+          val worker = app.injector.instanceOf[DeclarationSubmissionWorker]
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
-            .one(Declaration(ChargeReference(1), State.Paid, Json.obj()))
+          worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(0)
+
+          proxy.close()
+
+          database.flatMap {
+            _.collection[JSONCollection]("declarations")
+              .insert[Declaration](ordered = true)
+              .one(Declaration(ChargeReference(1), State.Paid, Json.obj()))
+          }.futureValue
+
+          proxy.open()
+
+          worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(1)
         }
+      } finally {
 
-        worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(1)
+        proxy.close()
+        reactor.close()
       }
     }
   }
