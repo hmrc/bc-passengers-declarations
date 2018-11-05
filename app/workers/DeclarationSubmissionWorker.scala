@@ -23,6 +23,8 @@ class DeclarationSubmissionWorker @Inject() (
   private val initialDelay = config.get[FiniteDuration]("workers.declaration-submission-worker.initial-delay")
   private val interval = config.get[FiniteDuration]("workers.declaration-submission-worker.interval")
   private val parallelism = config.get[Int]("workers.declaration-submission-worker.parallelism")
+  private val elements = config.get[Int]("workers.declaration-submission-worker.throttle.elements")
+  private val per = config.get[FiniteDuration]("workers.declaration-submission-worker.throttle.per")
 
   private val supervisionStrategy: Supervision.Decider = {
     case NonFatal(_) => Supervision.resume
@@ -32,6 +34,7 @@ class DeclarationSubmissionWorker @Inject() (
   val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] =
     Source.tick(initialDelay, interval, declarationsRepository.paidDeclarations)
       .flatMapConcat(identity)
+      .throttle(elements, per)
       .mapAsync(parallelism)(getLock)
       .mapConcat(lockSuccessful)
       .mapAsync(parallelism) {
