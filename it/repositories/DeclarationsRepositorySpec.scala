@@ -13,13 +13,13 @@ import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
-import suite.MongoSuite
+import suite.FailOnUnindexedQueries
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
-class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
-  with ScalaFutures with IntegrationPatience with OptionValues with Inside {
+class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexedQueries
+  with ScalaFutures with IntegrationPatience with OptionValues with Inside  {
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -79,8 +79,15 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSu
 
         indices.find {
           index =>
-            index.name.contains("declarations-index") &&
+            index.name.contains("declarations-last-updated-index") &&
               index.key == Seq("lastUpdated" -> IndexType.Ascending)
+        } mustBe defined
+
+
+        indices.find {
+          index =>
+            index.name.contains("declarations-state-index") &&
+              index.key == Seq("state" -> IndexType.Ascending)
         } mustBe defined
       }
     }

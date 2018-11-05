@@ -7,11 +7,11 @@ import play.api.test.Helpers.running
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.collection.JSONCollection
-import suite.MongoSuite
+import suite.FailOnUnindexedQueries
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite
+class LockRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexedQueries
   with ScalaFutures with IntegrationPatience with OptionValues {
 
   private lazy val builder: GuiceApplicationBuilder =
