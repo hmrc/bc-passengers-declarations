@@ -50,6 +50,13 @@ class DefaultLockRepository @Inject()(
         false
       }
 
+  override def release(id: Int): Future[Unit] =
+    collection
+      .flatMap {
+        _.findAndRemove(Json.obj("_id" -> id))
+          .map(_ => ())
+      }.fallbackTo(Future.successful(()))
+
   override def isLocked(id: Int): Future[Boolean] =
     collection
       .flatMap{
@@ -61,5 +68,6 @@ trait LockRepository {
 
   val started: Future[Unit]
   def lock(id: Int): Future[Boolean]
+  def release(id: Int): Future[Unit]
   def isLocked(id: Int): Future[Boolean]
 }
