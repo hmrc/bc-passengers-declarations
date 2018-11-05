@@ -4,6 +4,7 @@ import models.declarations.{Declaration, State}
 import models.ChargeReference
 import org.mockito.Mockito
 import org.mockito.Mockito._
+import org.mockito.Matchers.{eq => eqTo, _}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
@@ -13,17 +14,21 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import repositories.DeclarationsRepository
+import repositories.{DeclarationsRepository, LockRepository}
 
 import scala.concurrent.Future
 
 class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite
   with OptionValues with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
-  private val repository = mock[DeclarationsRepository]
+  private val declarationsRepository = mock[DeclarationsRepository]
 
-  override def beforeEach(): Unit =
-    Mockito.reset(repository)
+  private val lockRepository = mock[LockRepository]
+
+  override def beforeEach(): Unit = {
+    Mockito.reset(declarationsRepository)
+    Mockito.reset(lockRepository)
+  }
 
   override lazy val app: Application = {
 
@@ -31,7 +36,8 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
     new GuiceApplicationBuilder()
       .overrides(
-        bind[DeclarationsRepository].toInstance(repository)
+        bind[DeclarationsRepository].toInstance(declarationsRepository),
+        bind[LockRepository].toInstance(lockRepository)
       )
       .build()
   }
@@ -53,7 +59,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody)
 
-          when(repository.insert(requestBody))
+          when(declarationsRepository.insert(requestBody))
             .thenReturn(Future.successful(declaration))
 
           val result = route(app, request).value
@@ -63,7 +69,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           whenReady(result) {
             _ =>
-              verify(repository, times(1)).insert(requestBody)
+              verify(declarationsRepository, times(1)).insert(requestBody)
           }
         }
       }
@@ -77,7 +83,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody)
 
-          when(repository.insert(requestBody))
+          when(declarationsRepository.insert(requestBody))
             .thenReturn(Future.failed(new Exception()))
 
           val result = route(app, request).value
@@ -94,6 +100,73 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
     "when a matching declaration is found" - {
 
+      "and the declaration is locked" - {
+
+        "must return LOCKED" in {
+
+          val chargeReference = ChargeReference(1234567890)
+
+          when(lockRepository.lock(1234567890))
+            .thenReturn(Future.successful(false))
+
+          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+
+          val result = route(app, request).value
+
+          status(result) mustBe LOCKED
+          verify(lockRepository, never).release(1234567890)
+        }
+      }
+
+      "and the declaration is in a Failed state" - {
+
+        "must return CONFLICT" in {
+
+          val chargeReference = ChargeReference(1234567890)
+
+          val declaration = Declaration(chargeReference, State.Failed, Json.obj())
+
+          when(lockRepository.lock(1234567890))
+            .thenReturn(Future.successful(true))
+          when(lockRepository.release(1234567890))
+            .thenReturn(Future.successful(()))
+          when(declarationsRepository.get(chargeReference))
+            .thenReturn(Future.successful(Some(declaration)))
+
+          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+
+          val result = route(app, request).value
+
+          status(result) mustBe CONFLICT
+          verify(lockRepository, times(1)).release(1234567890)
+        }
+      }
+
+      "and the declaration is in a Paid state" - {
+
+        "must return ACCEPTED without modifying the declaration" in {
+
+          val chargeReference = ChargeReference(1234567890)
+
+          val declaration = Declaration(chargeReference, State.Paid, Json.obj())
+
+          when(lockRepository.lock(1234567890))
+            .thenReturn(Future.successful(true))
+          when(lockRepository.release(1234567890))
+            .thenReturn(Future.successful(()))
+          when(declarationsRepository.get(chargeReference))
+            .thenReturn(Future.successful(Some(declaration)))
+
+          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+
+          val result = route(app, request).value
+
+          status(result) mustBe ACCEPTED
+          verify(declarationsRepository, never()).setState(eqTo(chargeReference), any())
+          verify(lockRepository, times(1)).release(1234567890)
+        }
+      }
+
       "and updating its state fails" - {
 
         "must throw an exception" in {
@@ -102,10 +175,14 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
 
-          when(repository.get(chargeReference))
+          when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
-          when(repository.setState(chargeReference, State.Paid))
+          when(declarationsRepository.setState(chargeReference, State.Paid))
             .thenReturn(Future.failed(new Exception))
+          when(lockRepository.lock(1234567890))
+            .thenReturn(Future.successful(true))
+          when(lockRepository.release(1234567890))
+            .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
 
@@ -114,6 +191,8 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           intercept[Exception] {
             status(result)
           }
+
+          verify(lockRepository, times(1)).release(1234567890)
         }
       }
 
@@ -126,10 +205,14 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
           val updatedDeclaration = declaration copy (state = State.Paid)
 
-          when(repository.get(chargeReference))
+          when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
-          when(repository.setState(chargeReference, State.Paid))
+          when(declarationsRepository.setState(chargeReference, State.Paid))
             .thenReturn(Future.successful(updatedDeclaration))
+          when(lockRepository.lock(1234567890))
+            .thenReturn(Future.successful(true))
+          when(lockRepository.release(1234567890))
+            .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
           val result = route(app, request).value
@@ -138,8 +221,9 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           whenReady(result) {
             _ =>
-              verify(repository, times(1)).get(chargeReference)
-              verify(repository, times(1)).setState(chargeReference, State.Paid)
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setState(chargeReference, State.Paid)
+              verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -151,8 +235,12 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val chargeReference = ChargeReference(1234567890)
 
-        when(repository.get(chargeReference))
+        when(declarationsRepository.get(chargeReference))
           .thenReturn(Future.successful(None))
+        when(lockRepository.lock(1234567890))
+          .thenReturn(Future.successful(true))
+        when(lockRepository.release(1234567890))
+          .thenReturn(Future.successful(()))
 
         val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
         val result = route(app, request).value
@@ -161,7 +249,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         whenReady(result) {
           _ =>
-            verify(repository, times(1)).get(chargeReference)
+            verify(declarationsRepository, times(1)).get(chargeReference)
         }
       }
     }

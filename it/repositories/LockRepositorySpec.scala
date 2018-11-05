@@ -1,5 +1,7 @@
 package repositories
 
+import org.netcrusher.core.reactor.NioReactor
+import org.netcrusher.tcp.TcpCrusherBuilder
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -105,6 +107,70 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexed
 
         repository.isLocked(0).futureValue mustEqual true
       }
+    }
+
+    "must release a lock" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[LockRepository]
+
+        started(app).futureValue
+
+        repository.lock(0).futureValue
+
+        repository.isLocked(0).futureValue mustEqual true
+
+        repository.release(0).futureValue
+
+        repository.isLocked(0).futureValue mustEqual false
+      }
+    }
+
+    "must return a successful future if releasing a lock fails" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val reactor = new NioReactor()
+
+      val proxy = TcpCrusherBuilder.builder()
+        .withReactor(reactor)
+        .withBindAddress("localhost", 27018)
+        .withConnectAddress("localhost", 27017)
+        .buildAndOpen()
+
+      val app = builder.configure(
+        "mongodb.uri" -> s"mongodb://localhost:${proxy.getBindAddress.getPort}/bc-passengers-declarations-integration"
+      ).build()
+
+      try {
+
+        running(app) {
+
+          val repository = app.injector.instanceOf[LockRepository]
+
+          started(app).futureValue
+
+          repository.lock(0).futureValue
+
+          proxy.close()
+
+          repository.release(0).futureValue
+
+          proxy.open()
+
+          repository.isLocked(0).futureValue mustEqual true
+        }
+      } finally {
+
+        proxy.close()
+        reactor.close()
+      }
+
     }
   }
 }
