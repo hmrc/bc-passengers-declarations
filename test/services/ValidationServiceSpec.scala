@@ -8,7 +8,7 @@ import play.api.test.Injecting
 class ValidationServiceSpec extends FreeSpec with MustMatchers with OneAppPerSuite with Injecting {
 
   private lazy val validationService: ValidationService = inject[ValidationService]
-  private lazy val validator: Validator = validationService.get("json-schema-sample.json")
+  private lazy val validator: Validator = validationService.get("test-schema.json")
 
   "a validator" - {
 
