@@ -45,7 +45,7 @@ class JourneySpec extends FreeSpec with MustMatchers with MongoSuite
 
       started(app).futureValue
 
-      val response = route(app, FakeRequest(POST, routes.DeclarationController.submit().url).withJsonBody(Json.obj())).value
+      val response = route(app, FakeRequest(POST, routes.DeclarationController.submit().url).withJsonBody(Json.obj("foo" -> "bar"))).value
 
       val declaration = contentAsJson(response).as[Declaration]
 

@@ -16,7 +16,7 @@ import reactivemongo.akkastream.cursorProducer
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
-import services.ChargeReferenceService
+import services.{ChargeReferenceService, ValidationService, Validator}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,8 +26,14 @@ import scala.language.implicitConversions
 class DefaultDeclarationsRepository @Inject() (
                                                 mongo: ReactiveMongoApi,
                                                 chargeReferenceService: ChargeReferenceService,
+                                                validationService: ValidationService,
                                                 config: Configuration
                                               )(implicit ec: ExecutionContext, m: Materializer) extends DeclarationsRepository {
+
+  private val validator: Validator = {
+    val schema = config.get[String]("declarations.schema")
+    validationService.get(schema)
+  }
 
   private val collectionName: String = "declarations"
 
@@ -56,18 +62,28 @@ class DefaultDeclarationsRepository @Inject() (
         } yield ()
     }
 
-  override def insert(data: JsObject): Future[Declaration] = {
+  override def insert(data: JsObject): Future[Either[List[String], Declaration]] = {
 
-    chargeReferenceService.nextChargeReference().flatMap{
+    chargeReferenceService.nextChargeReference().flatMap {
       id =>
 
-        val declaration = Declaration(
-          chargeReference = id,
-          state           = State.PendingPayment,
-          data            = data ++ id
-        )
+        val json             = data ++ id
+        val validationErrors = validator.validate(json)
 
-        collection.flatMap(_.insert(declaration)).map(_ => declaration)
+        if (validationErrors.isEmpty) {
+
+          val declaration = Declaration(
+            chargeReference = id,
+            state           = State.PendingPayment,
+            data            = data ++ id
+          )
+
+          collection.flatMap(_.insert(declaration))
+            .map(_ => Right(declaration))
+        } else {
+
+          Future.successful(Left(validationErrors))
+        }
     }
   }
 
@@ -165,7 +181,7 @@ class DefaultDeclarationsRepository @Inject() (
 trait DeclarationsRepository {
 
   val started: Future[Unit]
-  def insert(data: JsObject): Future[Declaration]
+  def insert(data: JsObject): Future[Either[List[String], Declaration]]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def setState(id: ChargeReference, state: State): Future[Declaration]

@@ -21,8 +21,10 @@ class DeclarationController @Inject()(
     implicit request =>
 
       repository.insert(request.body.as[JsObject]).map {
-        declaration =>
+        case Right(declaration) =>
           Accepted(Json.toJson(declaration))
+        case Left(errors) =>
+          BadRequest(Json.obj("errors" -> errors))
       }
   }
 
