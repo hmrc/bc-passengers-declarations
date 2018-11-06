@@ -9,6 +9,7 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
   .settings(
+    PlayKeys.playDefaultPort                      := 9073,
     majorVersion                                  := 0,
     libraryDependencies                           ++= AppDependencies.compile ++ AppDependencies.test,
     RoutesKeys.routesImport                       += "models.ChargeReference"
