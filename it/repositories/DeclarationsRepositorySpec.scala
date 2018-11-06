@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
 class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexedQueries
-  with ScalaFutures with IntegrationPatience with OptionValues with Inside  {
+  with ScalaFutures with IntegrationPatience with OptionValues with Inside with EitherValues {
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -38,13 +38,14 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val document = repository.insert(Json.obj()).futureValue
+        val document = repository.insert(Json.obj("foo" -> "bar")).futureValue.right.value
 
         inside(document) {
           case Declaration(id, _, data, _) =>
 
             id mustEqual document.chargeReference
             data mustEqual Json.obj(
+              "foo" -> "bar",
               "simpleDeclarationRequest" -> Json.obj(
                 "requestDetail" -> Json.obj(
                   "declarationHeader" -> Json.obj(
@@ -139,7 +140,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val declaration = repository.insert(Json.obj()).futureValue
+        val declaration = repository.insert(Json.obj("foo" -> "bar")).futureValue.right.value
 
         val updatedDeclaration = repository.setState(declaration.chargeReference, State.Paid).futureValue
 
@@ -214,6 +215,24 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         failedDeclarations.size mustEqual 2
         failedDeclarations.map(_.chargeReference) must contain only (ChargeReference(0), ChargeReference(2))
+      }
+    }
+
+    "must fail to insert invalid declarations" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val errors = repository.insert(Json.obj()).futureValue.left.value
+
+        errors must contain ("""object has missing required properties (["foo"])""")
       }
     }
   }

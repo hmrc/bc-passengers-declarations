@@ -84,8 +84,9 @@ Json payload to be sent to MDG.
 
 | Status | Meaning |
 |--------|---------|
-| `202`  | The request has been accepted for processing                                                            |
-| `500`  | Any server error will cause this status, most likely issue would be difficulty in connecting to MongoDB |
+| `202`  | The request has been accepted for processing. |
+| `400`  | The request has failed schema validation. |
+| `500`  | Any server error will cause this status, most likely issue would be difficulty in connecting to MongoDB. |
 
 #### Response body (202)
 
@@ -99,6 +100,16 @@ This will include the following fields:
 | `data`            | `{ ... }`           | This is the data which has been submitted, modified to add the charge reference into the place in the structure which MDG expects it. |
 | `lastUpdated`     | ???                 | This is the last updated time of the record, in this case it will have been the time at which the model was created. |
 | `state`           | `"pending-payment"` | All newly submitted declarations will have a `PendingPayment` state. |
+
+#### Response body (400)
+
+The bad request response body will contain a list of validation errors. For example:
+
+```$json
+"errors": [
+  "object has missing required properties ([\"foo\"])"
+]
+```
 
 ### `POST /bc-passengers-declarations/update/:chargeReference`
 

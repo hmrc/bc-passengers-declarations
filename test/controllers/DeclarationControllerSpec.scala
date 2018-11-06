@@ -54,13 +54,13 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
 
-          val requestBody = Json.obj()
+          val requestBody = Json.obj("foo" -> "bar")
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody)
 
           when(declarationsRepository.insert(requestBody))
-            .thenReturn(Future.successful(declaration))
+            .thenReturn(Future.successful(Right(declaration)))
 
           val result = route(app, request).value
 
@@ -78,7 +78,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         "must throw an exception" in {
 
-          val requestBody = Json.obj()
+          val requestBody = Json.obj("foo" -> "bar")
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody)
@@ -92,6 +92,27 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
             _ mustBe an[Exception]
           }
         }
+      }
+    }
+
+    "when given an invalid request" - {
+
+      "must return BAD_REQUEST with a list of errors" in {
+
+        val requestBody = Json.obj()
+
+        val request = FakeRequest(POST, routes.DeclarationController.submit().url)
+          .withJsonBody(requestBody)
+
+        when(declarationsRepository.insert(requestBody))
+          .thenReturn(Future.successful(Left(List("foo"))))
+
+        val result = route(app, request).value
+
+        status(result) mustBe BAD_REQUEST
+        contentAsJson(result) mustEqual Json.obj(
+          "errors" -> Seq("foo")
+        )
       }
     }
   }
