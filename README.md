@@ -96,7 +96,7 @@ This will include the following fields:
 
 | Field | Example | Value |
 |-------|---------|-------|
-| `chargeReference` | `"XHPR1234567890"`  | This is the charge reference which has been generated for the request which should be used in the subsequent `update` call. |
+| `_id`             | `"XHPR1234567890"`  | This is the charge reference which has been generated for the request which should be used in the subsequent `update` call. |
 | `data`            | `{ ... }`           | This is the data which has been submitted, modified to add the charge reference into the place in the structure which MDG expects it. |
 | `lastUpdated`     | ???                 | This is the last updated time of the record, in this case it will have been the time at which the model was created. |
 | `state`           | `"pending-payment"` | All newly submitted declarations will have a `PendingPayment` state. |
