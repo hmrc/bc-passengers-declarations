@@ -2,17 +2,18 @@ package workers
 
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
-import com.google.inject.Inject
+import com.google.inject.{Singleton, Inject}
 import connectors.HODConnector
 import models.SubmissionResponse
 import models.declarations.{Declaration, State}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+@Singleton
 class DeclarationSubmissionWorker @Inject() (
                                               declarationsRepository: DeclarationsRepository,
                                               override protected val lockRepository: LockRepository,
@@ -20,6 +21,8 @@ class DeclarationSubmissionWorker @Inject() (
                                               config: Configuration
                                             )(implicit mat: Materializer, ec: ExecutionContext)
   extends BaseDeclarationWorker {
+
+    private val logger = Logger(this.getClass)
 
     private val initialDelay = config.get[FiniteDuration]("workers.declaration-submission-worker.initial-delay")
     private val interval = config.get[FiniteDuration]("workers.declaration-submission-worker.interval")
@@ -32,7 +35,10 @@ class DeclarationSubmissionWorker @Inject() (
       case _           => Supervision.stop
     }
 
-    val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] =
+    val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] = {
+
+      logger.info("Declaration submission worker started")
+
       Source.tick(initialDelay, interval, declarationsRepository.paidDeclarations)
         .flatMapConcat(identity)
         .throttle(elements, per)
@@ -52,7 +58,8 @@ class DeclarationSubmissionWorker @Inject() (
               }
             } yield (declaration, result)
         }.wireTapMat(Sink.queue())(Keep.right)
-          .toMat(Sink.ignore)(Keep.left)
-          .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
-          .run()
+        .toMat(Sink.ignore)(Keep.left)
+        .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
+        .run()
+    }
 }

@@ -9,6 +9,8 @@
 
     <logger name="connector" level="${logger.connector:-WARN}"/>
 
+    <logger name="workers" level="${logger.workers:-WARN}"/>
+
     <root level="${logger.application:-WARN}">
         <appender-ref ref="STDOUT"/>
     </root>
