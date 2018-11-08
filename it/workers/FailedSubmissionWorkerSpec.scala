@@ -1,6 +1,6 @@
 package workers
 
-import models.ChargeReference
+import models.{ChargeReference, Lock}
 import models.declarations.{Declaration, State}
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
@@ -75,10 +75,13 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
           .many(declarations)
       }.futureValue
 
-      val app = builder.build()
+      database.flatMap {
+        _.collection[JSONCollection]("locks")
+          .insert[Lock](ordered = true)
+          .one(Lock(0))
+      }.futureValue
 
-      val lockRepository = app.injector.instanceOf[LockRepository]
-      lockRepository.lock(0)
+      val app = builder.build()
 
       running(app) {
 
