@@ -2,7 +2,7 @@ package workers
 
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{ActorAttributes, Materializer, Supervision}
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import models.declarations.Declaration
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
@@ -11,6 +11,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+@Singleton
 class PaymentTimeoutWorker @Inject()(
                                      declarationsRepository: DeclarationsRepository,
                                      override protected val lockRepository: LockRepository,
@@ -29,7 +30,10 @@ class PaymentTimeoutWorker @Inject()(
       case _           => Supervision.stop
     }
 
-    val tap: SinkQueueWithCancel[Declaration] =
+    val tap: SinkQueueWithCancel[Declaration] = {
+
+      logger.info("Payment timeout worker started")
+
       Source.tick(initialDelay, interval, declarationsRepository.staleDeclarations)
         .flatMapConcat(identity)
         .mapAsync(parallelism)(getLock)
@@ -44,4 +48,5 @@ class PaymentTimeoutWorker @Inject()(
         .toMat(Sink.ignore)(Keep.left)
         .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
         .run()
+    }
 }

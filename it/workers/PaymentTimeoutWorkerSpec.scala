@@ -66,6 +66,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         worker.tap.pull.futureValue.value
 
+        TestLoggerAppender.queue.dequeue()
         val logEvent = TestLoggerAppender.queue.dequeue()
 
         logEvent.getLevel mustEqual Level.INFO

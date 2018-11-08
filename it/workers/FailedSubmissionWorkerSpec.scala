@@ -29,23 +29,23 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap(_.drop()).futureValue
 
+      val declarations = List(
+        Declaration(ChargeReference(0), State.Failed, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, Json.obj()),
+        Declaration(ChargeReference(2), State.PendingPayment, Json.obj())
+      )
+
+      database.flatMap {
+        _.collection[JSONCollection]("declarations")
+          .insert[Declaration](ordered = true)
+          .many(declarations)
+      }.futureValue
+
       val app = builder.build()
 
       running(app) {
 
         started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj()),
-          Declaration(ChargeReference(1), State.Failed, Json.obj()),
-          Declaration(ChargeReference(2), State.PendingPayment, Json.obj())
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
-            .many(declarations)
-        }.futureValue
 
         val worker = app.injector.instanceOf[FailedSubmissionWorker]
 
@@ -64,26 +64,25 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap(_.drop()).futureValue
 
+      val declarations = List(
+        Declaration(ChargeReference(0), State.Failed, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, Json.obj())
+      )
+
+      database.flatMap {
+        _.collection[JSONCollection]("declarations")
+          .insert[Declaration](ordered = true)
+          .many(declarations)
+      }.futureValue
+
       val app = builder.build()
+
+      val lockRepository = app.injector.instanceOf[LockRepository]
+      lockRepository.lock(0)
 
       running(app) {
 
         started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj()),
-          Declaration(ChargeReference(1), State.Failed, Json.obj())
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        val lockRepository = app.injector.instanceOf[LockRepository]
-
-        lockRepository.lock(0)
 
         val worker = app.injector.instanceOf[FailedSubmissionWorker]
 
@@ -96,22 +95,22 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap(_.drop()).futureValue
 
+      val declarations = List(
+        Declaration(ChargeReference(0), State.Failed, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, Json.obj())
+      )
+
+      database.flatMap {
+        _.collection[JSONCollection]("declarations")
+          .insert[Declaration](ordered = true)
+          .many(declarations)
+      }.futureValue
+
       val app = builder.build()
 
       running(app) {
 
         started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj()),
-          Declaration(ChargeReference(1), State.Failed, Json.obj())
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
-            .many(declarations)
-        }.futureValue
 
         val worker = app.injector.instanceOf[FailedSubmissionWorker]
 

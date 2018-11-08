@@ -8,16 +8,24 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
+  .settings(inConfig(Test)(testSettings): _*)
   .settings(
     PlayKeys.playDefaultPort                      := 9073,
     majorVersion                                  := 0,
     libraryDependencies                           ++= AppDependencies.compile ++ AppDependencies.test,
-    RoutesKeys.routesImport                       += "models.ChargeReference",
-    unmanagedSourceDirectories in Test            += baseDirectory.value / "test-utils",
-    unmanagedResourceDirectories in Test          += baseDirectory.value / "test-utils" / "resources"
+    RoutesKeys.routesImport                       += "models.ChargeReference"
   )
   .settings(publishingSettings: _*)
   .settings(resolvers += Resolver.jcenterRepo)
+
+lazy val testSettings = Seq(
+  unmanagedSourceDirectories   += baseDirectory.value / "test-utils",
+  unmanagedResourceDirectories += baseDirectory.value / "test-utils" / "resources",
+  fork                         := true,
+  javaOptions                  ++= Seq(
+    "-Dconfig.resource=test.application.conf"
+  )
+)
 
 lazy val itSettings = Defaults.itSettings ++ Seq(
   unmanagedSourceDirectories   := Seq(

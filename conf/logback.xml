@@ -22,6 +22,8 @@
 
     <logger name="connector" level="WARN"/>
 
+    <logger name="workers" level="INFO"/>
+
     <root level="WARN">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDOUT"/>
