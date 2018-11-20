@@ -36,6 +36,8 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
   "a declaration submission worker" - {
 
+    val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
     "must submit paid declarations" in {
 
       server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
@@ -51,9 +53,9 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -88,10 +90,10 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Json.obj()),
-          Declaration(ChargeReference(1), State.Paid, Json.obj()),
-          Declaration(ChargeReference(2), State.Paid, Json.obj()),
-          Declaration(ChargeReference(3), State.Paid, Json.obj())
+          Declaration(ChargeReference(0), State.Paid, correlationId, Json.obj()),
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj()),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj()),
+          Declaration(ChargeReference(3), State.Paid, correlationId, Json.obj())
         )
 
         database.flatMap {
@@ -131,8 +133,8 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -167,7 +169,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -200,9 +202,9 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -234,9 +236,9 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -270,9 +272,9 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.PendingPayment, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -304,8 +306,8 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         val worker = app.injector.instanceOf[DeclarationSubmissionWorker]
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -326,8 +328,8 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Paid, Json.obj(), LocalDateTime.now),
-        Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now)
+        Declaration(ChargeReference(0), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
+        Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
       )
 
       database.flatMap {
@@ -366,7 +368,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
       database.flatMap {
         _.collection[JSONCollection]("declarations")
           .insert[Declaration](ordered = true)
-          .one(Declaration(ChargeReference(0), State.Paid, Json.obj()))
+          .one(Declaration(ChargeReference(0), State.Paid, correlationId, Json.obj()))
       }.futureValue
 
       val reactor = new NioReactor()
@@ -396,7 +398,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
           database.flatMap {
             _.collection[JSONCollection]("declarations")
               .insert[Declaration](ordered = true)
-              .one(Declaration(ChargeReference(1), State.Paid, Json.obj()))
+              .one(Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj()))
           }.futureValue
 
           proxy.open()

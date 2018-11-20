@@ -15,7 +15,9 @@ class ValidationServiceSpec extends FreeSpec with MustMatchers with OneAppPerSui
     "must return an empty list of errors when a document is valid" in {
 
       val json = Json.obj(
-        "foo" -> "bar"
+        "simpleDeclarationRequest" -> Json.obj(
+          "foo" -> "bar"
+        )
       )
 
       validator.validate(json) mustBe empty
@@ -26,7 +28,7 @@ class ValidationServiceSpec extends FreeSpec with MustMatchers with OneAppPerSui
       val json = Json.obj()
 
       validator.validate(json) must contain (
-        """object has missing required properties (["foo"])"""
+        """object has missing required properties (["simpleDeclarationRequest"])"""
       )
     }
   }

@@ -6,11 +6,12 @@ import models.ChargeReference
 import play.api.libs.json._
 
 final case class Declaration (
-                               chargeReference: ChargeReference,
-                               state: State,
-                               data: JsObject,
-                               lastUpdated: LocalDateTime = LocalDateTime.now
-                             )
+  chargeReference: ChargeReference,
+  state: State,
+  correlationId: String,
+  data: JsObject,
+  lastUpdated: LocalDateTime = LocalDateTime.now
+)
 
 object Declaration {
 
@@ -21,6 +22,7 @@ object Declaration {
     (
       (__ \ "_id").read[ChargeReference] and
       (__ \ "state").read[State] and
+      (__ \ "correlationId").read[String] and
       (__ \ "data").read[JsObject] and
       (__ \ "lastUpdated").read[LocalDateTime]
     )(Declaration.apply _)
@@ -33,6 +35,7 @@ object Declaration {
     (
       (__ \ "_id").write[ChargeReference] and
       (__ \ "state").write[State] and
+      (__ \ "correlationId").write[String] and
       (__ \ "data").write[JsObject] and
       (__ \ "lastUpdated").write[LocalDateTime]
     )(unlift(Declaration.unapply))

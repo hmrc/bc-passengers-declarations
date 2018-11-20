@@ -3,9 +3,19 @@
   "title": "Person",
   "type": "object",
   "properties": {
-    "foo": {
-      "type": "string"
+    "simpleDeclarationRequest": {
+      "$ref": "#/definitions/simpleDeclarationRequest"
     }
   },
-  "required": ["foo"]
+  "definitions": {
+    "simpleDeclarationRequest": {
+      "properties": {
+        "foo": {
+          "type": "string"
+        }
+      },
+      "required": ["foo"]
+    }
+  },
+  "required": ["simpleDeclarationRequest"]
 }

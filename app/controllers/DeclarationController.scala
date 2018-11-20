@@ -12,19 +12,28 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DeclarationController @Inject()(
-                                       cc: ControllerComponents,
-                                       repository: DeclarationsRepository,
-                                       lockRepository: LockRepository
-                                     )(implicit ec: ExecutionContext) extends BackendController(cc) {
+  cc: ControllerComponents,
+  repository: DeclarationsRepository,
+  lockRepository: LockRepository
+)(implicit ec: ExecutionContext) extends BackendController(cc) {
+
+  val CorrelationIdKey = "X-Correlation-ID"
 
   def submit(): Action[JsValue] = Action.async(parse.tolerantJson) {
     implicit request =>
 
-      repository.insert(request.body.as[JsObject]).map {
-        case Right(declaration) =>
-          Accepted(Json.toJson(declaration))
-        case Left(errors) =>
-          BadRequest(Json.obj("errors" -> errors))
+      request.headers.get(CorrelationIdKey) match {
+        case Some(cid) =>
+          repository.insert(request.body.as[JsObject], cid).map {
+            case Right(declaration) =>
+              Accepted(declaration.data).withHeaders(CorrelationIdKey -> cid)
+            case Left(errors) =>
+              BadRequest(Json.obj("errors" -> errors)).withHeaders(CorrelationIdKey -> cid)
+          }
+        case None =>
+          Future.successful {
+            BadRequest(Json.obj("errors" -> Json.arr("Missing X-Correlation-ID header")))
+          }
       }
   }
 

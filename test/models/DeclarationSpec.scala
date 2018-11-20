@@ -14,17 +14,21 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
       val lastUpdated = LocalDateTime.now
 
+      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
       val json = Json.obj(
-        "_id"         -> "XHPR1234567890",
-        "state"       -> State.PendingPayment,
-        "data"        -> Json.obj(),
-        "lastUpdated" -> Json.toJson(lastUpdated)
+        "_id"           -> "XHPR1234567890",
+        "state"         -> State.PendingPayment,
+        "correlationId" -> correlationId,
+        "data"          -> Json.obj(),
+        "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
       json.as[Declaration] mustEqual
         Declaration(
           ChargeReference(1234567890),
           State.PendingPayment,
+          correlationId,
           Json.obj(),
           lastUpdated
         )
@@ -34,14 +38,18 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
       val lastUpdated = LocalDateTime.now
 
+      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
+
       val json = Json.obj(
-        "_id"         -> "XHPR1234567890",
-        "state"       -> State.PendingPayment,
-        "data"        -> Json.obj(),
-        "lastUpdated" -> Json.toJson(lastUpdated)
+        "_id"           -> "XHPR1234567890",
+        "state"         -> State.PendingPayment,
+        "correlationId" -> correlationId,
+        "data"          -> Json.obj(),
+        "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, Json.obj(), lastUpdated)) mustEqual json
+      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, correlationId, Json.obj(), lastUpdated)) mustEqual json
     }
   }
 }
