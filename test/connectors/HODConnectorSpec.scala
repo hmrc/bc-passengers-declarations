@@ -30,7 +30,9 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
       .build()
   }
 
-  private lazy val declaration = Declaration(ChargeReference(123), State.PendingPayment, Json.obj())
+  private val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
+  private lazy val declaration = Declaration(ChargeReference(123), State.PendingPayment, correlationId, Json.obj())
 
   private def stubCall: MappingBuilder =
     post(urlEqualTo("/declarations/passengerdeclaration/v1"))

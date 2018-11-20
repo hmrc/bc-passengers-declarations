@@ -44,6 +44,8 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
   "submit" - {
 
+    val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
     "when given a valid request" - {
 
       "and mongo is available" - {
@@ -52,24 +54,25 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
+          val message = Json.obj("simpleDeclarationRequest" -> Json.obj("foo" -> "bar"))
 
-          val requestBody = Json.obj("foo" -> "bar")
+          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, message)
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-            .withJsonBody(requestBody)
+            .withJsonBody(message).withHeaders("X-Correlation-ID" -> correlationId)
 
-          when(declarationsRepository.insert(requestBody))
+          when(declarationsRepository.insert(message, correlationId))
             .thenReturn(Future.successful(Right(declaration)))
 
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
-          contentAsJson(result) mustBe Json.toJson(declaration)
+          headers(result) must contain ("X-Correlation-ID" -> correlationId)
+          contentAsJson(result) mustBe declaration.data
 
           whenReady(result) {
             _ =>
-              verify(declarationsRepository, times(1)).insert(requestBody)
+              verify(declarationsRepository, times(1)).insert(message, correlationId)
           }
         }
       }
@@ -81,9 +84,9 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           val requestBody = Json.obj("foo" -> "bar")
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-            .withJsonBody(requestBody)
+            .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
 
-          when(declarationsRepository.insert(requestBody))
+          when(declarationsRepository.insert(requestBody, correlationId))
             .thenReturn(Future.failed(new Exception()))
 
           val result = route(app, request).value
@@ -97,19 +100,42 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
     "when given an invalid request" - {
 
+      "must return BAD_REQUEST when not supplied with a correlation id in the headers" in {
+
+        val requestBody = Json.obj()
+
+        val chargeReference = ChargeReference(1234567890)
+
+        val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj())
+
+        val request = FakeRequest(POST, routes.DeclarationController.submit().url)
+          .withJsonBody(requestBody)
+
+        when(declarationsRepository.insert(requestBody, correlationId))
+          .thenReturn(Future.successful(Right(declaration)))
+
+        val result = route(app, request).value
+
+        status(result) mustBe BAD_REQUEST
+        contentAsJson(result) mustEqual Json.obj(
+          "errors" -> Seq("Missing X-Correlation-ID header")
+        )
+      }
+
       "must return BAD_REQUEST with a list of errors" in {
 
         val requestBody = Json.obj()
 
         val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-          .withJsonBody(requestBody)
+          .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
 
-        when(declarationsRepository.insert(requestBody))
+        when(declarationsRepository.insert(requestBody, correlationId))
           .thenReturn(Future.successful(Left(List("foo"))))
 
         val result = route(app, request).value
 
         status(result) mustBe BAD_REQUEST
+        headers(result) must contain ("X-Correlation-ID" -> correlationId)
         contentAsJson(result) mustEqual Json.obj(
           "errors" -> Seq("foo")
         )
@@ -118,6 +144,8 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
   }
 
   "update" - {
+
+    val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
     "when a matching declaration is found" - {
 
@@ -145,7 +173,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.Failed, Json.obj())
+          val declaration = Declaration(chargeReference, State.Failed, correlationId, Json.obj())
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -169,7 +197,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.Paid, Json.obj())
+          val declaration = Declaration(chargeReference, State.Paid, correlationId, Json.obj())
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -194,7 +222,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj())
 
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
@@ -223,7 +251,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj())
           val updatedDeclaration = declaration copy (state = State.Paid)
 
           when(declarationsRepository.get(chargeReference))

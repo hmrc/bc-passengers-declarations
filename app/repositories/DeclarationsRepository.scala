@@ -24,11 +24,11 @@ import scala.language.implicitConversions
 
 @Singleton
 class DefaultDeclarationsRepository @Inject() (
-                                                mongo: ReactiveMongoApi,
-                                                chargeReferenceService: ChargeReferenceService,
-                                                validationService: ValidationService,
-                                                config: Configuration
-                                              )(implicit ec: ExecutionContext, m: Materializer) extends DeclarationsRepository {
+  mongo: ReactiveMongoApi,
+  chargeReferenceService: ChargeReferenceService,
+  validationService: ValidationService,
+  config: Configuration
+)(implicit ec: ExecutionContext, m: Materializer) extends DeclarationsRepository {
 
   private val validator: Validator = {
     val schema = config.get[String]("declarations.schema")
@@ -62,12 +62,12 @@ class DefaultDeclarationsRepository @Inject() (
         } yield ()
     }
 
-  override def insert(data: JsObject): Future[Either[List[String], Declaration]] = {
+  override def insert(data: JsObject, correlationId: String): Future[Either[List[String], Declaration]] = {
 
     chargeReferenceService.nextChargeReference().flatMap {
-      id =>
+      id: ChargeReference =>
 
-        val json             = data ++ id
+        val json             = data deepMerge id
         val validationErrors = validator.validate(json)
 
         if (validationErrors.isEmpty) {
@@ -75,7 +75,8 @@ class DefaultDeclarationsRepository @Inject() (
           val declaration = Declaration(
             chargeReference = id,
             state           = State.PendingPayment,
-            data            = data ++ id
+            data            = json,
+            correlationId   = correlationId
           )
 
           collection.flatMap(_.insert(declaration))
@@ -168,6 +169,9 @@ class DefaultDeclarationsRepository @Inject() (
   private implicit def toJson(chargeReference: ChargeReference): JsObject = {
     Json.obj(
       "simpleDeclarationRequest" -> Json.obj(
+        "requestCommon" -> Json.obj(
+          "acknowledgementReference" -> (chargeReference.toString+"0")
+        ),
         "requestDetail" -> Json.obj(
           "declarationHeader" -> Json.obj(
             "chargeReference" -> chargeReference.toString
@@ -181,7 +185,7 @@ class DefaultDeclarationsRepository @Inject() (
 trait DeclarationsRepository {
 
   val started: Future[Unit]
-  def insert(data: JsObject): Future[Either[List[String], Declaration]]
+  def insert(data: JsObject, correlationId: String): Future[Either[List[String], Declaration]]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def setState(id: ChargeReference, state: State): Future[Declaration]

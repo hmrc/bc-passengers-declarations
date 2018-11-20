@@ -25,14 +25,16 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
   "a failed submission worker" - {
 
+    val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
     "must lock failed records when it processes them" in {
 
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Failed, Json.obj()),
-        Declaration(ChargeReference(1), State.Failed, Json.obj()),
-        Declaration(ChargeReference(2), State.PendingPayment, Json.obj())
+        Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, correlationId, Json.obj()),
+        Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj())
       )
 
       database.flatMap {
@@ -65,8 +67,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Failed, Json.obj()),
-        Declaration(ChargeReference(1), State.Failed, Json.obj())
+        Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, correlationId, Json.obj())
       )
 
       database.flatMap {
@@ -99,8 +101,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Failed, Json.obj()),
-        Declaration(ChargeReference(1), State.Failed, Json.obj())
+        Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, correlationId, Json.obj())
       )
 
       database.flatMap {
@@ -130,8 +132,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Failed, Json.obj()),
-        Declaration(ChargeReference(1), State.Failed, Json.obj())
+        Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, correlationId, Json.obj())
       )
 
       database.flatMap {
@@ -165,8 +167,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Failed, Json.obj()),
-        Declaration(ChargeReference(1), State.Failed, Json.obj())
+        Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj()),
+        Declaration(ChargeReference(1), State.Failed, correlationId, Json.obj())
       )
 
       database.flatMap {

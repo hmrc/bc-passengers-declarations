@@ -24,9 +24,7 @@ class Validator(schema: JsonSchema) {
   }
 }
 
-class ValidationService @Inject() (
-                                    resourceService: ResourceService
-                                  ) {
+class ValidationService @Inject() (resourceService: ResourceService) {
 
   private val factory = JsonSchemaFactory.byDefault()
 

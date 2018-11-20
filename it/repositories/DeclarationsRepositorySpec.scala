@@ -26,6 +26,8 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
   "a declarations repository" - {
 
+    val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
     "must insert and remove declarations" in {
 
       database.flatMap(_.drop()).futureValue
@@ -38,15 +40,19 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val document = repository.insert(Json.obj("foo" -> "bar")).futureValue.right.value
+        val document = repository.insert(Json.obj("simpleDeclarationRequest" -> Json.obj("foo" -> "bar")), correlationId).futureValue.right.value
 
         inside(document) {
-          case Declaration(id, _, data, _) =>
+          case Declaration(id, _, cid, data, _) =>
 
             id mustEqual document.chargeReference
+            cid mustEqual correlationId
             data mustEqual Json.obj(
-              "foo" -> "bar",
               "simpleDeclarationRequest" -> Json.obj(
+                "foo" -> "bar",
+                "requestCommon" -> Json.obj(
+                  "acknowledgementReference" -> (document.chargeReference.toString+"0")
+                ),
                 "requestDetail" -> Json.obj(
                   "declarationHeader" -> Json.obj(
                     "chargeReference" -> document.chargeReference.toString
@@ -106,11 +112,11 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Failed, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(3), State.PendingPayment, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.PendingPayment, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Failed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -140,7 +146,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val declaration = repository.insert(Json.obj("foo" -> "bar")).futureValue.right.value
+        val declaration = repository.insert(Json.obj("simpleDeclarationRequest" -> Json.obj("foo" -> "bar")), correlationId).futureValue.right.value
 
         val updatedDeclaration = repository.setState(declaration.chargeReference, State.Paid).futureValue
 
@@ -161,11 +167,11 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Failed, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(3), State.Paid, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.Paid, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(3), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -197,10 +203,10 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, Json.obj()),
-          Declaration(ChargeReference(1), State.Paid, Json.obj()),
-          Declaration(ChargeReference(2), State.Failed, Json.obj()),
-          Declaration(ChargeReference(3), State.PendingPayment, Json.obj())
+          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj()),
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj()),
+          Declaration(ChargeReference(2), State.Failed, correlationId, Json.obj()),
+          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj())
         )
 
         database.flatMap {
@@ -230,7 +236,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val errors = repository.insert(Json.obj()).futureValue.left.value
+        val errors = repository.insert(Json.obj(), correlationId).futureValue.left.value
 
         errors must contain ("""object has missing required properties (["foo"])""")
       }
