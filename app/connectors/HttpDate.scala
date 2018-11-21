@@ -7,7 +7,7 @@ trait HttpDate {
 
   protected val dateFormatter: DateTimeFormatter =
     DateTimeFormat
-      .forPattern("EEE, dd MMM yyyy HH:mm:ss z")
+      .forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
       .withZone(DateTimeZone.UTC)
 
   def now: String =

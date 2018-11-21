@@ -1,7 +1,7 @@
 package controllers
 
 import com.google.inject.{Inject, Singleton}
-import models.ChargeReference
+import models.{ChargeReference, PaymentNotification}
 import models.declarations.State
 import play.api.libs.json._
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
@@ -37,16 +37,16 @@ class DeclarationController @Inject()(
       }
   }
 
-  def update(chargeReference: ChargeReference): Action[AnyContent] = Action.async {
+  def update(): Action[PaymentNotification] = Action.async(parse.tolerantJson.map(_.as[PaymentNotification])) {
     implicit request =>
 
-      withLock(chargeReference) {
-        repository.get(chargeReference).flatMap {
+      withLock(request.body.reference) {
+        repository.get(request.body.reference).flatMap {
           _.map {
             declaration =>
               declaration.state match {
                 case State.PendingPayment =>
-                  repository.setState(chargeReference, State.Paid).map(_ => Accepted)
+                  repository.setState(request.body.reference, State.Paid).map(_ => Accepted)
                 case State.Paid =>
                   Future.successful(Accepted)
                 case _ =>

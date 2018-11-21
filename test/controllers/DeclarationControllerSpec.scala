@@ -147,18 +147,18 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
+    val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
+
     "when a matching declaration is found" - {
 
       "and the declaration is locked" - {
 
         "must return LOCKED" in {
 
-          val chargeReference = ChargeReference(1234567890)
-
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(false))
 
-          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
 
           val result = route(app, request).value
 
@@ -173,7 +173,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.Failed, correlationId, Json.obj())
+          val declaration = Declaration(chargeReference, State.SubmissionFailed, correlationId, Json.obj())
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -182,7 +182,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
 
-          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
 
           val result = route(app, request).value
 
@@ -206,7 +206,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
 
-          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
 
           val result = route(app, request).value
 
@@ -233,7 +233,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           when(lockRepository.release(1234567890))
             .thenReturn(Future.successful(()))
 
-          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
 
           val result = route(app, request).value
 
@@ -263,7 +263,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           when(lockRepository.release(1234567890))
             .thenReturn(Future.successful(()))
 
-          val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
@@ -291,7 +291,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         when(lockRepository.release(1234567890))
           .thenReturn(Future.successful(()))
 
-        val request = FakeRequest(POST, routes.DeclarationController.update(chargeReference).url)
+        val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
         val result = route(app, request).value
 
         status(result) mustBe NOT_FOUND
