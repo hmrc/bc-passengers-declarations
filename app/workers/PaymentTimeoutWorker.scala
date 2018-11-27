@@ -41,7 +41,9 @@ class PaymentTimeoutWorker @Inject()(
         .map {
           declaration =>
 
-            logger.info(s"Declaration ${declaration.chargeReference.value} is stale")
+            logger.info(s"Declaration ${declaration.chargeReference.value} is stale, deleting")
+
+            declarationsRepository.remove(declaration.chargeReference)
 
             declaration
         }.wireTapMat(Sink.queue())(Keep.right)

@@ -2,28 +2,27 @@ package workers
 
 import java.time.LocalDateTime
 
-import ch.qos.logback.classic.Level
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
-import play.api.test.Helpers.running
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.netcrusher.core.reactor.NioReactor
 import org.netcrusher.tcp.TcpCrusherBuilder
-import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.play.json.collection.JSONCollection
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.mockito.MockitoSugar
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsValue, Json}
+import play.api.test.Helpers.running
+import reactivemongo.api.Cursor
+import reactivemongo.play.json.collection._
+import reactivemongo.play.json.JsObjectDocumentWriter
 import repositories.LockRepository
 import suite.MongoSuite
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
@@ -54,8 +53,10 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val declarations = List(
           Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PaymentCancelled, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -66,13 +67,34 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
-        worker.tap.pull.futureValue.value
-
         TestLoggerAppender.queue.dequeue()
-        val logEvent = TestLoggerAppender.queue.dequeue()
 
-        logEvent.getLevel mustEqual Level.INFO
-        logEvent.getMessage mustEqual "Declaration 0 is stale"
+        val staleDeclarations = List(
+          worker.tap.pull.futureValue.value,
+          worker.tap.pull.futureValue.value,
+          worker.tap.pull.futureValue.value
+        )
+
+        staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2))
+        staleDeclarations.map(_.state) must contain allOf (State.PendingPayment, State.PaymentFailed, State.PaymentCancelled)
+
+        val logEvents = List(
+          TestLoggerAppender.queue.dequeue(),
+          TestLoggerAppender.queue.dequeue(),
+          TestLoggerAppender.queue.dequeue()
+        )
+
+        logEvents.map(_.getMessage) must contain allOf ("Declaration 2 is stale, deleting", "Declaration 1 is stale, deleting" , "Declaration 0 is stale, deleting")
+
+
+        val remaining = database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .find(Json.obj(), None)
+            .cursor[Declaration]()
+            .collect[List](10, Cursor.ContOnError())
+        }.futureValue
+
+        remaining mustEqual declarations.filter(_.chargeReference.value > 2)
       }
     }
 
@@ -123,7 +145,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val declarations = List(
           Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PaymentFailed,  correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
           Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
         )
 
@@ -181,8 +203,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), State.PaymentCancelled, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+        Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5))
       )
 
       database.flatMap {

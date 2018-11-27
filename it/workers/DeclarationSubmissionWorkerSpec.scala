@@ -53,7 +53,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
@@ -202,7 +202,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
@@ -236,7 +236,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
@@ -272,7 +272,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
@@ -289,7 +289,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         val (declaration, result) = worker.tap.pull.futureValue.value
         result mustEqual SubmissionResponse.Failed
 
-        repository.get(declaration.chargeReference).futureValue.value.state mustEqual State.Failed
+        repository.get(declaration.chargeReference).futureValue.value.state mustEqual State.SubmissionFailed
       }
     }
 

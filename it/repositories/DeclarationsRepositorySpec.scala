@@ -113,10 +113,12 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         val declarations = List(
           Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Failed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PaymentCancelled, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.Paid, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(4), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(5), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(6), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -129,8 +131,8 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         val staleDeclarations = repository.staleDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
-        staleDeclarations.size mustEqual 1
-        staleDeclarations.map(_.chargeReference) must contain only ChargeReference(0)
+        staleDeclarations.size mustEqual 3
+        staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2))
       }
     }
 
@@ -169,7 +171,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         val declarations = List(
           Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Failed, correlationId, Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(3), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
           Declaration(ChargeReference(4), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
         )
@@ -190,7 +192,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
       }
     }
 
-    "must provide a stream of failed declarations" in {
+    "must provide a stream of submission-failed declarations" in {
 
       database.flatMap(_.drop()).futureValue
 
@@ -203,9 +205,9 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Failed, correlationId, Json.obj()),
+          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj()),
           Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj()),
-          Declaration(ChargeReference(2), State.Failed, correlationId, Json.obj()),
+          Declaration(ChargeReference(2), State.SubmissionFailed, correlationId, Json.obj()),
           Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj())
         )
 

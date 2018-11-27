@@ -31,16 +31,42 @@ class StateSpec extends FreeSpec with MustMatchers {
     }
   }
 
-  "a failed state" - {
+  "a submission-failed state" - {
 
     "must deserialise from json" in {
 
-      JsString("failed").as[State] mustEqual State.Failed
+      JsString("submission-failed").as[State] mustEqual State.SubmissionFailed
     }
 
     "must serialise to json" in {
 
-      Json.toJson(State.Failed) mustEqual JsString("failed")
+      Json.toJson(State.SubmissionFailed) mustEqual JsString("submission-failed")
+    }
+  }
+
+  "a payment-failed state" - {
+
+    "must deserialise from json" in {
+
+      JsString("payment-failed").as[State] mustEqual State.PaymentFailed
+    }
+
+    "must serialise to json" in {
+
+      Json.toJson(State.PaymentFailed) mustEqual JsString("payment-failed")
+    }
+  }
+
+  "a payment-cancelled state" - {
+
+    "must deserialise from json" in {
+
+      JsString("payment-cancelled").as[State] mustEqual State.PaymentCancelled
+    }
+
+    "must serialise to json" in {
+
+      Json.toJson(State.PaymentCancelled) mustEqual JsString("payment-cancelled")
     }
   }
 

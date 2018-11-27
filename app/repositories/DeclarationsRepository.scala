@@ -121,7 +121,11 @@ class DefaultDeclarationsRepository @Inject() (
 
     val query = Json.obj(
       "lastUpdated" -> Json.obj("$lt" -> timeout),
-      "state"       -> State.PendingPayment
+      "$or" -> Json.arr(
+        Json.obj("state" -> State.PendingPayment),
+        Json.obj("state" -> State.PaymentCancelled),
+        Json.obj("state" -> State.PaymentFailed)
+      )
     )
 
     Source.fromFutureSource {
@@ -153,7 +157,7 @@ class DefaultDeclarationsRepository @Inject() (
   override def failedDeclarations: Source[Declaration, Future[NotUsed]] = {
 
    val query = Json.obj(
-     "state" -> State.Failed
+     "state" -> State.SubmissionFailed
    )
 
     Source.fromFutureSource {

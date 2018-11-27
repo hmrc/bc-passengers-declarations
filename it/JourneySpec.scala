@@ -54,7 +54,9 @@ class JourneySpec extends FreeSpec with MustMatchers with MongoSuite
 
       val chargeReference: String = (contentAsJson(response) \ "simpleDeclarationRequest" \ "requestDetail" \ "declarationHeader" \ "chargeReference").as[JsString].value
 
-      route(app, FakeRequest(POST, routes.DeclarationController.update(ChargeReference(chargeReference).get).url)).value.futureValue
+      route(app, FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(
+        Json.obj("reference" -> chargeReference, "status" -> "Successful")
+      )).value.futureValue
 
       val submissionWorker = app.injector.instanceOf[DeclarationSubmissionWorker]
 

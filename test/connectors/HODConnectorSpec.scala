@@ -38,10 +38,10 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
     post(urlEqualTo("/declarations/passengerdeclaration/v1"))
       .withHeader(CONTENT_TYPE, matching(ContentTypes.JSON))
       .withHeader(ACCEPT, matching(ContentTypes.JSON))
-      .withHeader("X-Correlation-ID", matching("^.+$"))
+      .withHeader("X-Correlation-ID", matching(correlationId))
       .withHeader("X-Forwarded-Host", matching("MDTP"))
-      .withHeader(DATE, matching("^.+$"))
-      .withRequestBody(equalTo(Json.stringify(Json.toJson(declaration))))
+      .withHeader(DATE, matching("""^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"""))
+      .withRequestBody(equalTo(Json.stringify(declaration.data)))
 
   private lazy val connector: HODConnector = inject[HODConnector]
 
