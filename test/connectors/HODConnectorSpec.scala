@@ -39,6 +39,7 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
       .withHeader(CONTENT_TYPE, matching(ContentTypes.JSON))
       .withHeader(ACCEPT, matching(ContentTypes.JSON))
       .withHeader("X-Correlation-ID", matching(correlationId))
+      .withHeader("Authorization",  matching("Bearer changeme"))
       .withHeader("X-Forwarded-Host", matching("MDTP"))
       .withHeader(DATE, matching("""^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"""))
       .withRequestBody(equalTo(Json.stringify(declaration.data)))

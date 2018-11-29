@@ -22,6 +22,8 @@ class HODConnector @Inject() (
 
   private val baseUrl = config.get[Service]("microservice.services.des")
 
+  private val bearerToken = config.get[String]("microservice.services.des.bearer-token")
+
   private val CORRELATION_ID: String = "X-Correlation-ID"
   private val FORWARDED_HOST: String = "X-Forwarded-Host"
   private val MDTP: String = "MDTP"
@@ -34,6 +36,7 @@ class HODConnector @Inject() (
         .withExtraHeaders(
           HeaderNames.ACCEPT -> ContentTypes.JSON,
           HeaderNames.DATE -> now,
+          HeaderNames.AUTHORIZATION -> s"Bearer $bearerToken",
           CORRELATION_ID -> declaration.correlationId,
           FORWARDED_HOST -> MDTP)
     }
