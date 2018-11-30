@@ -44,14 +44,26 @@ class DeclarationController @Inject()(
         repository.get(request.body.reference).flatMap {
           _.map {
             declaration =>
+
               declaration.state match {
-                case State.PendingPayment =>
-                  repository.setState(request.body.reference, State.Paid).map(_ => Accepted)
+
                 case State.Paid =>
                   Future.successful(Accepted)
-                case _ =>
+
+                case State.SubmissionFailed =>
                   Future.successful(Conflict)
+
+                case _ =>
+                  request.body.status match {
+                    case PaymentNotification.Successful =>
+                      repository.setState(request.body.reference, State.Paid).map(_ => Accepted)
+                    case PaymentNotification.Failed =>
+                      repository.setState(request.body.reference, State.PaymentFailed).map(_ => Accepted)
+                    case PaymentNotification.Cancelled =>
+                      repository.setState(request.body.reference, State.PaymentCancelled).map(_ => Accepted)
+                  }
               }
+
           }.getOrElse(Future.successful(NotFound))
         }
       }

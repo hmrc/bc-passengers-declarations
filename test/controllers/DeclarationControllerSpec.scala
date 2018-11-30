@@ -245,11 +245,13 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         }
       }
 
-      "and updating its state succeeds" - {
+      "and the payload status is Successful and updating its state succeeds" - {
 
-        "must return ACCEPTED" in {
+        "must return ACCEPTED and update the state to Paid" in {
 
           val chargeReference = ChargeReference(1234567890)
+
+          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
 
           val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj())
           val updatedDeclaration = declaration copy (state = State.Paid)
@@ -272,6 +274,74 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
             _ =>
               verify(declarationsRepository, times(1)).get(chargeReference)
               verify(declarationsRepository, times(1)).setState(chargeReference, State.Paid)
+              verify(lockRepository, times(1)).release(1234567890)
+          }
+        }
+      }
+
+      "and the payload status is Failed and updating its state succeeds" - {
+
+        "must return ACCEPTED and update the state to PaymentFailed" in {
+
+          val chargeReference = ChargeReference(1234567890)
+
+          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Failed")
+
+          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj())
+          val updatedDeclaration = declaration copy (state = State.PaymentFailed)
+
+          when(declarationsRepository.get(chargeReference))
+            .thenReturn(Future.successful(Some(declaration)))
+          when(declarationsRepository.setState(chargeReference, State.PaymentFailed))
+            .thenReturn(Future.successful(updatedDeclaration))
+          when(lockRepository.lock(1234567890))
+            .thenReturn(Future.successful(true))
+          when(lockRepository.release(1234567890))
+            .thenReturn(Future.successful(()))
+
+          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+          val result = route(app, request).value
+
+          status(result) mustBe ACCEPTED
+
+          whenReady(result) {
+            _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentFailed)
+              verify(lockRepository, times(1)).release(1234567890)
+          }
+        }
+      }
+
+      "and the payload status is Cancelled and updating its state succeeds" - {
+
+        "must return ACCEPTED and update the state to PaymentCancelled" in {
+
+          val chargeReference = ChargeReference(1234567890)
+
+          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Cancelled")
+
+          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj())
+          val updatedDeclaration = declaration copy (state = State.PaymentCancelled)
+
+          when(declarationsRepository.get(chargeReference))
+            .thenReturn(Future.successful(Some(declaration)))
+          when(declarationsRepository.setState(chargeReference, State.PaymentCancelled))
+            .thenReturn(Future.successful(updatedDeclaration))
+          when(lockRepository.lock(1234567890))
+            .thenReturn(Future.successful(true))
+          when(lockRepository.release(1234567890))
+            .thenReturn(Future.successful(()))
+
+          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+          val result = route(app, request).value
+
+          status(result) mustBe ACCEPTED
+
+          whenReady(result) {
+            _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentCancelled)
               verify(lockRepository, times(1)).release(1234567890)
           }
         }
