@@ -12,10 +12,10 @@ import scala.util.control.NonFatal
 
 @Singleton
 class FailedSubmissionWorker @Inject()(
-                                        declarationsRepository: DeclarationsRepository,
-                                        override protected val lockRepository: LockRepository,
-                                        config: Configuration
-                                      )(implicit ec: ExecutionContext, mat: Materializer)
+  declarationsRepository: DeclarationsRepository,
+  override protected val lockRepository: LockRepository,
+  config: Configuration
+)(implicit ec: ExecutionContext, mat: Materializer)
   extends BaseDeclarationWorker {
 
     private val logger = Logger(this.getClass)

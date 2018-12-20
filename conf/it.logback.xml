@@ -13,6 +13,10 @@
         <appender-ref ref="TEST_APPENDER"/>
     </logger>
 
+    <logger name="workers.MetricsWorker" level="INFO" additivity="false">
+        <appender-ref ref="TEST_APPENDER"/>
+    </logger>
+
     <root level="OFF">
         <appender-ref ref="STDOUT"/>
     </root>

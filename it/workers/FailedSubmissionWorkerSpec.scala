@@ -14,6 +14,7 @@ import reactivemongo.play.json.collection.JSONCollection
 import repositories.LockRepository
 import suite.MongoSuite
 
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

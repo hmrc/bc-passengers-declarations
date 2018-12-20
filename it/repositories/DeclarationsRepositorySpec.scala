@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
-import models.ChargeReference
+import models.{ChargeReference, DeclarationsStatus}
 import models.declarations.{Declaration, State}
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -241,6 +241,60 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         val errors = repository.insert(Json.obj(), correlationId).futureValue.left.value
 
         errors must contain ("""object has missing required properties (["foo"])""")
+      }
+    }
+
+    "reads the correct number of declaration states" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarations = List(
+          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj()),
+
+          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj()),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj()),
+
+          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj()),
+          Declaration(ChargeReference(4), State.PendingPayment, correlationId, Json.obj()),
+          Declaration(ChargeReference(5), State.PendingPayment, correlationId, Json.obj()),
+
+          Declaration(ChargeReference(6), State.PaymentCancelled, correlationId, Json.obj()),
+          Declaration(ChargeReference(7), State.PaymentCancelled, correlationId, Json.obj()),
+          Declaration(ChargeReference(8), State.PaymentCancelled, correlationId, Json.obj()),
+          Declaration(ChargeReference(9), State.PaymentCancelled, correlationId, Json.obj()),
+
+          Declaration(ChargeReference(10), State.PaymentFailed, correlationId, Json.obj()),
+          Declaration(ChargeReference(11), State.PaymentFailed, correlationId, Json.obj()),
+          Declaration(ChargeReference(12), State.PaymentFailed, correlationId, Json.obj()),
+          Declaration(ChargeReference(13), State.PaymentFailed, correlationId, Json.obj()),
+          Declaration(ChargeReference(14), State.PaymentFailed, correlationId, Json.obj())
+
+        )
+
+        database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .insert[Declaration](ordered = true)
+            .many(declarations)
+        }.futureValue
+
+        implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+
+        repository.metricsCount.futureValue mustBe DeclarationsStatus(
+          pendingPaymentCount = 3,
+          paymentCompleteCount = 2,
+          paymentFailedCount = 5,
+          paymentCancelledCount = 4,
+          failedSubmissionCount = 1
+        )
+
       }
     }
   }
