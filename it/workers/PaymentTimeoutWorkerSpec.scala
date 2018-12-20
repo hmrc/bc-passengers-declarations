@@ -67,7 +67,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
-        TestLoggerAppender.queue.dequeue()
+        TestLoggerAppender.queue.dequeueAll(_ => true)
 
         val staleDeclarations = List(
           worker.tap.pull.futureValue.value,

@@ -7,12 +7,14 @@ import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
-import models.ChargeReference
+import models.{ChargeReference, DeclarationsStatus}
 import models.declarations.{Declaration, State}
+import org.reactivestreams.{Publisher, Subscriber}
 import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsNumber, JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
+import reactivemongo.api.Cursor
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
@@ -170,6 +172,28 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
+  def metricsCount: Future[DeclarationsStatus] = {
+
+    collection.flatMap { col =>
+      import col.BatchCommands.AggregationFramework.{Group, SumAll}
+      
+      col.aggregatorContext[JsObject](Group(JsString("$state"))("count" -> SumAll))
+        .prepared
+        .cursor
+        .collect[List](-1, Cursor.FailOnError[List[JsObject]]()) map { jsObjects =>
+        jsObjects.foldLeft(DeclarationsStatus(0, 0, 0, 0, 0)) { (status, jsObject) =>
+          (jsObject \ "_id").as[JsString].value match {
+            case "pending-payment" => status.copy(pendingPaymentCount = (jsObject \ "count").as[JsNumber].value.toInt)
+            case "paid" => status.copy(paymentCompleteCount = (jsObject \ "count").as[JsNumber].value.toInt)
+            case "payment-failed" => status.copy(paymentFailedCount = (jsObject \ "count").as[JsNumber].value.toInt)
+            case "payment-cancelled" => status.copy(paymentCancelledCount = (jsObject \ "count").as[JsNumber].value.toInt)
+            case "submission-failed" => status.copy(failedSubmissionCount = (jsObject \ "count").as[JsNumber].value.toInt)
+          }
+        }
+      }
+    }
+  }
+
   private implicit def toJson(chargeReference: ChargeReference): JsObject = {
     Json.obj(
       "simpleDeclarationRequest" -> Json.obj(
@@ -196,4 +220,5 @@ trait DeclarationsRepository {
   def staleDeclarations: Source[Declaration, Future[NotUsed]]
   def paidDeclarations: Source[Declaration, Future[NotUsed]]
   def failedDeclarations: Source[Declaration, Future[NotUsed]]
+  def metricsCount: Future[DeclarationsStatus]
 }

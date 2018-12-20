@@ -13,10 +13,10 @@ import scala.util.control.NonFatal
 
 @Singleton
 class PaymentTimeoutWorker @Inject()(
-                                     declarationsRepository: DeclarationsRepository,
-                                     override protected val lockRepository: LockRepository,
-                                     config: Configuration
-                                    )(implicit ec: ExecutionContext, mat: Materializer)
+  declarationsRepository: DeclarationsRepository,
+  override protected val lockRepository: LockRepository,
+  config: Configuration
+)(implicit ec: ExecutionContext, mat: Materializer)
   extends BaseDeclarationWorker {
 
     private val logger: Logger = Logger(this.getClass)
