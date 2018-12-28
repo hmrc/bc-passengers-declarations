@@ -1,9 +1,9 @@
 package workers
 
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.actor.Cancellable
-import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
-import akka.stream.{ActorAttributes, Materializer, Supervision}
+import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
+import akka.stream.{ActorAttributes, Materializer, OverflowStrategy, Supervision}
 import com.google.inject.{Inject, Singleton}
 import metrics.MetricsOperator
 import models.DeclarationsStatus
@@ -27,19 +27,19 @@ class MetricsWorker @Inject() (
   private val interval = config.get[FiniteDuration]("workers.metrics-worker.interval")
 
   private val supervisionStrategy: Supervision.Decider = {
-    case NonFatal(_) => Supervision.resume
-    case _           => Supervision.stop
+    case NonFatal(e) =>
+      logger.warn("Exception thrown in metrics stream, resuming", e)
+      Supervision.resume
+    case _ =>
+      Supervision.stop
   }
 
   val tap: SinkQueueWithCancel[DeclarationsStatus] = {
 
     logger.info("Metrics worker started")
 
-    Source.tick(initialDelay, interval, ())
-      .mapAsync(1) {
-        _ =>
-          declarationsRepository.metricsCount
-      }
+    Source.tick(initialDelay, interval, declarationsRepository.metricsCount)
+      .flatMapConcat(identity)
       .map {
         status =>
           metricsOperator.setPendingPaymentCounter(status.pendingPaymentCount)
@@ -48,7 +48,8 @@ class MetricsWorker @Inject() (
           metricsOperator.setPaymentCancelledCounter(status.paymentCancelledCount)
           metricsOperator.setFailedSubmissionCounter(status.failedSubmissionCount)
           status
-      }.wireTapMat(Sink.queue())(Keep.right)
+      }
+      .wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
       .run()

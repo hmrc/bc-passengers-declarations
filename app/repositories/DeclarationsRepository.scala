@@ -42,8 +42,6 @@ class DefaultDeclarationsRepository @Inject() (
   private def collection: Future[JSONCollection] =
     mongo.database.map(_.collection[JSONCollection](collectionName))
 
-  private val paymentTimeout = config.get[Duration]("declarations.payment-no-response-timeout")
-
   private val lastUpdatedIndex = Index(
     key     = Seq("lastUpdated" -> IndexType.Ascending),
     name    = Some("declarations-last-updated-index")
@@ -117,12 +115,9 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
-  override def staleDeclarations: Source[Declaration, Future[NotUsed]] = {
-
-    val timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
+  override def unpaidDeclarations = {
 
     val query = Json.obj(
-      "lastUpdated" -> Json.obj("$lt" -> timeout),
       "$or" -> Json.arr(
         Json.obj("state" -> State.PendingPayment),
         Json.obj("state" -> State.PaymentCancelled),
@@ -172,16 +167,15 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
-  def metricsCount: Future[DeclarationsStatus] = {
+  override def metricsCount: Source[DeclarationsStatus, NotUsed] = {
 
-    collection.flatMap { col =>
+    def buildDeclarationStatus: Future[DeclarationsStatus] = collection.flatMap { col =>
       import col.BatchCommands.AggregationFramework.{Group, SumAll}
-      
       col.aggregatorContext[JsObject](Group(JsString("$state"))("count" -> SumAll))
         .prepared
         .cursor
         .collect[List](-1, Cursor.FailOnError[List[JsObject]]()) map { jsObjects =>
-        jsObjects.foldLeft(DeclarationsStatus(0, 0, 0, 0, 0)) { (status, jsObject) =>
+        val ds = jsObjects.foldLeft(DeclarationsStatus(0, 0, 0, 0, 0)) { (status, jsObject) =>
           (jsObject \ "_id").as[JsString].value match {
             case "pending-payment" => status.copy(pendingPaymentCount = (jsObject \ "count").as[JsNumber].value.toInt)
             case "paid" => status.copy(paymentCompleteCount = (jsObject \ "count").as[JsNumber].value.toInt)
@@ -190,7 +184,14 @@ class DefaultDeclarationsRepository @Inject() (
             case "submission-failed" => status.copy(failedSubmissionCount = (jsObject \ "count").as[JsNumber].value.toInt)
           }
         }
+
+        ds
       }
+    }
+
+    Source.unfoldAsync[Boolean, DeclarationsStatus](true) {
+      case true => buildDeclarationStatus.map(ds => Some((false, ds)))
+      case false => Future.successful(None)
     }
   }
 
@@ -217,8 +218,8 @@ trait DeclarationsRepository {
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def setState(id: ChargeReference, state: State): Future[Declaration]
-  def staleDeclarations: Source[Declaration, Future[NotUsed]]
+  def unpaidDeclarations: Source[Declaration, Future[NotUsed]]
   def paidDeclarations: Source[Declaration, Future[NotUsed]]
   def failedDeclarations: Source[Declaration, Future[NotUsed]]
-  def metricsCount: Future[DeclarationsStatus]
+  def metricsCount: Source[DeclarationsStatus, NotUsed]
 }
