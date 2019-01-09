@@ -1,5 +1,8 @@
 package workers
 
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import javax.inject.{Inject, Singleton}
@@ -7,7 +10,7 @@ import models.declarations.Declaration
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -24,6 +27,8 @@ class PaymentTimeoutWorker @Inject()(
     private val initialDelay = config.get[FiniteDuration]("workers.payment-timeout-worker.initial-delay")
     private val interval = config.get[FiniteDuration]("workers.payment-timeout-worker.interval")
     private val parallelism = config.get[Int]("workers.payment-timeout-worker.parallelism")
+    private val paymentTimeout = config.get[Duration]("declarations.payment-no-response-timeout")
+
 
     private val supervisionStrategy: Supervision.Decider = {
       case NonFatal(_) => Supervision.resume
@@ -34,8 +39,13 @@ class PaymentTimeoutWorker @Inject()(
 
       logger.info("Payment timeout worker started")
 
-      Source.tick(initialDelay, interval, declarationsRepository.staleDeclarations)
+      def timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
+
+      Source.tick(initialDelay, interval, declarationsRepository.unpaidDeclarations)
         .flatMapConcat(identity)
+        .collect {
+          case declaration if declaration.lastUpdated.isBefore(timeout) => declaration
+        }
         .mapAsync(parallelism)(getLock)
         .mapConcat(lockSuccessful)
         .map {

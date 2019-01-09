@@ -50,8 +50,6 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
 
       database.flatMap(_.drop()).futureValue
 
-      TestLoggerAppender.queue.dequeueAll(_ => true)
-
       database.flatMap {
         _.collection[JSONCollection]("declarations")
           .insert[Declaration](ordered = true)
@@ -93,7 +91,6 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
         }.futureValue
 
         worker.tap.pull.futureValue mustBe Some(DeclarationsStatus(1, 1, 1, 1, 1))
-
 
         val r1 = route(app, FakeRequest("GET", "/admin/metrics")).get
         r1.futureValue

@@ -99,7 +99,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
       }
     }
 
-    "must provide a stream of stale declarations" in {
+    "must provide a stream of unpaid declarations" in {
 
       database.flatMap(_.drop()).futureValue
 
@@ -129,10 +129,10 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
-        val staleDeclarations = repository.staleDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+        val staleDeclarations = repository.unpaidDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
-        staleDeclarations.size mustEqual 3
-        staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2))
+        staleDeclarations.size mustEqual 5
+        staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2), ChargeReference(5), ChargeReference(6))
       }
     }
 
@@ -287,13 +287,15 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
-        repository.metricsCount.futureValue mustBe DeclarationsStatus(
-          pendingPaymentCount = 3,
-          paymentCompleteCount = 2,
-          paymentFailedCount = 5,
-          paymentCancelledCount = 4,
-          failedSubmissionCount = 1
-        )
+        repository.metricsCount
+          .runWith(Sink.collection[DeclarationsStatus, List[DeclarationsStatus]])
+          .futureValue.head mustBe DeclarationsStatus(
+            pendingPaymentCount = 3,
+            paymentCompleteCount = 2,
+            paymentFailedCount = 5,
+            paymentCancelledCount = 4,
+            failedSubmissionCount = 1
+          )
 
       }
     }
