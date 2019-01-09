@@ -1,17 +1,18 @@
 package workers
 
-import akka.stream.{ActorAttributes, Materializer, Supervision}
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
+import akka.stream.{ActorAttributes, Materializer, Supervision}
 import com.google.inject.{Inject, Singleton}
 import connectors.HODConnector
 import models.SubmissionResponse
 import models.declarations.{Declaration, State}
-import org.joda.time.DateTime
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
+import util.AuditingTools
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
@@ -19,7 +20,9 @@ class DeclarationSubmissionWorker @Inject() (
   declarationsRepository: DeclarationsRepository,
   override protected val lockRepository: LockRepository,
   hodConnector: HODConnector,
-  config: Configuration
+  config: Configuration,
+  auditConnector: AuditConnector,
+  auditingTools: AuditingTools
 )(implicit mat: Materializer, ec: ExecutionContext)
   extends BaseDeclarationWorker {
 
@@ -51,6 +54,7 @@ class DeclarationSubmissionWorker @Inject() (
               result <- hodConnector.submit(declaration)
               _      <- result match {
                 case SubmissionResponse.Submitted =>
+                  auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
                   declarationsRepository.remove(declaration.chargeReference)
                 case SubmissionResponse.Error =>
                   Future.successful(())
@@ -64,3 +68,4 @@ class DeclarationSubmissionWorker @Inject() (
         .run()
     }
 }
+
