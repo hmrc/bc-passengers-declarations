@@ -31,7 +31,9 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
       "workers.declaration-submission-worker.interval" -> "1 second",
-      "microservice.services.des.port" -> server.port()
+      "microservice.services.des.port" -> server.port(),
+      "auditing.consumer.baseUri.port" -> server.port(),
+      "auditing.enabled" -> "true"
     )
 
   "a declaration submission worker" - {
@@ -189,6 +191,10 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
     "must remove successfully submitted declarations from mongo" in {
 
+      server.stubFor(post(urlPathEqualTo("/write/audit"))
+        .willReturn(aResponse().withStatus(OK)
+      ))
+
       server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
         .willReturn(aResponse().withStatus(NO_CONTENT))
       )
@@ -202,9 +208,9 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj("data" -> 1), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj("data" -> 2), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj("data" -> 3), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -213,10 +219,37 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
             .many(declarations)
         }.futureValue
 
-        val repository = app.injector.instanceOf[DeclarationsRepository]
         val worker = app.injector.instanceOf[DeclarationSubmissionWorker]
 
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
         val (declaration, _) = worker.tap.pull.futureValue.value
+
+        Thread.sleep(100)
+
+        val expectedJsonBody =
+          """
+            |{
+            |    "auditSource": "bc-passengers-declarations",
+            |    "auditType": "passengerdeclaration",
+            |    "tags": {
+            |        "clientIP": "-",
+            |        "path": "-",
+            |        "X-Session-ID": "-",
+            |        "Akamai-Reputation": "-",
+            |        "X-Request-ID": "-",
+            |        "deviceID": "-",
+            |        "clientPort": "-",
+            |        "transactionName": "passengerdeclarationsubmitted"
+            |    },
+            |    "detail": {
+            |        "data": 3
+            |    }
+            |}
+          """.stripMargin
+
+        server.verify(postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(equalToJson(expectedJsonBody, true, true)))
+
         repository.get(declaration.chargeReference).futureValue mustNot be(defined)
       }
     }
