@@ -30,7 +30,7 @@ class ValidationService @Inject() (resourceService: ResourceService) {
 
   def get(schemaName: String): Validator = {
 
-    val schemaJson = JsonLoader.fromString(resourceService.getFile(schemaName))
+    val schemaJson = JsonLoader.fromString(resourceService.getFile(s"schemas/$schemaName"))
     val schema     = factory.getJsonSchema(schemaJson)
 
     new Validator(schema)
