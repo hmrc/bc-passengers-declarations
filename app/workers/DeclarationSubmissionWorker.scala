@@ -9,7 +9,7 @@ import models.declarations.{Declaration, State}
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
-import util.AuditingTools
+import util.{AuditingTools, DeclarationDataTransformers}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,7 +49,7 @@ class DeclarationSubmissionWorker @Inject() (
         .mapAsync(parallelism)(getLock)
         .mapConcat(lockSuccessful)
         .mapAsync(parallelism) {
-          declaration =>
+          declaration => {
             for {
               result <- hodConnector.submit(declaration)
               _      <- result match {
@@ -62,6 +62,7 @@ class DeclarationSubmissionWorker @Inject() (
                   declarationsRepository.setState(declaration.chargeReference, State.SubmissionFailed)
               }
             } yield (declaration, result)
+          }
         }.wireTapMat(Sink.queue())(Keep.right)
         .toMat(Sink.ignore)(Keep.left)
         .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))

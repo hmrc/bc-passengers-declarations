@@ -32,8 +32,8 @@ class DefaultDeclarationsRepository @Inject() (
   config: Configuration
 )(implicit ec: ExecutionContext, m: Materializer) extends DeclarationsRepository {
 
-  private val validator: Validator = {
-    val schema = config.get[String]("declarations.schema")
+  private def validator(schemaVersion: String): Validator = {
+    val schema = config.get[String](s"declarations.schemas.$schemaVersion")
     validationService.get(schema)
   }
 
@@ -68,7 +68,7 @@ class DefaultDeclarationsRepository @Inject() (
       id: ChargeReference =>
 
         val json             = data deepMerge id
-        val validationErrors = validator.validate(json)
+        val validationErrors = validator("current").validate(json)
 
         if (validationErrors.isEmpty) {
 
