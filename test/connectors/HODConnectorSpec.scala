@@ -61,23 +61,6 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with OneAppPerSuite wi
       connector.submit(declaration).futureValue mustBe SubmissionResponse.Submitted
     }
 
-    "must re-call the HOD if the initial call returns a SubmissionResponse.Failure" in {
-
-      server.stubFor(
-        stubCall.inScenario("Initial call fails")
-          .willReturn(aResponse().withStatus(NO_CONTENT))
-          .willSetStateTo("Initial call has failed")
-      )
-
-      server.stubFor(
-        stubCall.inScenario("Initial call fails")
-          .willReturn(aResponse().withStatus(NO_CONTENT))
-          .willSetStateTo("Initial call has failed")
-      )
-
-      connector.submit(declaration).futureValue mustBe SubmissionResponse.Submitted
-    }
-
     "must fall back to a SubmissionResponse.Error when the downstream call errors" in {
 
       server.stubFor(
