@@ -9,7 +9,7 @@ import models.declarations.{Declaration, State}
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
-import util.{AuditingTools, DeclarationDataTransformers}
+import util.AuditingTools
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

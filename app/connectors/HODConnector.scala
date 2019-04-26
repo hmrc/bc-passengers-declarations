@@ -4,14 +4,12 @@ import akka.pattern.CircuitBreaker
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.Declaration
-import models.declarations.State.SubmissionFailed
 import models.{Service, SubmissionResponse}
 import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.JsObject
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import util.DeclarationDataTransformers
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,7 +17,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class HODConnector @Inject() (
   http: HttpClient,
   config: Configuration,
-  declarationDataTransformers: DeclarationDataTransformers,
   @Named("des") circuitBreaker: CircuitBreaker
   )(implicit ec: ExecutionContext) extends HttpDate {
 
@@ -44,15 +41,9 @@ class HODConnector @Inject() (
           FORWARDED_HOST -> MDTP)
     }
 
-    val oldStyleDeclaration = declarationDataTransformers.declarationToV110(declaration).getOrElse(declaration)
-
-    def call: Future[SubmissionResponse] = {
-      http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", oldStyleDeclaration.data).filter(_ != SubmissionResponse.Error) flatMap {
-        case SubmissionResponse.Failed =>
-          http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration.data).filter(_ != SubmissionResponse.Error)
-        case x => Future.successful(x)
-      }
-    }
+    def call: Future[SubmissionResponse] =
+      http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration.data)
+        .filter(_ != SubmissionResponse.Error)
 
     circuitBreaker.withCircuitBreaker(call)
       .fallbackTo(Future.successful(SubmissionResponse.Error))
