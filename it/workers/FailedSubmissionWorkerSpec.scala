@@ -40,7 +40,7 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(declarations)
       }.futureValue
 
@@ -74,13 +74,13 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(declarations)
       }.futureValue
 
       database.flatMap {
         _.collection[JSONCollection]("locks")
-          .insert[Lock](ordered = true)
+          .insert(ordered = true)
           .one(Lock(0))
       }.futureValue
 
@@ -108,7 +108,7 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(declarations)
       }.futureValue
 
@@ -139,7 +139,7 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(declarations)
       }.futureValue
 
@@ -174,7 +174,7 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(declarations)
       }.futureValue
 

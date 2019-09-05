@@ -15,6 +15,7 @@ import play.api.libs.json.{JsNumber, JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
 import reactivemongo.api.Cursor
+import reactivemongo.api.Cursor.ContOnError
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
@@ -129,7 +130,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
-          .documentSource()
+          .documentSource(err = ContOnError())
           .mapMaterializedValue(_ => NotUsed.notUsed)
       }
     }
@@ -145,7 +146,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
-          .documentSource()
+          .documentSource(err = ContOnError())
           .mapMaterializedValue(_ => NotUsed.notUsed)
       }
     }
@@ -161,7 +162,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
-          .documentSource()
+          .documentSource(err = ContOnError())
           .mapMaterializedValue(_ => NotUsed.notUsed)
       }
     }

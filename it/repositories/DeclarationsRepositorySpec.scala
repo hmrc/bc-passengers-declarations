@@ -4,8 +4,8 @@ import java.time.LocalDateTime
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
-import models.{ChargeReference, DeclarationsStatus}
 import models.declarations.{Declaration, State}
+import models.{ChargeReference, DeclarationsStatus}
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -123,7 +123,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -178,7 +178,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -213,7 +213,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -281,7 +281,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 

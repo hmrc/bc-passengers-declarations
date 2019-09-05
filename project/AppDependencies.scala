@@ -10,7 +10,8 @@ object AppDependencies {
     "uk.gov.hmrc"                %% "bootstrap-play-26"        % "0.46.0",
     "com.github.java-json-tools" % "json-schema-validator"     % "2.2.10",
     "org.reactivemongo"          %% "play2-reactivemongo"      % "0.18.5-play26",
-    "org.reactivemongo"          %% "reactivemongo-akkastream" % "0.18.5"
+    "org.reactivemongo"          %% "reactivemongo-akkastream" % "0.18.5",
+    "com.typesafe.akka"          %% "akka-slf4j"               % "2.5.25"
   )
 
   val test: Seq[ModuleID] = Seq(
