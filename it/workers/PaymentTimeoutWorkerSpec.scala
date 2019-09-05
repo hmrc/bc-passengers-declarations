@@ -61,7 +61,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -118,7 +118,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -151,7 +151,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -187,7 +187,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -209,7 +209,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(declarations)
       }.futureValue
 
@@ -240,7 +240,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .one(Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)))
       }.futureValue
 
@@ -270,7 +270,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
 
           database.flatMap {
             _.collection[JSONCollection]("declarations")
-              .insert[Declaration](ordered = true)
+              .insert(ordered = true)
               .one(Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)))
           }.futureValue
 

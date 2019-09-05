@@ -3,20 +3,18 @@ package workers
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-import com.github.tomakehurst.wiremock.client.CountMatchingStrategy
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, SubmissionResponse}
-import org.apache.bcel.verifier.exc.VerificationException
 import org.mockito.Matchers._
-import org.mockito.Mockito.{verify => mVerify, _}
+import org.mockito.Mockito._
 import org.netcrusher.core.reactor.NioReactor
 import org.netcrusher.tcp.TcpCrusherBuilder
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 import play.api.test.Helpers._
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.{DeclarationsRepository, LockRepository}
@@ -65,7 +63,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -103,7 +101,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -144,7 +142,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -179,7 +177,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -218,7 +216,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -281,7 +279,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -317,7 +315,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -350,7 +348,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 
@@ -372,7 +370,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(declarations)
       }.futureValue
 
@@ -405,7 +403,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .one(Declaration(ChargeReference(0), State.Paid, correlationId, Json.obj()))
       }.futureValue
 
@@ -435,7 +433,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
           database.flatMap {
             _.collection[JSONCollection]("declarations")
-              .insert[Declaration](ordered = true)
+              .insert(ordered = true)
               .one(Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj()))
           }.futureValue
 
@@ -477,7 +475,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(declarations)
         }.futureValue
 

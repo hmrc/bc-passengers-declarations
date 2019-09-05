@@ -52,7 +52,7 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
-          .insert[Declaration](ordered = true)
+          .insert(ordered = true)
           .many(
             List(
               Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
@@ -80,7 +80,7 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
 
         database.flatMap {
           _.collection[JSONCollection]("declarations")
-            .insert[Declaration](ordered = true)
+            .insert(ordered = true)
             .many(
               List(
                 Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
