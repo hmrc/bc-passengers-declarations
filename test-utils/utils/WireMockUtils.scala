@@ -1,3 +1,8 @@
+/*
+ * Copyright 2020 HM Revenue & Customs
+ *
+ */
+
 package utils
 
 import com.github.tomakehurst.wiremock.WireMockServer
