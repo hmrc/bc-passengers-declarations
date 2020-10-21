@@ -134,14 +134,16 @@
 		"customerReference": {
 			"type": "object",
 			"properties": {
-				"passport": {
-					"type": "string",
-					"minLength": 1,
-					"maxLength": 40
+				"identificationType": {
+					"$ref": "#/definitions/String40"
+				},
+				"identificationNumber": {
+					"$ref": "#/definitions/String40"
 				}
 			},
 			"required": [
-				"passport"
+				"identificationType",
+				"identificationNumber"
 			],
 			"additionalProperties": false
 		},
@@ -153,11 +155,15 @@
 				},
 				"lastName": {
 					"$ref": "#/definitions/String35"
+				},
+				"emailAddress": {
+					"type": "string"
 				}
 			},
 			"required": [
 				"firstName",
-				"lastName"
+				"lastName",
+				"emailAddress"
 			],
 			"additionalProperties": false
 		},
