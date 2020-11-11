@@ -57,6 +57,24 @@
 								"grandTotalGBP"
 							],
 							"additionalProperties": false
+						},
+						"amendmentLiabilityDetails": {
+							"additionalProperties": false,
+							"properties": {
+								"additionalExciseGBP": {
+									"$ref": "#/definitions/DecimalString13.2"
+								},
+								"additionalCustomsGBP": {
+									"$ref": "#/definitions/DecimalString13.2"
+								},
+								"additionalVATGBP": {
+									"$ref": "#/definitions/DecimalString13.2"
+								},
+								"additionalTotalGBP": {
+									"$ref": "#/definitions/DecimalString13.2"
+								}
+							},
+							"type": "object"
 						}
 					},
 					"required": [
@@ -134,16 +152,18 @@
 		"customerReference": {
 			"type": "object",
 			"properties": {
-				"identificationType": {
+				"idType": {
 					"$ref": "#/definitions/String40"
 				},
-				"identificationNumber": {
+				"idValue": {
 					"$ref": "#/definitions/String40"
+				},
+				"ukResident": {
+					"type": "boolean"
 				}
 			},
 			"required": [
-				"identificationType",
-				"identificationNumber"
+				"idType", "idValue", "ukResident"
 			],
 			"additionalProperties": false
 		},
@@ -170,6 +190,9 @@
 		"declarationHeader": {
 			"type": "object",
 			"properties": {
+				"messageTypes": {
+					"$ref": "#/definitions/messageTypesObject"
+				},
 				"chargeReference": {
 					"$ref": "#/definitions/String14"
 				},
@@ -181,10 +204,31 @@
 				},
 				"timeOfEntry": {
 					"$ref": "#/definitions/TimeType"
+				},
+				"travellingFrom": {
+					"$ref": "#/definitions/String40"
+				},
+				"uccRelief": {
+					"type": "boolean"
+				},
+				"ukVATPaid": {
+					"type": "boolean"
+				},
+				"ukExcisePaid": {
+					"type": "boolean"
+				},
+				"onwardTravelGBNI": {
+					"enum": [
+						"GB",
+						"NI"
+					],
+					"maxLength": 2,
+					"minLength": 2,
+					"type": "string"
 				}
 			},
 			"required": [
-				"chargeReference"
+				"chargeReference", "travellingFrom", "onwardTravelGBNI", "uccRelief", "ukVATPaid", "ukExcisePaid", "messageTypes"
 			],
 			"additionalProperties": false
 		},
@@ -339,6 +383,21 @@
 				}
 			},
 			"additionalProperties": false
+		},
+		"messageTypesObject": {
+			"additionalProperties": false,
+			"properties": {
+				"messageType": {
+					"maxLength": 30,
+					"minLength": 1,
+					"type": "string",
+					"enum": ["DeclarationCreate", "DeclarationAmend"]
+				}
+			},
+			"required": [
+				"messageType"
+			],
+			"type": "object"
 		},
 		"declarationItemTobaccoObject": {
 			"type": "object",
