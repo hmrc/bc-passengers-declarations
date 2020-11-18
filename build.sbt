@@ -1,4 +1,5 @@
 import play.sbt.routes.RoutesKeys
+import scoverage.ScoverageKeys
 import uk.gov.hmrc.SbtArtifactory
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
@@ -18,6 +19,10 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings(publishingSettings: _*)
   .settings(resolvers += Resolver.jcenterRepo)
+  .settings(
+    ScoverageKeys.coverageExcludedFiles := "<empty>;Reverse.*;..*Routes.*;",
+    ScoverageKeys.coverageMinimum := 80
+  )
 
 lazy val testSettings = Seq(
   unmanagedSourceDirectories   += baseDirectory.value / "test-utils",
