@@ -8,11 +8,9 @@ package util
 import models.ChargeReference
 import models.declarations.{Declaration, State}
 import org.scalatest.{FreeSpec, MustMatchers}
-import org.scalatestplus.play.OneAppPerSuite
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Injecting
-import services.ValidationService
 
 class AuditingToolsSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with Injecting {
 
