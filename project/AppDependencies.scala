@@ -1,17 +1,19 @@
 import play.core.PlayVersion.current
 import play.sbt.PlayImport._
-import sbt.Keys.libraryDependencies
 import sbt._
 
 object AppDependencies {
 
+  val akkaVersion = "2.5.31"
   val compile: Seq[ModuleID] = Seq(
     ws,
     "uk.gov.hmrc"                %% "bootstrap-play-26"        % "2.0.0",
     "com.github.java-json-tools" % "json-schema-validator"     % "2.2.14",
     "org.reactivemongo"          %% "play2-reactivemongo"      % "0.18.8-play26",
-    "org.reactivemongo"          %% "reactivemongo-akkastream" % "0.18.8",
-    "com.typesafe.akka"          %% "akka-slf4j"               % "2.5.31"
+    "org.reactivemongo"          %% "reactivemongo-akkastream" % "0.20.3",
+    "com.typesafe.akka"          %% "akka-slf4j"               % akkaVersion,
+    "com.typesafe.akka"          %% "akka-actor"               % akkaVersion,
+    "com.typesafe.akka"          %% "akka-stream"              % akkaVersion
   )
 
   val test: Seq[ModuleID] = Seq(

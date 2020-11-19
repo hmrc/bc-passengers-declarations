@@ -6,20 +6,21 @@
 package controllers
 
 import com.google.inject.{Inject, Singleton}
-import models.{ChargeReference, PaymentNotification}
 import models.declarations.State
+import models.{ChargeReference, PaymentNotification}
 import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import play.api.mvc.{Action, ControllerComponents, Result}
 import repositories.{DeclarationsRepository, LockRepository}
+import services.SendEmailServiceImpl
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DeclarationController @Inject()(
   cc: ControllerComponents,
   repository: DeclarationsRepository,
-  lockRepository: LockRepository
+  lockRepository: LockRepository,
+  sendEmailService: SendEmailServiceImpl
 )(implicit ec: ExecutionContext) extends BackendController(cc) {
 
   val CorrelationIdKey = "X-Correlation-ID"
@@ -61,6 +62,7 @@ class DeclarationController @Inject()(
                 case _ =>
                   request.body.status match {
                     case PaymentNotification.Successful =>
+                      sendEmailService.constructEmail(request.body.reference)
                       repository.setState(request.body.reference, State.Paid).map(_ => Accepted)
                     case PaymentNotification.Failed =>
                       repository.setState(request.body.reference, State.PaymentFailed).map(_ => Accepted)
@@ -94,4 +96,5 @@ class DeclarationController @Inject()(
         }
     }
   }
+
 }
