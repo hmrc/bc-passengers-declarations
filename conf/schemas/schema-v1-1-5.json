@@ -175,15 +175,11 @@
 				},
 				"lastName": {
 					"$ref": "#/definitions/String35"
-				},
-				"emailAddress": {
-					"type": "string"
 				}
 			},
 			"required": [
 				"firstName",
-				"lastName",
-				"emailAddress"
+				"lastName"
 			],
 			"additionalProperties": false
 		},
