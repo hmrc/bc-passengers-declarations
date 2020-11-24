@@ -43,36 +43,36 @@ class DeclarationController @Inject()(
       }
   }
 
-  def update(): Action[PaymentNotification] = Action.async(parse.tolerantJson.map(_.as[PaymentNotification])) {
+  def update(): Action[JsValue] = Action.async(parse.tolerantJson) {
     implicit request =>
-
-      withLock(request.body.reference) {
-        repository.get(request.body.reference).flatMap {
-          _.map {
-            declaration =>
-
-              declaration.state match {
-
-                case State.Paid =>
-                  Future.successful(Accepted)
-
-                case State.SubmissionFailed =>
-                  Future.successful(Conflict)
-
-                case _ =>
-                  request.body.status match {
-                    case PaymentNotification.Successful =>
-                      sendEmailService.constructEmail(request.body.reference)
-                      repository.setState(request.body.reference, State.Paid).map(_ => Accepted)
-                    case PaymentNotification.Failed =>
-                      repository.setState(request.body.reference, State.PaymentFailed).map(_ => Accepted)
-                    case PaymentNotification.Cancelled =>
-                      repository.setState(request.body.reference, State.PaymentCancelled).map(_ => Accepted)
+      request.body.validate[PaymentNotification].map {
+        paymentNotification =>
+          withLock(paymentNotification.reference) {
+            repository.get(paymentNotification.reference).flatMap {
+              _.map {
+                declaration =>
+                  declaration.state match {
+                    case State.Paid =>
+                      Future.successful(Accepted)
+                    case State.SubmissionFailed =>
+                      Future.successful(Conflict)
+                    case _ =>
+                      paymentNotification.status match {
+                        case PaymentNotification.Successful =>
+                          sendEmailService.constructEmail(paymentNotification.reference)
+                          repository.setState(paymentNotification.reference, State.Paid).map(_ => Accepted)
+                        case PaymentNotification.Failed =>
+                          repository.setState(paymentNotification.reference, State.PaymentFailed).map(_ => Accepted)
+                        case PaymentNotification.Cancelled =>
+                          repository.setState(paymentNotification.reference, State.PaymentCancelled).map(_ => Accepted)
+                      }
                   }
-              }
 
-          }.getOrElse(Future.successful(NotFound))
-        }
+              }.getOrElse(Future.successful(NotFound))
+            }
+          }
+      }.recoverTotal{
+        e => Future.successful(BadRequest(JsError.toJson(e)))
       }
   }
 

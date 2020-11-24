@@ -377,5 +377,16 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         }
       }
     }
+
+    "when a request is made with an invalid charge reference" - {
+
+      "must return BAD_REQUEST" in {
+
+        val jsonPayload = Json.obj("reference" -> "XDDD0000000105", "status" -> "Successful")
+        val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+        val result = route(app, request).value
+        status(result) mustBe BAD_REQUEST
+      }
+    }
   }
 }
