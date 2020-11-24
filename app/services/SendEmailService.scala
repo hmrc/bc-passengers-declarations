@@ -53,7 +53,7 @@ trait SendEmailService {
       val personalDetails: JsLookupResult = requestDetail.\("personalDetails")
       val declarationHeader: JsLookupResult = requestDetail.\("declarationHeader")
       val liabilityDetails: JsLookupResult = requestDetail.\("liabilityDetails")
-      val contactDetails: JsLookupResult = requestDetail.\("personalDetails")
+      val contactDetails: JsLookupResult = requestDetail.\("contactDetails")
 
       val emailId: String = (contactDetails.\("emailAddress").asOpt[String]).getOrElse("")
       if(emailId.nonEmpty){
