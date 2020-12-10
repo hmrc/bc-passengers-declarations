@@ -59,7 +59,7 @@ class DeclarationController @Inject()(
                     case _ =>
                       paymentNotification.status match {
                         case PaymentNotification.Successful =>
-                          sendEmailService.constructEmail(paymentNotification.reference)
+                          sendEmailService.constructAndSendEmail(paymentNotification.reference)
                           repository.setState(paymentNotification.reference, State.Paid).map(_ => Accepted)
                         case PaymentNotification.Failed =>
                           repository.setState(paymentNotification.reference, State.PaymentFailed).map(_ => Accepted)

@@ -21,7 +21,8 @@ class EmailErrorResponse() extends NoStackTrace
 @Singleton
 class SendEmailConnectorImpl @Inject()(servicesConfig:ServicesConfig,
                                         val http: HttpClient) extends SendEmailConnector with HttpErrorFunctions {
-  val sendEmailURL: String = s"${servicesConfig.baseUrl("email.sendEmailURL")}/hmrc/email"
+  val emailDomain:String = servicesConfig.getConfString("email.domain","")
+  val sendEmailURL: String = s"${servicesConfig.baseUrl("email.sendEmailURL")}/$emailDomain/email"
 }
 
 trait SendEmailConnector extends HttpErrorFunctions {
