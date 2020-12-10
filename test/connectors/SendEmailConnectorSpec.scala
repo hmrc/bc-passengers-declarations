@@ -7,12 +7,13 @@ package connectors
 
 import helpers.BaseSpec
 import models.SendEmailRequest
-import org.mockito.Mockito._
 import org.mockito.Matchers
+import org.mockito.Mockito._
 import play.api.libs.json.JsValue
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
+
 import scala.concurrent.Future
 
 class SendEmailConnectorSpec extends BaseSpec {
