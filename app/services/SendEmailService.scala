@@ -50,6 +50,15 @@ trait SendEmailService {
     }
   }
 
+  private[services] def isZeroPound(data: JsObject): Boolean ={
+    data.value.apply("simpleDeclarationRequest")
+      .\("requestDetail")
+      .\("liabilityDetails")
+      .\("grandTotalGBP").asOpt[String]
+      .getOrElse("")
+      .equalsIgnoreCase("0.00")
+  }
+
   private[services] def getEmailParamsFromData(data: JsObject): Map[String, Map[String, String]] = {
     val simpleDeclarationRequest: JsValue = data.value.apply("simpleDeclarationRequest")
     val requestCommon: JsLookupResult = simpleDeclarationRequest.\("requestCommon")
@@ -124,17 +133,23 @@ trait SendEmailService {
   }
 
   def constructAndSendEmail(reference: ChargeReference)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    getDeclaration(reference).map(x => {
+    val disableZeroPoundEmail = servicesConfig.getBoolean("features.disable-zero-pound-email")
+    getDeclaration(reference).flatMap(x => {
       val data: JsObject = x.data
       val emailParams = getEmailParamsFromData(data)
       val emailId = emailParams.keys.head
       val params = emailParams.getOrElse(emailId, Map.empty)
       if (emailId.nonEmpty && params.nonEmpty) {
-       return sendPassengerEmail(emailId, params)
+        if(disableZeroPoundEmail && isZeroPound(data)){
+          Logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
+          Future.successful(false)
+        }else{
+          sendPassengerEmail(emailId, params)
+        }
       }
       else {
         Logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as email Id is not present in the Database")
-        false
+        Future.successful(false)
       }
     })
   }

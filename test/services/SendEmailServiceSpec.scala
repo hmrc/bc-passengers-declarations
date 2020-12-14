@@ -178,6 +178,7 @@ class SendEmailServiceSpec extends BaseSpec {
           |    },
           |    "lastUpdated" : "2020-12-07T01:37:30.832"
           |}""".stripMargin
+
       val declaration:Declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.parse(data).as[JsObject])
       val bfEmail: String = "borderforce@digital.hmrc.gov.uk"
       val isleOfManEmail: String = "isleofman@digital.hmrc.gov.uk"
@@ -205,6 +206,119 @@ class SendEmailServiceSpec extends BaseSpec {
         "AllITEMS" -> "")
 
     }
+    val zeroPoundsData: String =
+      """{
+        |        "simpleDeclarationRequest" : {
+        |            "requestCommon" : {
+        |                "receiptDate" : "2020-11-10T01:36:43Z",
+        |                "requestParameters" : [
+        |                    {
+        |                        "paramName" : "REGIME",
+        |                        "paramValue" : "PNGR"
+        |                    }
+        |                ],
+        |                "acknowledgementReference" : "XAPR0000001074"
+        |            },
+        |            "requestDetail" : {
+        |                "declarationAlcohol" : {
+        |                    "totalExciseAlcohol" : "0.00",
+        |                    "totalCustomsAlcohol" : "0.00",
+        |                    "totalVATAlcohol" : "0.00",
+        |                    "declarationItemAlcohol" : [
+        |                        {
+        |                            "commodityDescription" : "Beer",
+        |                            "volume" : "35",
+        |                            "goodsValue" : "3254.00",
+        |                            "valueCurrency" : "USD",
+        |                            "originCountry" : "BQ",
+        |                            "exchangeRate" : "1.3303",
+        |                            "exchangeRateDate" : "2020-12-07",
+        |                            "goodsValueGBP" : "2446.06",
+        |                            "VATRESClaimed" : false,
+        |                            "exciseGBP" : "28.00",
+        |                            "customsGBP" : "0.00",
+        |                            "vatGBP" : "494.81"
+        |                        }
+        |                    ]
+        |                },
+        |                "liabilityDetails" : {
+        |                    "totalExciseGBP" : "0.00",
+        |                    "totalCustomsGBP" : "0.00",
+        |                    "totalVATGBP" : "0.00",
+        |                    "grandTotalGBP" : "0.00"
+        |                },
+        |                "customerReference" : {
+        |                    "idType" : "passport",
+        |                    "idValue" : "H4564654645",
+        |                    "ukResident" : false
+        |                },
+        |                "personalDetails" : {
+        |                    "firstName" : "John",
+        |                    "lastName" : "Doe"
+        |                },
+        |                "declarationTobacco" : {
+        |                    "totalExciseTobacco" : "108.96",
+        |                    "totalCustomsTobacco" : "283.01",
+        |                    "totalVATTobacco" : "191.60",
+        |                    "declarationItemTobacco" : [
+        |                        {
+        |                            "commodityDescription" : "Cigarettes",
+        |                            "quantity" : "357",
+        |                            "goodsValue" : "753.00",
+        |                            "valueCurrency" : "USD",
+        |                            "originCountry" : "BQ",
+        |                            "exchangeRate" : "1.3303",
+        |                            "exchangeRateDate" : "2020-12-07",
+        |                            "goodsValueGBP" : "566.03",
+        |                            "VATRESClaimed" : false,
+        |                            "exciseGBP" : "108.96",
+        |                            "customsGBP" : "283.01",
+        |                            "vatGBP" : "191.60"
+        |                        }
+        |                    ]
+        |                },
+        |                "declarationHeader" : {
+        |                    "travellingFrom" : "NON_EU Only",
+        |                    "expectedDateOfArrival" : "2020-11-10",
+        |                    "ukVATPaid" : false,
+        |                    "uccRelief" : false,
+        |                    "ukExcisePaid" : false,
+        |                    "chargeReference" : "XAPR0000001074",
+        |                    "portOfEntry" : "LHR",
+        |                    "timeOfEntry" : "12:16",
+        |                    "onwardTravelGBNI" : "NI",
+        |                    "messageTypes" : {
+        |                        "messageType" : "DeclarationCreate"
+        |                    }
+        |                },
+        |                "contactDetails" : {
+        |                    "emailAddress" : "testEmail@digital.hmrc.gov.uk"
+        |                },
+        |                "declarationOther" : {
+        |                    "totalExciseOther" : "0.00",
+        |                    "totalCustomsOther" : "0.00",
+        |                    "totalVATOther" : "0.00",
+        |                    "declarationItemOther" : [
+        |                        {
+        |                            "commodityDescription" : "Adult clothing",
+        |                            "quantity" : "1",
+        |                            "goodsValue" : "258.00",
+        |                            "valueCurrency" : "USD",
+        |                            "originCountry" : "BQ",
+        |                            "exchangeRate" : "1.3303",
+        |                            "exchangeRateDate" : "2020-12-07",
+        |                            "goodsValueGBP" : "193.94",
+        |                            "VATRESClaimed" : false,
+        |                            "exciseGBP" : "0.00",
+        |                            "customsGBP" : "0.00",
+        |                            "vatGBP" : "0.00"
+        |                        }
+        |                    ]
+        |                }
+        |            }
+        |    },
+        |    "lastUpdated" : "2020-12-07T01:37:30.832"
+        |}""".stripMargin
   }
 
   "generateEmailRequest" should {
@@ -305,6 +419,45 @@ class SendEmailServiceSpec extends BaseSpec {
          """.stripMargin
       }
       resultAsJson shouldBe expectedJson
+    }
+  }
+
+  "isZeroPound " should {
+    "return true if a Zero Pound Journey" in new Setup{
+      emailService.isZeroPound(Json.parse(zeroPoundsData).as[JsObject]) shouldBe true
+    }
+    "return false if not a Zero Pound Journey" in new Setup{
+      emailService.isZeroPound(Json.parse(emailService.data).as[JsObject]) shouldBe false
+    }
+  }
+
+  "constructAndSendEmail" should {
+    "send an email for a zero pound journey when disable-zero-pound-email feature is false" in new Setup{
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(zeroPoundsData).as[JsObject])
+      when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
+      when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
+      emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
+    }
+
+    "not send an email for a zero pound journey when disable-zero-pound-email feature is true" in new Setup{
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(zeroPoundsData).as[JsObject])
+      when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
+      when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
+      emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe false
+    }
+
+    "send an email for a non zero pound journey when disable-zero-pound-email feature is true" in new Setup{
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.data).as[JsObject])
+      when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
+      when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
+      emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
+    }
+
+    "send an email for a non zero pound journey when disable-zero-pound-email feature is false" in new Setup{
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.data).as[JsObject])
+      when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
+      when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
+      emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
     }
   }
 }
