@@ -82,7 +82,6 @@ trait SendEmailService {
     }
     val allItems: JsArray = itemsAlcohol ++ itemsTobacco ++ itemsOtherGoods
 
-
     val emailId: String = contactDetails.\("emailAddress").asOpt[String].getOrElse("")
     if (emailId.nonEmpty) {
       val firstName: String = personalDetails.\("firstName").asOpt[String].getOrElse("")
@@ -103,14 +102,14 @@ trait SendEmailService {
 
       val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
 
-      val grandTotalGBP: String = s"£ ${liabilityDetails.\("grandTotalGBP").asOpt[String].getOrElse("")}"
-      val totalExciseGBP: String = s"£ ${liabilityDetails.\("totalExciseGBP").asOpt[String].getOrElse("")}"
-      val totalCustomsGBP: String = s"£ ${liabilityDetails.\("totalCustomsGBP").asOpt[String].getOrElse("")}"
-      val totalVATGBP: String = s"£ ${liabilityDetails.\("totalVATGBP").asOpt[String].getOrElse("")}"
+      val grandTotalGBP: String = s"£${liabilityDetails.\("grandTotalGBP").asOpt[String].getOrElse("")}"
+      val totalExciseGBP: String = s"£${liabilityDetails.\("totalExciseGBP").asOpt[String].getOrElse("")}"
+      val totalCustomsGBP: String = s"£${liabilityDetails.\("totalCustomsGBP").asOpt[String].getOrElse("")}"
+      val totalVATGBP: String = s"£${liabilityDetails.\("totalVATGBP").asOpt[String].getOrElse("")}"
 
       val staticSubjectNonZero = "Receipt for payment on goods brought into the UK - Reference number "
       val staticSubjectZero = "Receipt for declaration of goods brought into Northern Ireland - Reference number "
-      val dynamicSubject = if (grandTotalGBP.equalsIgnoreCase("£ 0.00")) staticSubjectZero else staticSubjectNonZero
+      val dynamicSubject = if (grandTotalGBP.equalsIgnoreCase("£0.00")) staticSubjectZero else staticSubjectNonZero
       val subject = s"$dynamicSubject $chargeReference"
 
       val parameters: Map[String, String] = Map(
@@ -165,4 +164,5 @@ trait SendEmailService {
         Logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
         true
     }
+    
 }
