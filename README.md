@@ -119,7 +119,7 @@ No headers are required, post body should be empty.
 
 The `chargeReference` in the url should match one returned from a previous call to the `submit` endpoint.
 
-#### Response statuses
+#### Response statuses 
 
 | Status | Meaning |
 |--------|---------|
