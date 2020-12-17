@@ -43,10 +43,14 @@ trait SendEmailService {
   private[services] def sendEmail(emailAddress: String, parameters: Map[String, String])(implicit hc: HeaderCarrier): Future[Boolean] = {
     val configuredEmailFirst: String = servicesConfig.getConfString("email.addressFirst", "")
     val configuredEmailSecond: String = servicesConfig.getConfString("email.addressSecond", "")
-    emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress, configuredEmailFirst, configuredEmailSecond), parameters)).map {
+    emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map {
       res =>
-        Logger.info("[SendEmailServiceImpl] [sendEmail] Passenger Email sent ")
-        res
+        Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
+    }
+    emailConnector.requestEmail(generateEmailRequest(Seq(configuredEmailFirst,configuredEmailSecond), parameters)).map {
+      result =>
+        Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
+        result
     }
   }
 
