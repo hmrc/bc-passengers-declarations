@@ -62,8 +62,10 @@ class DeclarationSubmissionWorker @Inject() (
                   auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
                   declarationsRepository.remove(declaration.chargeReference)
                 case SubmissionResponse.Error =>
+                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
                   Future.successful(())
                 case SubmissionResponse.Failed =>
+                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 400")
                   declarationsRepository.setState(declaration.chargeReference, State.SubmissionFailed)
               }
             } yield (declaration, result)
