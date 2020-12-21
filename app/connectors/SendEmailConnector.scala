@@ -31,7 +31,7 @@ trait SendEmailConnector extends HttpErrorFunctions {
 
   def requestEmail(EmailRequest : SendEmailRequest)(implicit hc: HeaderCarrier): Future[Boolean] = {
     def errorMsg(status: String, ex: HttpException) = {
-      Logger.error(s"[SendEmailConnector] [sendEmail] request to send email returned a $status - email not sent - reason = ${ex.getMessage}")
+      Logger.error(s"PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to send email returned a $status - email not sent - reason = ${ex.getMessage}")
       throw new EmailErrorResponse()
     }
     http.POST[SendEmailRequest, HttpResponse] (s"$sendEmailURL", EmailRequest) map { r =>
