@@ -45,6 +45,7 @@ trait SendEmailConnector extends HttpErrorFunctions {
       case ex: NotFoundException => errorMsg("404", ex)
       case ex: InternalServerException => errorMsg("500", ex)
       case ex: BadGatewayException => errorMsg("502", ex)
+      case ex: HttpException => errorMsg(ex.responseCode.toString, ex)
     }
 
   }
