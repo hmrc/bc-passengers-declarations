@@ -39,6 +39,9 @@ trait SendEmailConnector extends HttpErrorFunctions {
         case ACCEPTED =>
           Logger.debug("[SendEmailConnector] [sendEmail] request to email service was successful")
           true
+        case _ =>
+          Logger.error(s"PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to email service was unsuccessful with ${r.status}")
+          false
       }
     } recover {
       case ex: BadRequestException => errorMsg("400", ex)
