@@ -85,5 +85,12 @@ class SendEmailConnectorSpec extends BaseSpec {
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
+    "Fail the future when EVS returns another HTTP exception e.g 501" in new Setup {
+      when(mockWSHttp.POST[JsValue, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any()))
+        .thenReturn(Future.failed(new NotImplementedException("error")))
+
+      intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
+    }
+
   }
 }
