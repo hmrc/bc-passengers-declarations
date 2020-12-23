@@ -44,12 +44,9 @@ trait SendEmailConnector extends HttpErrorFunctions {
           false
       }
     } recover {
-      case ex: BadRequestException => errorMsg("400", ex)
-      case ex: NotFoundException => errorMsg("404", ex)
-      case ex: InternalServerException => errorMsg("500", ex)
-      case ex: BadGatewayException => errorMsg("502", ex)
       case ex: HttpException => errorMsg(ex.responseCode.toString, ex)
+      case ex: Throwable => errorMsg("0", new HttpException(ex.getMessage,0))
+      case _ => errorMsg("0", new HttpException("An exception was thrown when calling the email service",0))
     }
-
   }
 }
