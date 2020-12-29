@@ -2,3 +2,6 @@
 
 POST      /submit-declaration                       controllers.DeclarationController.submit()
 POST      /update-payment                           controllers.DeclarationController.update()
+
+GET      /get-declaration/:chargeReference          controllers.DeclarationController.getDeclaration(chargeReference: ChargeReference)
+POST     /find-declaration                          controllers.DeclarationController.findDeclaration()

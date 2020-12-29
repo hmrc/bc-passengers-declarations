@@ -60,7 +60,8 @@ class DeclarationSubmissionWorker @Inject() (
               _      <- result match {
                 case SubmissionResponse.Submitted =>
                   auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
-                  declarationsRepository.remove(declaration.chargeReference)
+                  declarationsRepository.setState(declaration.chargeReference, State.Complete)
+                  //declarationsRepository.remove(declaration.chargeReference)
                 case SubmissionResponse.Error =>
                   Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
                   Future.successful(())

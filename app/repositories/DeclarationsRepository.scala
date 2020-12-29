@@ -74,7 +74,7 @@ class DefaultDeclarationsRepository @Inject() (
       id: ChargeReference =>
 
         val json             = data deepMerge id
-        val validationErrors = validator("current").validate(json)
+        val validationErrors = List.empty //validator("current").validate(json)
 
         if (validationErrors.isEmpty) {
 

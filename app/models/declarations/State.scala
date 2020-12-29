@@ -16,6 +16,8 @@ object State {
   case object SubmissionFailed extends State
   case object PaymentFailed extends State
   case object PaymentCancelled extends State
+  case object Complete extends State
+
 
   implicit lazy val reads: Reads[State] = Reads {
     case JsString("pending-payment")   => JsSuccess(PendingPayment)
@@ -32,5 +34,6 @@ object State {
     case SubmissionFailed => JsString("submission-failed")
     case PaymentFailed    => JsString("payment-failed")
     case PaymentCancelled => JsString("payment-cancelled")
+    case Complete => JsString("complete")
   }
 }

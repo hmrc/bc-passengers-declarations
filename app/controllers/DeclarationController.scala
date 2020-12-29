@@ -6,13 +6,16 @@
 package controllers
 
 import com.google.inject.{Inject, Singleton}
-import models.declarations.State
-import models.{ChargeReference, PaymentNotification}
+import models.declarations.{EtMp, State}
+import models.{ChargeReference, DeclarationRetrieval, PaymentNotification}
+import play.api.Logger
+import play.api.libs.json.Json.toJson
 import play.api.libs.json._
-import play.api.mvc.{Action, ControllerComponents, Result}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import repositories.{DeclarationsRepository, LockRepository}
 import services.SendEmailServiceImpl
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -41,6 +44,47 @@ class DeclarationController @Inject()(
             BadRequest(Json.obj("errors" -> Json.arr("Missing X-Correlation-ID header")))
           }
       }
+  }
+
+  def getDeclaration(chargeReference: ChargeReference): Action[AnyContent] = Action.async {
+    Logger.debug(s"findDeclaration received chargeReference $chargeReference")
+    repository.get(chargeReference).map {
+      case Some(chargeReference) =>
+        Ok(toJson(chargeReference))
+      case None =>
+        NotFound(s"No chargeReference found for ${chargeReference.value}")
+    }
+  }
+
+  def findDeclaration(): Action[JsValue] = Action.async(parse.tolerantJson) {
+    implicit request =>
+      request.body.validate[DeclarationRetrieval].map {
+        declarationRetrieval =>
+          withLock(declarationRetrieval.referenceNumber) {
+            repository.get(declarationRetrieval.referenceNumber).flatMap {
+              _.map {
+                declaration =>
+                  val et = declaration.data.as[EtMp]
+                  (getId(et),getLastName(et)) match {
+                    case (declarationRetrieval.identificationNumber,declarationRetrieval.lastName) => Future.successful(Ok(toJson(et)))
+                    case _ => Future.successful(NotFound)
+                  }
+              }.getOrElse(Future.successful(NotFound))
+            }
+          }
+      }.recoverTotal{
+        //Security risk returning 400 as this is a security feature?
+        //e => Future.successful(BadRequest(JsError.toJson(e)))
+        _ => Future.successful(NotFound)
+      }
+  }
+
+  def getId(data: EtMp): String ={
+    data.simpleDeclarationRequest.requestDetail.customerReference.idValue
+  }
+
+  def getLastName(data: EtMp): String ={
+    data.simpleDeclarationRequest.requestDetail.personalDetails.map(x =>x.lastName).getOrElse("")
   }
 
   def update(): Action[JsValue] = Action.async(parse.tolerantJson) {
