@@ -5,16 +5,12 @@
 
 package repositories
 
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
-import models.{ChargeReference, DeclarationsStatus}
 import models.declarations.{Declaration, State}
-import org.reactivestreams.{Publisher, Subscriber}
+import models.{ChargeReference, DeclarationsStatus}
 import play.api.Configuration
 import play.api.libs.json.{JsNumber, JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
@@ -26,7 +22,6 @@ import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 import reactivemongo.play.json.collection.JSONCollection
 import services.{ChargeReferenceService, ValidationService, Validator}
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
@@ -74,7 +69,7 @@ class DefaultDeclarationsRepository @Inject() (
       id: ChargeReference =>
 
         val json             = data deepMerge id
-        val validationErrors = validator("current").validate(json)
+        val validationErrors = validator("request").validate(json)
 
         if (validationErrors.isEmpty) {
 
@@ -121,7 +116,7 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
-  override def unpaidDeclarations = {
+  override def unpaidDeclarations: Source[Declaration, Future[NotUsed]] = {
 
     val query = Json.obj(
       "$or" -> Json.arr(
