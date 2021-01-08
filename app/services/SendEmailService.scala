@@ -96,7 +96,7 @@ trait SendEmailService {
       val receiptDateForParsing = receiptDate.substring(0, 10)
       val receiptDateFormatted: String = if (receiptDate.equals("")) receiptDate else LocalDate.parse(receiptDateForParsing).toString("dd MMMM YYYY")
 
-      val portOfEntry: String = declarationHeader.\("portOfEntry").asOpt[String].getOrElse("")
+      val portOfEntry: String = declarationHeader.\("portOfEntryName").asOpt[String].getOrElse("")
 
       val expectedDateOfArrival: String = declarationHeader.\("expectedDateOfArrival").asOpt[String].getOrElse("")
       val expectedDateArr: String = if (expectedDateOfArrival.equals("")) expectedDateOfArrival else LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")

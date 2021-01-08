@@ -9,7 +9,7 @@ import models.{ChargeReference, DeclarationsStatus}
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
@@ -23,6 +23,102 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
+
+  val inputData: JsObject = Json.obj(
+    "simpleDeclarationRequest" -> Json.obj(
+      "requestCommon" -> Json.obj(
+        "receiptDate" -> "2020-12-29T12:14:08Z",
+        "requestParameters" -> Json.arr(
+          Json.obj(
+            "paramName" -> "REGIME",
+            "paramValue" -> "PNGR"
+          )
+        ),
+        "acknowledgementReference" -> "XMPR00000000000"
+      ),
+      "requestDetail" -> Json.obj(
+        "declarationAlcohol" -> Json.obj(
+          "totalExciseAlcohol" -> "2.00",
+          "totalCustomsAlcohol" -> "0.30",
+          "totalVATAlcohol" -> "18.70",
+          "declarationItemAlcohol" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Cider",
+              "volume" -> "5",
+              "goodsValue" -> "120.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "91.23",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "2.00",
+              "customsGBP" -> "0.30",
+              "vatGBP" -> "18.70"
+            )
+          )
+        ),
+        "liabilityDetails" -> Json.obj(
+          "totalExciseGBP" -> "102.54",
+          "totalCustomsGBP" -> "534.89",
+          "totalVATGBP" -> "725.03",
+          "grandTotalGBP" -> "1362.46"
+        ),
+        "customerReference" -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+        "personalDetails" -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
+        "declarationTobacco" -> Json.obj(
+          "totalExciseTobacco" -> "100.54",
+          "totalCustomsTobacco" -> "192.94",
+          "totalVATTobacco" -> "149.92",
+          "declarationItemTobacco" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Cigarettes",
+              "quantity" -> "250",
+              "goodsValue" -> "400.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "304.11",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "74.00",
+              "customsGBP" -> "79.06",
+              "vatGBP" -> "91.43"
+            )
+          )
+        ),
+        "declarationHeader" -> Json.obj("travellingFrom" -> "NON_EU Only", "expectedDateOfArrival" -> "2018-05-31", "ukVATPaid" -> false, "uccRelief" -> false, "portOfEntryName" -> "Heathrow Airport", "ukExcisePaid" -> false, "chargeReference" -> "XMPR0000000000", "portOfEntry" -> "LHR", "timeOfEntry" -> "13:20", "onwardTravelGBNI" -> "GB", "messageTypes" -> Json.obj("messageType" -> "DeclarationCreate")),
+        "contactDetails" -> Json.obj("emailAddress" -> "abc@gmail.com"),
+        "declarationOther" -> Json.obj(
+          "totalExciseOther" -> "0.00",
+          "totalCustomsOther" -> "341.65",
+          "totalVATOther" -> "556.41",
+          "declarationItemOther" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Television",
+              "quantity" -> "1",
+              "goodsValue" -> "1500.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "1140.42",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "0.00",
+              "customsGBP" -> "159.65",
+              "vatGBP" -> "260.01"
+            )
+          )
+        )
+      )
+    )
+  )
 
   "a declarations repository" - {
 
@@ -40,26 +136,14 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val document = repository.insert(Json.obj("simpleDeclarationRequest" -> Json.obj("foo" -> "bar")), correlationId).futureValue.right.value
+        val document = repository.insert(inputData, correlationId).futureValue.right.value
 
         inside(document) {
           case Declaration(id, _, cid, data, _) =>
 
             id mustEqual document.chargeReference
             cid mustEqual correlationId
-            data mustEqual Json.obj(
-              "simpleDeclarationRequest" -> Json.obj(
-                "foo" -> "bar",
-                "requestCommon" -> Json.obj(
-                  "acknowledgementReference" -> (document.chargeReference.toString+"0")
-                ),
-                "requestDetail" -> Json.obj(
-                  "declarationHeader" -> Json.obj(
-                    "chargeReference" -> document.chargeReference.toString
-                  )
-                )
-              )
-            )
+            data mustEqual inputData
         }
 
         repository.remove(document.chargeReference).futureValue
@@ -74,8 +158,6 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
       val app = builder.build()
 
       running(app) {
-
-        val repository = app.injector.instanceOf[DeclarationsRepository]
 
         started(app).futureValue
 
@@ -148,7 +230,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val declaration = repository.insert(Json.obj("simpleDeclarationRequest" -> Json.obj("foo" -> "bar")), correlationId).futureValue.right.value
+        val declaration = repository.insert(inputData, correlationId).futureValue.right.value
 
         val updatedDeclaration = repository.setState(declaration.chargeReference, State.Paid).futureValue
 
@@ -240,7 +322,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         val errors = repository.insert(Json.obj(), correlationId).futureValue.left.value
 
-        errors must contain ("""object has missing required properties (["foo"])""")
+        errors must contain ("""object has missing required properties (["receiptDate","requestParameters"])""")
       }
     }
 

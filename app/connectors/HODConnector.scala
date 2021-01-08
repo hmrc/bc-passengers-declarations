@@ -8,11 +8,11 @@ package connectors
 import akka.pattern.CircuitBreaker
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
-import models.declarations.Declaration
+import models.declarations.{Declaration, Etmp}
 import models.{Service, SubmissionResponse}
 import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
-import play.api.libs.json.JsObject
+import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
@@ -46,9 +46,13 @@ class HODConnector @Inject() (
           FORWARDED_HOST -> MDTP)
     }
 
-    def call: Future[SubmissionResponse] =
-      http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", declaration.data)
+    def call: Future[SubmissionResponse] = {
+
+      val data = Json.toJsObject(declaration.data.as[Etmp])
+
+      http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", data)
         .filter(_ != SubmissionResponse.Error)
+    }
 
     circuitBreaker.withCircuitBreaker(call)
       .fallbackTo(Future.successful(SubmissionResponse.Error))
