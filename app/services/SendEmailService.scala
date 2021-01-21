@@ -19,10 +19,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class SendEmailServiceImpl @Inject()(
-  val emailConnector: SendEmailConnectorImpl,
-  val repository: DefaultDeclarationsRepository,
-  val servicesConfig: ServicesConfig,
-) extends SendEmailService
+                                      val emailConnector: SendEmailConnectorImpl,
+                                      val repository: DefaultDeclarationsRepository,
+                                      val servicesConfig: ServicesConfig,
+                                    ) extends SendEmailService
 
 trait SendEmailService {
 
@@ -43,18 +43,20 @@ trait SendEmailService {
   private[services] def sendEmail(emailAddress: String, parameters: Map[String, String])(implicit hc: HeaderCarrier): Future[Boolean] = {
     val configuredEmailFirst: String = servicesConfig.getConfString("email.addressFirst", "")
     val configuredEmailSecond: String = servicesConfig.getConfString("email.addressSecond", "")
-    emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map {
-      res =>
-        Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
+    if (emailAddress.nonEmpty) {
+      emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map {
+        _ =>
+          Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
+      }
     }
-    emailConnector.requestEmail(generateEmailRequest(Seq(configuredEmailFirst,configuredEmailSecond), parameters)).map {
+    emailConnector.requestEmail(generateEmailRequest(Seq(configuredEmailFirst, configuredEmailSecond), parameters)).map {
       result =>
         Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
         result
     }
   }
 
-  private[services] def isZeroPound(data: JsObject): Boolean ={
+  private[services] def isZeroPound(data: JsObject): Boolean = {
     data.value.apply("simpleDeclarationRequest")
       .\("requestDetail")
       .\("liabilityDetails")
@@ -87,52 +89,49 @@ trait SendEmailService {
     val allItems: JsArray = itemsAlcohol ++ itemsTobacco ++ itemsOtherGoods
 
     val emailId: String = contactDetails.\("emailAddress").asOpt[String].getOrElse("")
-    if (emailId.nonEmpty) {
-      val firstName: String = personalDetails.\("firstName").asOpt[String].getOrElse("")
-      val lastName: String = personalDetails.\("lastName").asOpt[String].getOrElse("")
-      val fullName = s"$firstName $lastName"
+    val firstName: String = personalDetails.\("firstName").asOpt[String].getOrElse("")
+    val lastName: String = personalDetails.\("lastName").asOpt[String].getOrElse("")
+    val fullName = s"$firstName $lastName"
 
-      val receiptDate: String = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
-      val receiptDateForParsing = receiptDate.substring(0, 10)
-      val receiptDateFormatted: String = if (receiptDate.equals("")) receiptDate else LocalDate.parse(receiptDateForParsing).toString("dd MMMM YYYY")
+    val receiptDate: String = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
+    val receiptDateForParsing = receiptDate.substring(0, 10)
+    val receiptDateFormatted: String = if (receiptDate.equals("")) receiptDate else LocalDate.parse(receiptDateForParsing).toString("dd MMMM YYYY")
 
-      val portOfEntry: String = declarationHeader.\("portOfEntry").asOpt[String].getOrElse("")
+    val portOfEntry: String = declarationHeader.\("portOfEntry").asOpt[String].getOrElse("")
 
-      val expectedDateOfArrival: String = declarationHeader.\("expectedDateOfArrival").asOpt[String].getOrElse("")
-      val expectedDateArr: String = if (expectedDateOfArrival.equals("")) expectedDateOfArrival else LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
+    val expectedDateOfArrival: String = declarationHeader.\("expectedDateOfArrival").asOpt[String].getOrElse("")
+    val expectedDateArr: String = if (expectedDateOfArrival.equals("")) expectedDateOfArrival else LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
 
-      val timeOfEntry: String = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
-      val formattedTimeOfEntry = if (timeOfEntry.trim.equals("")) timeOfEntry else LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
+    val timeOfEntry: String = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
+    val formattedTimeOfEntry = if (timeOfEntry.trim.equals("")) timeOfEntry else LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
 
-      val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
+    val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
 
-      val grandTotalGBP: String = s"£${liabilityDetails.\("grandTotalGBP").asOpt[String].getOrElse("")}"
-      val totalExciseGBP: String = s"£${liabilityDetails.\("totalExciseGBP").asOpt[String].getOrElse("")}"
-      val totalCustomsGBP: String = s"£${liabilityDetails.\("totalCustomsGBP").asOpt[String].getOrElse("")}"
-      val totalVATGBP: String = s"£${liabilityDetails.\("totalVATGBP").asOpt[String].getOrElse("")}"
+    val grandTotalGBP: String = s"£${liabilityDetails.\("grandTotalGBP").asOpt[String].getOrElse("")}"
+    val totalExciseGBP: String = s"£${liabilityDetails.\("totalExciseGBP").asOpt[String].getOrElse("")}"
+    val totalCustomsGBP: String = s"£${liabilityDetails.\("totalCustomsGBP").asOpt[String].getOrElse("")}"
+    val totalVATGBP: String = s"£${liabilityDetails.\("totalVATGBP").asOpt[String].getOrElse("")}"
 
-      val staticSubjectNonZero = "Receipt for payment on goods brought into the UK - Reference number "
-      val staticSubjectZero = "Receipt for declaration of goods brought into Northern Ireland - Reference number "
-      val dynamicSubject = if (grandTotalGBP.equalsIgnoreCase("£0.00")) staticSubjectZero else staticSubjectNonZero
-      val subject = s"$dynamicSubject $chargeReference"
+    val staticSubjectNonZero = "Receipt for payment on goods brought into the UK - Reference number "
+    val staticSubjectZero = "Receipt for declaration of goods brought into Northern Ireland - Reference number "
+    val dynamicSubject = if (grandTotalGBP.equalsIgnoreCase("£0.00")) staticSubjectZero else staticSubjectNonZero
+    val subject = s"$dynamicSubject $chargeReference"
 
-      val parameters: Map[String, String] = Map(
-        "subject" -> subject,
-        "NAME" -> fullName,
-        "DATE" -> receiptDateFormatted,
-        "PLACEOFARRIVAL" -> portOfEntry,
-        "DATEOFARRIVAL" -> expectedDateArr,
-        "TIMEOFARRIVAL" -> formattedTimeOfEntry,
-        "REFERENCE" -> chargeReference,
-        "TOTAL" -> grandTotalGBP,
-        "TOTALEXCISEGBP" -> totalExciseGBP,
-        "TOTALCUSTOMSGBP" -> totalCustomsGBP,
-        "TOTALVATGBP" -> totalVATGBP,
-        "AllITEMS" -> allItems.toString())
+    val parameters: Map[String, String] = Map(
+      "subject" -> subject,
+      "NAME" -> fullName,
+      "DATE" -> receiptDateFormatted,
+      "PLACEOFARRIVAL" -> portOfEntry,
+      "DATEOFARRIVAL" -> expectedDateArr,
+      "TIMEOFARRIVAL" -> formattedTimeOfEntry,
+      "REFERENCE" -> chargeReference,
+      "TOTAL" -> grandTotalGBP,
+      "TOTALEXCISEGBP" -> totalExciseGBP,
+      "TOTALCUSTOMSGBP" -> totalCustomsGBP,
+      "TOTALVATGBP" -> totalVATGBP,
+      "AllITEMS" -> allItems.toString())
 
-      return Map(emailId -> parameters)
-    }
-    Map.empty
+    Map(emailId -> parameters)
   }
 
   def constructAndSendEmail(reference: ChargeReference)(implicit hc: HeaderCarrier): Future[Boolean] = {
@@ -142,17 +141,11 @@ trait SendEmailService {
       val emailParams = getEmailParamsFromData(data)
       val emailId = emailParams.keys.head
       val params = emailParams.getOrElse(emailId, Map.empty)
-      if (emailId.nonEmpty && params.nonEmpty) {
-        if(disableZeroPoundEmail && isZeroPound(data)){
-          Logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
-          Future.successful(false)
-        }else{
-          sendPassengerEmail(emailId, params)
-        }
-      }
-      else {
-        Logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as email Id is not present in the Database")
+      if (disableZeroPoundEmail && isZeroPound(data)) {
+        Logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
         Future.successful(false)
+      } else {
+        sendPassengerEmail(emailId, params)
       }
     })
   }
@@ -168,5 +161,5 @@ trait SendEmailService {
         Logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
         true
     }
-    
+
 }
