@@ -375,6 +375,9 @@ class SendEmailServiceSpec extends BaseSpec {
     "Return true for a valid email and params" in new Setup{
       emailService.sendEmail(emailService.testEmail,emailService.testParams).futureValue shouldBe true
     }
+    "Return true for a blank email and valid params" in new Setup{
+      emailService.sendEmail("",emailService.testParams).futureValue shouldBe true
+    }
   }
 
   "sendPassengerEmail" should {
