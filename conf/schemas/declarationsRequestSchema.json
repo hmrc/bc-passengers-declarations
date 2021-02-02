@@ -342,6 +342,18 @@
 				},
 				"originCountryName": {
 					"$ref": "#/definitions/String40"
+				},
+				"ukVATPaid": {
+					"type": "boolean"
+				},
+				"ukExcisePaid": {
+					"type": "boolean"
+				},
+				"madeIn": {
+					"$ref": "#/definitions/String40"
+				},
+				"euCustomsRelief": {
+					"type": "boolean"
 				}
 			},
 			"additionalProperties": false
@@ -390,6 +402,18 @@
 				},
 				"originCountryName": {
 					"$ref": "#/definitions/String40"
+				},
+				"ukVATPaid": {
+					"type": "boolean"
+				},
+				"uccRelief": {
+					"type": "boolean"
+				},
+				"madeIn": {
+					"$ref": "#/definitions/String40"
+				},
+				"euCustomsRelief": {
+					"type": "boolean"
 				}
 			},
 			"additionalProperties": false
@@ -456,6 +480,18 @@
 				},
 				"originCountryName": {
 					"$ref": "#/definitions/String40"
+				},
+				"ukVATPaid": {
+					"type": "boolean"
+				},
+				"ukExcisePaid": {
+					"type": "boolean"
+				},
+				"madeIn": {
+					"$ref": "#/definitions/String40"
+				},
+				"euCustomsRelief": {
+					"type": "boolean"
 				}
 			},
 			"additionalProperties": false
