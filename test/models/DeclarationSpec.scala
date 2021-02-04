@@ -25,6 +25,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
         "_id"           -> "XHPR1234567890",
         "state"         -> State.PendingPayment,
         "correlationId" -> correlationId,
+        "journeyData"   -> Json.obj(),
         "data"          -> Json.obj(),
         "lastUpdated"   -> Json.toJson(lastUpdated)
       )
@@ -34,6 +35,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
           ChargeReference(1234567890),
           State.PendingPayment,
           correlationId,
+          Json.obj(),
           Json.obj(),
           lastUpdated
         )
@@ -50,11 +52,12 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
         "_id"           -> "XHPR1234567890",
         "state"         -> State.PendingPayment,
         "correlationId" -> correlationId,
+        "journeyData"   -> Json.obj(),
         "data"          -> Json.obj(),
         "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, correlationId, Json.obj(), lastUpdated)) mustEqual json
+      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
     }
   }
 }

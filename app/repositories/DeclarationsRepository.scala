@@ -76,7 +76,8 @@ class DefaultDeclarationsRepository @Inject() (
           val declaration = Declaration(
             chargeReference = id,
             state           = State.PendingPayment,
-            data            = json,
+            journeyData     = json.apply("journeyData").as[JsObject],
+            data            = json - "journeyData",
             correlationId   = correlationId
           )
 

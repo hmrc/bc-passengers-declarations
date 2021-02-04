@@ -13,7 +13,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import reactivemongo.api.Cursor
 import reactivemongo.play.json.collection._
@@ -52,11 +52,11 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PaymentCancelled, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PaymentCancelled, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -111,9 +111,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -144,9 +144,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed,  correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PaymentFailed,  correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -181,8 +181,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5))
+          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5))
         )
 
         database.flatMap {
@@ -203,8 +203,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.PaymentCancelled, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), State.PaymentCancelled, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+        Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5))
       )
 
       database.flatMap {
@@ -241,7 +241,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap {
         _.collection[JSONCollection]("declarations")
           .insert(ordered = true)
-          .one(Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)))
+          .one(Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)))
       }.futureValue
 
       val reactor = new NioReactor()
@@ -271,7 +271,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
           database.flatMap {
             _.collection[JSONCollection]("declarations")
               .insert(ordered = true)
-              .one(Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now.minusMinutes(5)))
+              .one(Declaration(ChargeReference(1), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)))
           }.futureValue
 
           proxy.open()

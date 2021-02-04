@@ -37,6 +37,13 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
 
   private val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
+  val journeyData: JsObject = Json.obj(
+    "euCountryCheck" -> "greatBritain",
+    "arrivingNICheck" -> true,
+    "isUKResident" -> false,
+    "bringingOverAllowance" -> true
+  )
+
   val data: JsObject = Json.obj(
     "simpleDeclarationRequest" -> Json.obj(
       "requestCommon" -> Json.obj(
@@ -133,7 +140,7 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
     )
   )
 
-  private lazy val declaration = Declaration(ChargeReference(123), State.Paid, correlationId, data)
+  private lazy val declaration = Declaration(ChargeReference(123), State.Paid, correlationId, journeyData, data)
 
   private def stubCall: MappingBuilder =
     post(urlEqualTo("/declarations/passengerdeclaration/v1"))

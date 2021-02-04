@@ -3,7 +3,7 @@
 	"description": "PAS02 - Passenger Declaration Request",
 	"type": "object",
 	"minProperties": 1,
-	"maxProperties": 1,
+	"maxProperties": 2,
 	"properties": {
 		"simpleDeclarationRequest": {
 			"type": "object",
@@ -96,7 +96,7 @@
 	"required": [
 		"simpleDeclarationRequest"
 	],
-	"additionalProperties": false,
+	"additionalProperties": true,
 	"definitions": {
 		"requestCommon": {
 			"type": "object",

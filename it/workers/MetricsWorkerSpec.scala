@@ -3,27 +3,23 @@ package workers
 import java.time.LocalDateTime
 
 import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
-import logger.TestLoggerAppender
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsPath, Json, Reads}
+import play.api.libs.json.{JsPath, Json, Reads}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.running
 import reactivemongo.play.json.collection.JSONCollection
 import suite.MongoSuite
 import utils.WireMockHelper
-import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import play.api.test.Helpers._
 
 class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
@@ -55,8 +51,8 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
           .insert(ordered = true)
           .many(
             List(
-              Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), LocalDateTime.now),
-              Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), LocalDateTime.now)
+              Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+              Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
             )
           )
       }.futureValue
@@ -83,9 +79,9 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
             .insert(ordered = true)
             .many(
               List(
-                Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), LocalDateTime.now),
-                Declaration(ChargeReference(3), State.PaymentCancelled, correlationId, Json.obj(), LocalDateTime.now),
-                Declaration(ChargeReference(4), State.SubmissionFailed, correlationId, Json.obj(), LocalDateTime.now)
+                Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+                Declaration(ChargeReference(3), State.PaymentCancelled, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+                Declaration(ChargeReference(4), State.SubmissionFailed, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
               )
             )
         }.futureValue
