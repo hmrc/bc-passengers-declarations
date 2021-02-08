@@ -14,6 +14,7 @@ final case class Declaration (
   chargeReference: ChargeReference,
   state: State,
   correlationId: String,
+  journeyData: JsObject,
   data: JsObject,
   lastUpdated: LocalDateTime = LocalDateTime.now
 )
@@ -28,6 +29,7 @@ object Declaration {
       (__ \ "_id").read[ChargeReference] and
       (__ \ "state").read[State] and
       (__ \ "correlationId").read[String] and
+      (__ \ "journeyData").read[JsObject] and
       (__ \ "data").read[JsObject] and
       (__ \ "lastUpdated").read[LocalDateTime]
     )(Declaration.apply _)
@@ -41,6 +43,7 @@ object Declaration {
       (__ \ "_id").write[ChargeReference] and
       (__ \ "state").write[State] and
       (__ \ "correlationId").write[String] and
+      (__ \ "journeyData").write[JsObject] and
       (__ \ "data").write[JsObject] and
       (__ \ "lastUpdated").write[LocalDateTime]
     )(unlift(Declaration.unapply))

@@ -65,6 +65,128 @@ class SendEmailServiceSpec extends BaseSpec {
       val testEmail = "testEmail@digital.hmrc.gov.uk"
       val chargeReference:ChargeReference = ChargeReference(1234567890)
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+      val journeyData: String =
+        """{
+          |"journeyData" : {
+          |        "euCountryCheck" : "greatBritain",
+          |        "arrivingNICheck" : true,
+          |        "isUKResident" : false,
+          |        "bringingOverAllowance" : true,
+          |        "privateCraft" : true,
+          |        "ageOver17" : true,
+          |        "selectedAliases" : [],
+          |        "purchasedProductInstances" : [
+          |            {
+          |                "path" : "other-goods/adult/adult-clothing",
+          |                "iid" : "RTZdbZ",
+          |                "country" : {
+          |                    "code" : "IN",
+          |                    "countryName" : "title.india",
+          |                    "alphaTwoCode" : "IN",
+          |                    "isEu" : false,
+          |                    "isCountry" : true,
+          |                    "countrySynonyms" : []
+          |                },
+          |                "currency" : "GBP",
+          |                "cost" : 500,
+          |                "isVatPaid" : false,
+          |                "isCustomPaid" : false,
+          |                "isUccRelief" : false
+          |            }
+          |        ],
+          |        "userInformation" : {
+          |            "firstName" : "xyx",
+          |            "lastName" : "dsfds",
+          |            "identificationType" : "passport",
+          |            "identificationNumber" : "dfgtersdf",
+          |            "emailAddress" : "",
+          |            "selectPlaceOfArrival" : "BEL",
+          |            "enterPlaceOfArrival" : "",
+          |            "dateOfArrival" : "2021-02-04",
+          |            "timeOfArrival" : "23:00:00.000"
+          |        },
+          |        "calculatorResponse" : {
+          |            "otherGoods" : {
+          |                "bands" : [
+          |                    {
+          |                        "code" : "B",
+          |                        "items" : [
+          |                            {
+          |                                "rateId" : "OGD/CLTHS/ADULT",
+          |                                "purchaseCost" : "500.00",
+          |                                "calculation" : {
+          |                                    "excise" : "0.00",
+          |                                    "customs" : "12.50",
+          |                                    "vat" : "102.50",
+          |                                    "allTax" : "115.00"
+          |                                },
+          |                                "metadata" : {
+          |                                    "description" : "Adult clothing",
+          |                                    "name" : "label.other-goods.adult.adult-clothing",
+          |                                    "cost" : "500.00",
+          |                                    "currency" : {
+          |                                        "code" : "GBP",
+          |                                        "displayName" : "title.british_pounds_gbp",
+          |                                        "currencySynonyms" : [
+          |                                            "England",
+          |                                            "Scotland",
+          |                                            "Wales",
+          |                                            "Northern Ireland",
+          |                                            "British",
+          |                                            "sterling",
+          |                                            "pound",
+          |                                            "GB"
+          |                                        ]
+          |                                    },
+          |                                    "country" : {
+          |                                        "code" : "IN",
+          |                                        "countryName" : "title.india",
+          |                                        "alphaTwoCode" : "IN",
+          |                                        "isEu" : false,
+          |                                        "isCountry" : true,
+          |                                        "countrySynonyms" : []
+          |                                    },
+          |                                    "exchangeRate" : {
+          |                                        "rate" : "1.00",
+          |                                        "date" : "2021-02-04"
+          |                                    }
+          |                                },
+          |                                "isVatPaid" : false,
+          |                                "isCustomPaid" : false,
+          |                                "isUccRelief" : false
+          |                            }
+          |                        ],
+          |                        "calculation" : {
+          |                            "excise" : "0.00",
+          |                            "customs" : "12.50",
+          |                            "vat" : "102.50",
+          |                            "allTax" : "115.00"
+          |                        }
+          |                    }
+          |                ],
+          |                "calculation" : {
+          |                    "excise" : "0.00",
+          |                    "customs" : "12.50",
+          |                    "vat" : "102.50",
+          |                    "allTax" : "115.00"
+          |                }
+          |            },
+          |            "calculation" : {
+          |                "excise" : "0.00",
+          |                "customs" : "12.50",
+          |                "vat" : "102.50",
+          |                "allTax" : "115.00"
+          |            },
+          |            "withinFreeAllowance" : false,
+          |            "limits" : {},
+          |            "isAnyItemOverAllowance" : true
+          |        },
+          |        "defaultCountry" : "IN",
+          |        "defaultOriginCountry" : "",
+          |        "defaultCurrency" : "GBP"
+          |    }
+          |}""".stripMargin
+
       val data: String =
         """{
           |        "simpleDeclarationRequest" : {
@@ -186,7 +308,7 @@ class SendEmailServiceSpec extends BaseSpec {
           |    "lastUpdated" : "2020-12-07T01:37:30.832"
           |}""".stripMargin
 
-      val declaration:Declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.parse(data).as[JsObject])
+      val declaration:Declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.parse(journeyData).as[JsObject], Json.parse(data).as[JsObject])
       val bfEmail: String = "borderforce@digital.hmrc.gov.uk"
       val isleOfManEmail: String = "isleofman@digital.hmrc.gov.uk"
 
@@ -450,28 +572,28 @@ class SendEmailServiceSpec extends BaseSpec {
 
   "constructAndSendEmail" should {
     "send an email for a zero pound journey when disable-zero-pound-email feature is false" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(zeroPoundsData).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
     }
 
     "not send an email for a zero pound journey when disable-zero-pound-email feature is true" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(zeroPoundsData).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe false
     }
 
     "send an email for a non zero pound journey when disable-zero-pound-email feature is true" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.data).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
     }
 
     "send an email for a non zero pound journey when disable-zero-pound-email feature is false" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.data).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true

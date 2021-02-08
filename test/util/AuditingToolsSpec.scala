@@ -21,13 +21,16 @@ class AuditingToolsSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSu
 
       val chargeReference = ChargeReference(1234567890)
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+      val journeyData = Json.obj(
+          "foo" -> "bar"
+        )
       val data = Json.obj(
         "simpleDeclarationRequest" -> Json.obj(
           "foo" -> "bar"
         )
       )
 
-      val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, data)
+      val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, journeyData, data)
 
       val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration)
 

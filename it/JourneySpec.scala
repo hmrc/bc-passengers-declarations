@@ -30,6 +30,7 @@ class JourneySpec extends FreeSpec with MustMatchers with MongoSuite
     )
 
   val data: JsObject = Json.obj(
+    "journeyData" -> Json.obj("some" -> "journey data"),
     "simpleDeclarationRequest" -> Json.obj(
       "requestCommon" -> Json.obj(
         "receiptDate" -> "2020-12-29T12:14:08Z",
