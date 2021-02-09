@@ -30,7 +30,7 @@ class AuditingToolsSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSu
         )
       )
 
-      val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, journeyData, data)
+      val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, journeyData, data)
 
       val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration)
 

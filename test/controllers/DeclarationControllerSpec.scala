@@ -63,12 +63,12 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val journeyData = Json.obj("foo" -> "bar")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, journeyData, message)
+          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, journeyData, message)
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(message).withHeaders("X-Correlation-ID" -> correlationId)
 
-          when(declarationsRepository.insert(message, correlationId))
+          when(declarationsRepository.insert(message, correlationId, sentToEtmp = false))
             .thenReturn(Future.successful(Right(declaration)))
 
           val result = route(app, request).value
@@ -79,7 +79,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           whenReady(result) {
             _ =>
-              verify(declarationsRepository, times(1)).insert(message, correlationId)
+              verify(declarationsRepository, times(1)).insert(message, correlationId,sentToEtmp = false)
           }
         }
       }
@@ -93,7 +93,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
 
-          when(declarationsRepository.insert(requestBody, correlationId))
+          when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
             .thenReturn(Future.failed(new Exception()))
 
           val result = route(app, request).value
@@ -113,12 +113,12 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val chargeReference = ChargeReference(1234567890)
 
-        val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj(), Json.obj())
+        val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
 
         val request = FakeRequest(POST, routes.DeclarationController.submit().url)
           .withJsonBody(requestBody)
 
-        when(declarationsRepository.insert(requestBody, correlationId))
+        when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
           .thenReturn(Future.successful(Right(declaration)))
 
         val result = route(app, request).value
@@ -136,7 +136,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         val request = FakeRequest(POST, routes.DeclarationController.submit().url)
           .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
 
-        when(declarationsRepository.insert(requestBody, correlationId))
+        when(declarationsRepository.insert(requestBody, correlationId,sentToEtmp = false))
           .thenReturn(Future.successful(Left(List("foo"))))
 
         val result = route(app, request).value
@@ -180,7 +180,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.SubmissionFailed, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -204,7 +204,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.Paid, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.Paid,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -229,7 +229,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
 
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
@@ -260,7 +260,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
           val updatedDeclaration = declaration copy (state = State.Paid)
 
           when(declarationsRepository.get(chargeReference))
@@ -294,7 +294,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Failed")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
           val updatedDeclaration = declaration copy (state = State.PaymentFailed)
 
           when(declarationsRepository.get(chargeReference))
@@ -328,7 +328,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Cancelled")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
           val updatedDeclaration = declaration copy (state = State.PaymentCancelled)
 
           when(declarationsRepository.get(chargeReference))

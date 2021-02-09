@@ -1,19 +1,18 @@
 package workers
 
-import models.{ChargeReference, Lock}
 import models.declarations.{Declaration, State}
+import models.{ChargeReference, Lock}
 import org.mockito.Matchers.any
 import org.mockito.Mockito.when
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.LockRepository
 import suite.MongoSuite
-
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,9 +32,9 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(2), State.PendingPayment, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj()),
+        Declaration(ChargeReference(2), State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -68,8 +67,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -102,8 +101,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -133,8 +132,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -168,8 +167,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
       )
 
       database.flatMap {

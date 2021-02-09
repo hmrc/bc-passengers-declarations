@@ -10,7 +10,7 @@ import play.api.{Configuration, Environment}
 import play.api.inject.{Binding, Module}
 import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository, LockRepository}
 import services.{ChargeReferenceService, SequentialChargeReferenceService}
-import workers.{DeclarationSubmissionWorker, FailedSubmissionWorker, MetricsWorker, PaymentTimeoutWorker}
+import workers.{DeclarationSubmissionWorker,DeclarationDeletionWorker, FailedSubmissionWorker, MetricsWorker, PaymentTimeoutWorker}
 
 class HmrcModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
@@ -22,6 +22,7 @@ class HmrcModule extends Module {
       bind[CircuitBreaker].qualifiedWith("des").toProvider[DesCircuitBreakerProvider],
       bind[DeclarationSubmissionWorker].toSelf.eagerly,
       bind[PaymentTimeoutWorker].toSelf.eagerly,
+      bind[DeclarationDeletionWorker].toSelf.eagerly,
       bind[FailedSubmissionWorker].toSelf.eagerly,
       bind[MetricsWorker].toSelf.eagerly
     )
