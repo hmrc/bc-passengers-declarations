@@ -30,7 +30,7 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
     new GuiceApplicationBuilder()
       .configure(
         "workers.declaration-deletion-worker.interval" -> "1 second",
-        "workers.declaration-deletion-worker.minsToHold" -> "1"
+        "workers.declaration-deletion-worker.timeToHold" -> "1 minute"
       )
 
   private val journeyData: JsObject = Json.obj(
