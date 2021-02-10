@@ -5,6 +5,8 @@
 
 package repositories
 
+import java.time.LocalDateTime
+
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -63,7 +65,7 @@ class DefaultDeclarationsRepository @Inject() (
         } yield ()
     }
 
-  override def insert(data: JsObject, correlationId: String): Future[Either[List[String], Declaration]] = {
+  override def insert(data: JsObject, correlationId: String, sentToEtmp: Boolean): Future[Either[List[String], Declaration]] = {
 
     chargeReferenceService.nextChargeReference().flatMap {
       id: ChargeReference =>
@@ -76,6 +78,7 @@ class DefaultDeclarationsRepository @Inject() (
           val declaration = Declaration(
             chargeReference = id,
             state           = State.PendingPayment,
+            sentToEtmp      = sentToEtmp,
             journeyData     = json.apply("journeyData").as[JsObject],
             data            = json - "journeyData",
             correlationId   = correlationId
@@ -96,6 +99,7 @@ class DefaultDeclarationsRepository @Inject() (
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
 
+
   override def setState(id: ChargeReference, state: State): Future[Declaration] = {
 
     val selector = Json.obj(
@@ -104,7 +108,8 @@ class DefaultDeclarationsRepository @Inject() (
 
     val update = Json.obj(
       "$set" -> Json.obj(
-        "state" -> state
+        "state" -> state,
+        "lastUpdated" -> LocalDateTime.now
       )
     )
 
@@ -113,6 +118,28 @@ class DefaultDeclarationsRepository @Inject() (
         .map {
           _.result[Declaration]
             .getOrElse(throw new Exception(s"unable to update declaration $id"))
+        }
+    }
+  }
+
+
+  override def setSentToEtmp(id: ChargeReference, sentToEtmp: Boolean): Future[Declaration] = {
+
+    val selector = Json.obj(
+      "_id" -> id
+    )
+
+    val update = Json.obj(
+      "$set" -> Json.obj(
+        "sentToEtmp" -> sentToEtmp
+      )
+    )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, update, fetchNewObject = true)
+        .map {
+          _.result[Declaration]
+            .getOrElse(throw new Exception(s"unable to set sentToEtmp for declaration $id"))
         }
     }
   }
@@ -137,10 +164,28 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
-  override def paidDeclarations: Source[Declaration, Future[NotUsed]] = {
+  override def paidDeclarationsForEtmp: Source[Declaration, Future[NotUsed]] = {
 
     val query = Json.obj(
-      "state" -> State.Paid
+      "state" -> State.Paid,
+      "sentToEtmp" -> false
+    )
+
+    Source.fromFutureSource {
+      collection.map {
+        _.find(query, None)
+          .cursor[Declaration]()
+          .documentSource(err = ContOnError())
+          .mapMaterializedValue(_ => NotUsed.notUsed)
+      }
+    }
+  }
+
+  override def paidDeclarationsForDeletion: Source[Declaration, Future[NotUsed]] = {
+
+    val query = Json.obj(
+      "state" -> State.Paid,
+      "sentToEtmp" -> true
     )
 
     Source.fromFutureSource {
@@ -216,12 +261,14 @@ class DefaultDeclarationsRepository @Inject() (
 trait DeclarationsRepository {
 
   val started: Future[Unit]
-  def insert(data: JsObject, correlationId: String): Future[Either[List[String], Declaration]]
+  def insert(data: JsObject, correlationId: String, sentToEtmp: Boolean): Future[Either[List[String], Declaration]]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def setState(id: ChargeReference, state: State): Future[Declaration]
+  def setSentToEtmp(id: ChargeReference, sentToEtmp: Boolean): Future[Declaration]
   def unpaidDeclarations: Source[Declaration, Future[NotUsed]]
-  def paidDeclarations: Source[Declaration, Future[NotUsed]]
+  def paidDeclarationsForEtmp: Source[Declaration, Future[NotUsed]]
+  def paidDeclarationsForDeletion: Source[Declaration, Future[NotUsed]]
   def failedDeclarations: Source[Declaration, Future[NotUsed]]
   def metricsCount: Source[DeclarationsStatus, NotUsed]
 }

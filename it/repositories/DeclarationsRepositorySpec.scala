@@ -243,10 +243,10 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val document = repository.insert(inputData, correlationId).futureValue.right.value
+        val document = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.right.value
 
         inside(document) {
-          case Declaration(id, _, cid, jd, data, _) =>
+          case Declaration(id, _,false, cid, jd, data, _) =>
 
             id mustEqual document.chargeReference
             cid mustEqual correlationId
@@ -302,13 +302,13 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PaymentCancelled, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(3), State.Paid, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(4), State.SubmissionFailed, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(5), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(6), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PaymentFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PaymentCancelled,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.Paid,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(4), State.SubmissionFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(5), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(6), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -338,7 +338,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val declaration = repository.insert(inputData, correlationId).futureValue.right.value
+        val declaration = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.right.value
 
         val updatedDeclaration = repository.setState(declaration.chargeReference, State.Paid).futureValue
 
@@ -359,11 +359,11 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.SubmissionFailed, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(3), State.Paid, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.Paid, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(2), State.SubmissionFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(3), State.Paid,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+          Declaration(ChargeReference(4), State.Paid,sentToEtmp=false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -374,7 +374,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
-        val paidDeclarations = repository.paidDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+        val paidDeclarations = repository.paidDeclarationsForEtmp.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
         paidDeclarations.map(_.chargeReference) must contain only (
           ChargeReference(1), ChargeReference(3), ChargeReference(4)
@@ -395,10 +395,10 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(2), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj(), Json.obj())
+          Declaration(ChargeReference(0), State.SubmissionFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(1), State.Paid,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(2), State.SubmissionFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(3), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj())
         )
 
         database.flatMap {
@@ -428,7 +428,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         started(app).futureValue
 
-        val errors = repository.insert(Json.obj(), correlationId).futureValue.left.value
+        val errors = repository.insert(Json.obj(), correlationId,sentToEtmp=false).futureValue.left.value
 
         errors must contain ("""object has missing required properties (["receiptDate","requestParameters"])""")
       }
@@ -447,25 +447,25 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.SubmissionFailed, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(0), State.SubmissionFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
 
-          Declaration(ChargeReference(1), State.Paid, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(2), State.Paid, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(1), State.Paid,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(2), State.Paid,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
 
-          Declaration(ChargeReference(3), State.PendingPayment, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(4), State.PendingPayment, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(5), State.PendingPayment, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(3), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(4), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(5), State.PendingPayment,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
 
-          Declaration(ChargeReference(6), State.PaymentCancelled, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(7), State.PaymentCancelled, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(8), State.PaymentCancelled, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(9), State.PaymentCancelled, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(6), State.PaymentCancelled,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(7), State.PaymentCancelled,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(8), State.PaymentCancelled,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(9), State.PaymentCancelled,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
 
-          Declaration(ChargeReference(10), State.PaymentFailed, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(11), State.PaymentFailed, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(12), State.PaymentFailed, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(13), State.PaymentFailed, correlationId, Json.obj(), Json.obj()),
-          Declaration(ChargeReference(14), State.PaymentFailed, correlationId, Json.obj(), Json.obj())
+          Declaration(ChargeReference(10), State.PaymentFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(11), State.PaymentFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(12), State.PaymentFailed, sentToEtmp=false,correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(13), State.PaymentFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj()),
+          Declaration(ChargeReference(14), State.PaymentFailed,sentToEtmp=false, correlationId, Json.obj(), Json.obj())
 
         )
 

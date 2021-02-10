@@ -13,7 +13,7 @@ import models.SubmissionResponse
 import models.declarations.{Declaration, State}
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
-import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import util.AuditingTools
 
 import scala.concurrent.duration._
@@ -48,7 +48,7 @@ class DeclarationSubmissionWorker @Inject() (
 
       logger.info("Declaration submission worker started")
 
-      Source.tick(initialDelay, interval, declarationsRepository.paidDeclarations)
+      Source.tick(initialDelay, interval, declarationsRepository.paidDeclarationsForEtmp)
         .flatMapConcat(identity)
         .throttle(elements, per)
         .mapAsync(parallelism)(getLock)
@@ -60,7 +60,7 @@ class DeclarationSubmissionWorker @Inject() (
               _      <- result match {
                 case SubmissionResponse.Submitted =>
                   auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
-                  declarationsRepository.remove(declaration.chargeReference)
+                  declarationsRepository.setSentToEtmp(declaration.chargeReference,sentToEtmp = true)
                 case SubmissionResponse.Error =>
                   Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
                   Future.successful(())
@@ -70,7 +70,12 @@ class DeclarationSubmissionWorker @Inject() (
               }
             } yield (declaration, result)
           }
-        }.wireTapMat(Sink.queue())(Keep.right)
+        }.mapAsync(parallelism){response => {
+            lockRepository.release(response._1.chargeReference.value)
+            Future.successful(response)
+          }
+        }
+        .wireTapMat(Sink.queue())(Keep.right)
         .toMat(Sink.ignore)(Keep.left)
         .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
         .run()

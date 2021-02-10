@@ -24,6 +24,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
         "state"         -> State.PendingPayment,
+        "sentToEtmp"    -> false,
         "correlationId" -> correlationId,
         "journeyData"   -> Json.obj(),
         "data"          -> Json.obj(),
@@ -34,6 +35,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
         Declaration(
           ChargeReference(1234567890),
           State.PendingPayment,
+          sentToEtmp = false,
           correlationId,
           Json.obj(),
           Json.obj(),
@@ -51,13 +53,14 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
         "state"         -> State.PendingPayment,
+        "sentToEtmp"    -> false,
         "correlationId" -> correlationId,
         "journeyData"   -> Json.obj(),
         "data"          -> Json.obj(),
         "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
+      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
     }
   }
 }

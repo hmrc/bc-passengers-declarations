@@ -30,7 +30,7 @@ class DeclarationController @Inject()(
 
       request.headers.get(CorrelationIdKey) match {
         case Some(cid) =>
-          repository.insert(request.body.as[JsObject], cid).map {
+          repository.insert(request.body.as[JsObject], cid,false).map {
             case Right(declaration) =>
               Accepted(declaration.data).withHeaders(CorrelationIdKey -> cid)
             case Left(errors) =>
