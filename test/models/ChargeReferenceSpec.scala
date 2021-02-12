@@ -6,13 +6,14 @@
 package models
 
 import org.scalacheck.Gen
-import org.scalatest.prop.PropertyChecks
 import org.scalatest.{EitherValues, FreeSpec, MustMatchers, OptionValues}
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.{JsString, Json}
 import play.api.mvc.PathBindable
 
 class ChargeReferenceSpec extends FreeSpec with MustMatchers with EitherValues with OptionValues
-  with PropertyChecks {
+  with ScalaCheckPropertyChecks
+{
 
   "a charge reference" - {
 

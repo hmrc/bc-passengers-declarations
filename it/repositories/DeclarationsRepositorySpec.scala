@@ -1,7 +1,6 @@
 package repositories
 
 import java.time.LocalDateTime
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import models.declarations.{Declaration, State}
@@ -13,12 +12,12 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
+import suite.MongoSuite
 import suite.FailOnUnindexedQueries
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.implicitConversions
 
-class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexedQueries
+class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with MongoSuite with FailOnUnindexedQueries
   with ScalaFutures with IntegrationPatience with OptionValues with Inside with EitherValues {
 
   private lazy val builder: GuiceApplicationBuilder =

@@ -19,7 +19,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
 import play.api.test.Injecting
-import uk.gov.hmrc.http.HeaderCarrier
 import utils.WireMockHelper
 
 class HODConnectorSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with WireMockHelper
@@ -146,9 +145,6 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
       .withRequestBody(equalTo(Json.stringify(Json.toJsObject(data.as[Etmp]))))
 
   private lazy val connector: HODConnector = inject[HODConnector]
-
-  private implicit val hc: HeaderCarrier = HeaderCarrier()
-
 
   "hod connector" - {
 

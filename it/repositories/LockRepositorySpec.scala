@@ -9,11 +9,12 @@ import play.api.test.Helpers.running
 import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
 import reactivemongo.play.json.collection.JSONCollection
+import suite.MongoSuite
 import suite.FailOnUnindexedQueries
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class LockRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexedQueries
+class LockRepositorySpec extends FreeSpec with MustMatchers with MongoSuite with FailOnUnindexedQueries
   with ScalaFutures with IntegrationPatience with OptionValues {
 
   private lazy val builder: GuiceApplicationBuilder =
@@ -70,8 +71,6 @@ class LockRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexed
           .build()
 
       running(app) {
-
-        val repository = app.injector.instanceOf[DeclarationsRepository]
 
         started(app).futureValue
 

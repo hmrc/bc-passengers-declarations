@@ -12,7 +12,7 @@ import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
 import repositories.{DeclarationsRepository, LockRepository}
 import services.SendEmailServiceImpl
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton

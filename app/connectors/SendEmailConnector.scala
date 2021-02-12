@@ -11,11 +11,11 @@ import play.api.Logger
 import play.api.http.Status._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import scala.concurrent.Future
 import scala.util.control.NoStackTrace
-
 class EmailErrorResponse() extends NoStackTrace
 
 @Singleton
@@ -28,19 +28,20 @@ class SendEmailConnectorImpl @Inject()(servicesConfig:ServicesConfig,
 trait SendEmailConnector extends HttpErrorFunctions {
   val http: HttpClient
   val sendEmailURL : String
+  private val logger = Logger(this.getClass)
 
   def requestEmail(EmailRequest : SendEmailRequest)(implicit hc: HeaderCarrier): Future[Boolean] = {
     def errorMsg(status: String, ex: HttpException) = {
-      Logger.error(s"PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to send email returned a $status - email not sent - reason = ${ex.getMessage}")
+      logger.error(s"PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to send email returned a $status - email not sent - reason = ${ex.getMessage}")
       throw new EmailErrorResponse()
     }
     http.POST[SendEmailRequest, HttpResponse] (s"$sendEmailURL", EmailRequest) map { r =>
       r.status match {
         case ACCEPTED =>
-          Logger.debug("[SendEmailConnector] [sendEmail] request to email service was successful")
+          logger.debug("[SendEmailConnector] [sendEmail] request to email service was successful")
           true
         case _ =>
-          Logger.error(s"PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to email service was unsuccessful with ${r.status}")
+          logger.error(s"PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to email service was unsuccessful with ${r.status}")
           false
       }
     } recover {

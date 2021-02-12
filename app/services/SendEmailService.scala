@@ -30,6 +30,7 @@ trait SendEmailService {
   val emailConnector: SendEmailConnector
   val repository: DeclarationsRepository
   val servicesConfig: ServicesConfig
+  private val logger = Logger(this.getClass)
 
   private[services] def generateEmailRequest(emailAddress: Seq[String], parameters: Map[String, String]): SendEmailRequest = {
     SendEmailRequest(
@@ -46,12 +47,12 @@ trait SendEmailService {
     if (emailAddress.nonEmpty) {
       emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map {
         _ =>
-          Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
+          logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
       }
     }
     emailConnector.requestEmail(generateEmailRequest(Seq(configuredEmailFirst, configuredEmailSecond), parameters)).map {
       result =>
-        Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
+        logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
         result
     }
   }
@@ -142,7 +143,7 @@ trait SendEmailService {
       val emailId = emailParams.keys.head
       val params = emailParams.getOrElse(emailId, Map.empty)
       if (disableZeroPoundEmail && isZeroPound(data)) {
-        Logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
+        logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
         Future.successful(false)
       } else {
         sendPassengerEmail(emailId, params)
@@ -158,7 +159,7 @@ trait SendEmailService {
   private[services] def sendPassengerEmail(emailAddressAll: String, parameters: Map[String, String])(implicit hc: HeaderCarrier): Future[Boolean] =
     sendEmail(emailAddressAll, parameters) recover {
       case _: EmailErrorResponse =>
-        Logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
+        logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
         true
     }
 

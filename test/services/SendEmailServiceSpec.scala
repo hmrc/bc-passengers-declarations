@@ -23,7 +23,7 @@ import play.api.test.FakeRequest
 import repositories.DeclarationsRepository
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.Future
 
@@ -45,7 +45,7 @@ class SendEmailServiceSpec extends BaseSpec {
     override val http: HttpClient = mockWSHttp
 
     when(mockWSHttp.POST[JsValue, HttpResponse](any(), any(), any())(any(), any(), any(), any()))
-      .thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+      .thenReturn(Future.successful(HttpResponse(ACCEPTED,"")))
 
   }
   private val mockServicesConfig: ServicesConfig = mock[ServicesConfig]

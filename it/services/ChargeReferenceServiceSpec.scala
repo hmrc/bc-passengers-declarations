@@ -44,7 +44,7 @@ class ChargeReferenceServiceSpec extends FreeSpec with MustMatchers with MongoSu
           db.drop().flatMap {
             _ =>
               db.collection[JSONCollection]("charge-reference")
-                .insert(Json.obj(
+                .insert(ordered = false).one(Json.obj(
                   "_id"             -> "counter",
                   "chargeReference" -> 10
                 ))
@@ -55,7 +55,6 @@ class ChargeReferenceServiceSpec extends FreeSpec with MustMatchers with MongoSu
 
       running(app) {
 
-        val service = app.injector.instanceOf[ChargeReferenceService]
         started(app).futureValue
       }
     }

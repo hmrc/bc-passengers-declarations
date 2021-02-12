@@ -24,7 +24,6 @@ import utils.WireMockUtils._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.language.postfixOps
 
 class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
   with ScalaFutures with IntegrationPatience with OptionValues with MockitoSugar with WireMockHelper with Eventually {

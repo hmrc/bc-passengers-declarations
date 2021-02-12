@@ -5,10 +5,8 @@
 
 package workers
 
-import akka.{Done, NotUsed}
-import akka.actor.Cancellable
-import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
-import akka.stream.{ActorAttributes, Materializer, OverflowStrategy, Supervision}
+import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
+import akka.stream.{ActorAttributes, Materializer, Supervision}
 import com.google.inject.{Inject, Singleton}
 import metrics.MetricsOperator
 import models.DeclarationsStatus
@@ -16,7 +14,6 @@ import play.api.{Configuration, Logger}
 import repositories.DeclarationsRepository
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
@@ -24,7 +21,7 @@ class MetricsWorker @Inject() (
   declarationsRepository: DeclarationsRepository,
   config: Configuration,
   metricsOperator: MetricsOperator
-)(implicit mat: Materializer, ec: ExecutionContext) {
+)(implicit mat: Materializer) {
 
   private val logger = Logger(this.getClass)
 

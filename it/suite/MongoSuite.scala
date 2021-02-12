@@ -9,7 +9,7 @@ import services.ChargeReferenceService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.language.reflectiveCalls
+import scala.util.Try
 
 object MongoSuite {
 
@@ -19,8 +19,8 @@ object MongoSuite {
     MongoConnection.parseURI(config.get[String]("mongodb.uri"))
   }
 
-  lazy val connection =
-    parsedUri.map(MongoDriver().connection)
+  lazy val connection: Future[Try[MongoConnection]] =
+    parsedUri.map(MongoDriver().connection(_,strictUri = false))
 }
 
 trait MongoSuite {
@@ -41,7 +41,7 @@ trait MongoSuite {
     for {
       uri        <- MongoSuite.parsedUri
       connection <- MongoSuite.connection
-      database   <- connection.database(uri.db.get)
+      database   <- connection.get.database(uri.db.get)
     } yield database
   }
 }

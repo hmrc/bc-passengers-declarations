@@ -6,14 +6,13 @@ import org.mockito.Matchers.any
 import org.mockito.Mockito.when
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import reactivemongo.play.json.collection.JSONCollection
 import repositories.LockRepository
 import suite.MongoSuite
-
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

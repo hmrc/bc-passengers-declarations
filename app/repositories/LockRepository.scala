@@ -10,13 +10,15 @@ import models.Lock
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.commands.LastError
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.BSONDocument
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
 
 import scala.concurrent.{ExecutionContext, Future}
+
 
 @Singleton
 class DefaultLockRepository @Inject()(
@@ -48,7 +50,7 @@ class DefaultLockRepository @Inject()(
   override def lock(id: Int): Future[Boolean] =
     collection
       .flatMap {
-        _.insert(Lock(id))
+        _.insert(ordered = false).one(Lock(id))
           .map(_ => true)
       } recover {
       case e: LastError if e.code == documentExistsErrorCode =>
@@ -58,7 +60,7 @@ class DefaultLockRepository @Inject()(
   override def release(id: Int): Future[Unit] =
     collection
       .flatMap {
-        _.findAndRemove(Json.obj("_id" -> id))
+        _.findAndRemove(Json.obj("_id" -> id),None,None, WriteConcern.Default, None, None, Seq.empty)
           .map(_ => ())
       }.fallbackTo(Future.successful(()))
 

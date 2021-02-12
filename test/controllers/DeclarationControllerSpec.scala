@@ -11,7 +11,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application

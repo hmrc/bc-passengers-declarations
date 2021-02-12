@@ -7,8 +7,6 @@ package util
 
 import javax.inject.{Inject, Named, Singleton}
 import models.declarations.Declaration
-import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 @Singleton

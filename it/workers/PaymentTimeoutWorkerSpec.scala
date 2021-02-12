@@ -10,10 +10,10 @@ import org.mockito.Mockito._
 import org.netcrusher.core.reactor.NioReactor
 import org.netcrusher.tcp.TcpCrusherBuilder
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.Json
 import play.api.test.Helpers.running
 import reactivemongo.api.Cursor
 import reactivemongo.play.json.collection._
@@ -23,7 +23,6 @@ import suite.MongoSuite
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.language.postfixOps
 
 class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
   with ScalaFutures with IntegrationPatience with OptionValues with MockitoSugar {

@@ -15,10 +15,10 @@ import play.api.Configuration
 import play.api.libs.json.{JsNumber, JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
-import reactivemongo.api.Cursor
+import reactivemongo.api.{Cursor, WriteConcern}
 import reactivemongo.api.Cursor.ContOnError
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 import services.{ChargeReferenceService, ValidationService, Validator}
 
@@ -80,7 +80,7 @@ class DefaultDeclarationsRepository @Inject() (
             correlationId   = correlationId
           )
 
-          collection.flatMap(_.insert(declaration))
+          collection.flatMap(_.insert(ordered = false).one(declaration))
             .map(_ => Right(declaration))
         } else {
 
@@ -93,7 +93,7 @@ class DefaultDeclarationsRepository @Inject() (
     collection.flatMap(_.find(Json.obj("_id" -> id.toString), None).one[Declaration])
 
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
-    collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
+    collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString), None,None, WriteConcern.Default, None, None, Seq.empty).map(_.result[Declaration]))
 
   override def setState(id: ChargeReference, state: State): Future[Declaration] = {
 
@@ -108,7 +108,17 @@ class DefaultDeclarationsRepository @Inject() (
     )
 
     collection.flatMap {
-      _.findAndUpdate(selector, update, fetchNewObject = true)
+      _.findAndUpdate(selector = selector,
+        update = update,
+        fetchNewObject = true,
+        upsert = false,
+        sort = None,
+        fields = None,
+        bypassDocumentValidation = false,
+        writeConcern = WriteConcern.Acknowledged,
+        maxTime = None,
+        None,
+        Nil)
         .map {
           _.result[Declaration]
             .getOrElse(throw new Exception(s"unable to update declaration $id"))
@@ -126,7 +136,7 @@ class DefaultDeclarationsRepository @Inject() (
       )
     )
 
-    Source.fromFutureSource {
+    Source.futureSource {
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
@@ -142,7 +152,7 @@ class DefaultDeclarationsRepository @Inject() (
       "state" -> State.Paid
     )
 
-    Source.fromFutureSource {
+    Source.futureSource {
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()
@@ -158,7 +168,7 @@ class DefaultDeclarationsRepository @Inject() (
      "state" -> State.SubmissionFailed
    )
 
-    Source.fromFutureSource {
+    Source.futureSource {
       collection.map {
         _.find(query, None)
           .cursor[Declaration]()

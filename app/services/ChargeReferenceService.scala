@@ -9,8 +9,9 @@ import com.google.inject.{Inject, Singleton}
 import models.ChargeReference
 import play.api.libs.json.{Json, Reads}
 import play.modules.reactivemongo.ReactiveMongoApi
+import reactivemongo.api.WriteConcern
 import reactivemongo.api.commands.LastError
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import reactivemongo.play.json.collection.Helpers.idWrites
 import reactivemongo.play.json.collection.JSONCollection
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,7 +47,7 @@ class SequentialChargeReferenceService @Inject() (
     )
 
     collection.flatMap {
-      _.insert(document)
+      _.insert(ordered = false).one(document)
         .map(_ => ())
     } recover {
       case e: LastError if e.code == documentExistsErrorCode =>
@@ -67,7 +68,17 @@ class SequentialChargeReferenceService @Inject() (
     )
 
     collection.flatMap {
-      _.findAndUpdate(selector, update)
+      _.findAndUpdate(selector = selector,
+        update = update,
+        fetchNewObject = false,
+        upsert = false,
+        sort = None,
+        fields = None,
+        bypassDocumentValidation = false,
+        writeConcern = WriteConcern.Acknowledged,
+        maxTime = None,
+        None,
+        Nil)
         .map {
           _.result[ChargeReference]
             .getOrElse(throw new Exception("unable to generate charge reference"))

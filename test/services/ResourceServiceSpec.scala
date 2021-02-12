@@ -6,14 +6,13 @@
 package services
 
 import java.io.IOException
-
 import com.fasterxml.jackson.core.JsonParseException
 import org.scalatest.{FreeSpec, MustMatchers}
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Injecting
 
-class ResourceServiceSpec extends FreeSpec with MustMatchers with OneAppPerSuite with Injecting {
+class ResourceServiceSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with Injecting {
 
   private lazy val resourceService: ResourceService = inject[ResourceService]
 

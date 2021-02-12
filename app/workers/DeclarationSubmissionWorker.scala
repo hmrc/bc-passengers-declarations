@@ -13,7 +13,7 @@ import models.SubmissionResponse
 import models.declarations.{Declaration, State}
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
-import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector}
 import util.AuditingTools
 
 import scala.concurrent.duration._
@@ -62,10 +62,10 @@ class DeclarationSubmissionWorker @Inject() (
                   auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
                   declarationsRepository.remove(declaration.chargeReference)
                 case SubmissionResponse.Error =>
-                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
+                  logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
                   Future.successful(())
                 case SubmissionResponse.Failed =>
-                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 400")
+                  logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 400")
                   declarationsRepository.setState(declaration.chargeReference, State.SubmissionFailed)
               }
             } yield (declaration, result)

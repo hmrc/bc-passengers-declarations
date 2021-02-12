@@ -20,7 +20,7 @@ trait FailOnUnindexedQueries extends MongoSuite with BeforeAndAfterAll with Scal
     database.map(_.drop()).futureValue
 
     commandRunner(
-      db = MongoSuite.connection.flatMap(_.database("admin")).futureValue,
+      db = MongoSuite.connection.flatMap(_.get.database("admin")).futureValue,
       command = commandRunner.rawCommand(BSONDocument("setParameter" -> 1, "notablescan" -> 1))
     ).one[BSONDocument](ReadPreference.primaryPreferred).futureValue
   }
@@ -29,7 +29,7 @@ trait FailOnUnindexedQueries extends MongoSuite with BeforeAndAfterAll with Scal
     super.afterAll()
 
     commandRunner(
-      db      = MongoSuite.connection.flatMap(_.database("admin")).futureValue,
+      db      = MongoSuite.connection.flatMap(_.get.database("admin")).futureValue,
       command = commandRunner.rawCommand(BSONDocument("setParameter" -> 1, "notablescan" -> 0))
     ).one[BSONDocument](ReadPreference.primaryPreferred).futureValue
   }
