@@ -133,9 +133,6 @@ case class DeclarationHeader(
   expectedDateOfArrival: Option[String],
   timeOfEntry: Option[String],
   travellingFrom: String,
-  uccRelief: Boolean,
-  ukVATPaid: Boolean,
-  ukExcisePaid: Boolean,
   onwardTravelGBNI: String
 )
 
@@ -163,7 +160,11 @@ case class DeclarationItemTobacco(
   VATRESClaimed: Option[Boolean],
   exciseGBP: Option[String],
   customsGBP: Option[String],
-  vatGBP: Option[String]
+  vatGBP: Option[String],
+  ukVATPaid: Option[Boolean],
+  ukExcisePaid: Option[Boolean],
+  euCustomsRelief: Option[Boolean],
+  madeIn: Option[String]
 )
 
 case class DeclarationAlcohol(
@@ -185,7 +186,11 @@ case class DeclarationItemAlcohol(
   VATRESClaimed: Option[Boolean],
   exciseGBP: Option[String],
   customsGBP: Option[String],
-  vatGBP: Option[String]
+  vatGBP: Option[String],
+  ukVATPaid: Option[Boolean],
+  ukExcisePaid: Option[Boolean],
+  euCustomsRelief: Option[Boolean],
+  madeIn: Option[String]
 )
 
 case class DeclarationOther(
@@ -207,7 +212,11 @@ case class DeclarationItemOther(
   VATRESClaimed: Option[Boolean],
   exciseGBP: Option[String],
   customsGBP: Option[String],
-  vatGBP: Option[String]
+  vatGBP: Option[String],
+  ukVATPaid: Option[Boolean],
+  uccRelief: Option[Boolean],
+  euCustomsRelief: Option[Boolean],
+  madeIn: Option[String]
 )
 
 case class LiabilityDetails(
