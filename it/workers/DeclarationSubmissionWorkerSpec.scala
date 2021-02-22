@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
-import models.declarations.{Declaration, State}
+import models.declarations.{Declaration, Etmp, State}
 import models.{ChargeReference, SubmissionResponse}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -341,7 +341,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
             "clientPort" -> "-",
             "transactionName" -> "passengerdeclarationsubmitted"
           ),
-          "detail" -> data).toString().stripMargin
+          "detail" -> Json.toJsObject(data.as[Etmp])).toString().stripMargin
 
         val request = postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(equalToJson(expectedJsonBody, true, true))
 

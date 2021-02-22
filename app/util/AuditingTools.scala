@@ -6,9 +6,8 @@
 package util
 
 import javax.inject.{Inject, Named, Singleton}
-import models.declarations.Declaration
-import play.api.mvc.{AnyContent, Request}
-import uk.gov.hmrc.http.HeaderCarrier
+import models.declarations.{Declaration, Etmp}
+import play.api.libs.json.Json
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 @Singleton
@@ -21,7 +20,7 @@ class AuditingTools @Inject() (
       auditSource = appName,
       auditType =  "passengerdeclaration",
       tags = Map("transactionName" -> "passengerdeclarationsubmitted"),
-      detail = declaration.data
+      detail = Json.toJsObject(declaration.data.as[Etmp])
     )
   }
 }
