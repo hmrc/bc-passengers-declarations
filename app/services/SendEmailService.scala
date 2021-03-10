@@ -106,6 +106,7 @@ trait SendEmailService {
     val formattedTimeOfEntry = if (timeOfEntry.trim.equals("")) timeOfEntry else LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
 
     val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
+    val travellingFrom: String = declarationHeader.\("travellingFrom").asOpt[String].getOrElse("")
 
     val grandTotalGBP: String = s"£${liabilityDetails.\("grandTotalGBP").asOpt[String].getOrElse("")}"
     val totalExciseGBP: String = s"£${liabilityDetails.\("totalExciseGBP").asOpt[String].getOrElse("")}"
@@ -129,6 +130,7 @@ trait SendEmailService {
       "TOTALEXCISEGBP" -> totalExciseGBP,
       "TOTALCUSTOMSGBP" -> totalCustomsGBP,
       "TOTALVATGBP" -> totalVATGBP,
+      "TRAVELLINGFROM" -> travellingFrom,
       "AllITEMS" -> allItems.toString())
 
     Map(emailId -> parameters)
