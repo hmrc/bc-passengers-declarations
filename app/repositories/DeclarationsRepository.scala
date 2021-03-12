@@ -251,8 +251,18 @@ class DefaultDeclarationsRepository @Inject() (
 
     val query = Json.obj(
       "state" -> State.Paid,
-      "sentToEtmp" -> true
-    )
+      "sentToEtmp" -> true,
+      "$or" -> Json.arr(
+        Json.obj("$and" -> Json.arr(
+          Json.obj("amendState" -> Json.obj("$exists" -> false)),
+          Json.obj("amendSentToEtmp" -> Json.obj("$exists" -> false))
+          )),
+        Json.obj("$and" -> Json.arr(
+          Json.obj("amendState" -> State.Paid),
+          Json.obj("amendSentToEtmp" -> true)
+        )),
+        )
+      )
 
     Source.fromFutureSource {
       collection.map {
