@@ -63,7 +63,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val journeyData = Json.obj("foo" -> "bar")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, journeyData, message)
+          val declaration = Declaration(chargeReference, State.PendingPayment, None,sentToEtmp = false, None,correlationId, journeyData, message)
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(message).withHeaders("X-Correlation-ID" -> correlationId)
@@ -113,7 +113,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val chargeReference = ChargeReference(1234567890)
 
-        val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
+        val declaration = Declaration(chargeReference, State.PendingPayment, None,sentToEtmp = false, None,correlationId, Json.obj(), Json.obj())
 
         val request = FakeRequest(POST, routes.DeclarationController.submit().url)
           .withJsonBody(requestBody)

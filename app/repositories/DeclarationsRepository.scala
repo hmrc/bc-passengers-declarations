@@ -210,6 +210,27 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
+  override def setAmendSentToEtmp(id: ChargeReference, amendSentToEtmp: Boolean): Future[Declaration] = {
+
+    val selector = Json.obj(
+      "_id" -> id
+    )
+
+    val update = Json.obj(
+      "$set" -> Json.obj(
+        "amendSentToEtmp" -> amendSentToEtmp
+      )
+    )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, update, fetchNewObject = true)
+        .map {
+          _.result[Declaration]
+            .getOrElse(throw new Exception(s"unable to set amendSentToEtmp for amended declaration $id"))
+        }
+    }
+  }
+
   override def unpaidDeclarations: Source[Declaration, Future[NotUsed]] = {
 
     val query = Json.obj(
@@ -236,6 +257,26 @@ class DefaultDeclarationsRepository @Inject() (
       "state" -> State.Paid,
       "sentToEtmp" -> false
     )
+
+    Source.fromFutureSource {
+      collection.map {
+        _.find(query, None)
+          .cursor[Declaration]()
+          .documentSource(err = ContOnError())
+          .mapMaterializedValue(_ => NotUsed.notUsed)
+      }
+    }
+  }
+
+  override def paidAmendmentsForEtmp: Source[Declaration, Future[NotUsed]] = {
+
+    val query = Json.obj(
+      "state" -> State.Paid,
+      "sentToEtmp" -> true,
+      "amendState" -> State.Paid,
+      "amendSentToEtmp" -> false
+    )
+
 
     Source.fromFutureSource {
       collection.map {
@@ -345,8 +386,10 @@ trait DeclarationsRepository {
   def setState(id: ChargeReference, state: State): Future[Declaration]
   def setAmendState(id: ChargeReference, amendState: State): Future[Declaration]
   def setSentToEtmp(id: ChargeReference, sentToEtmp: Boolean): Future[Declaration]
+  def setAmendSentToEtmp(id: ChargeReference, amendSentToEtmp: Boolean): Future[Declaration]
   def unpaidDeclarations: Source[Declaration, Future[NotUsed]]
   def paidDeclarationsForEtmp: Source[Declaration, Future[NotUsed]]
+  def paidAmendmentsForEtmp: Source[Declaration, Future[NotUsed]]
   def paidDeclarationsForDeletion: Source[Declaration, Future[NotUsed]]
   def failedDeclarations: Source[Declaration, Future[NotUsed]]
   def metricsCount: Source[DeclarationsStatus, NotUsed]

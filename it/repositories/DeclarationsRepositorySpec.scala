@@ -709,6 +709,44 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
       }
     }
 
+    "must provide a stream of paid amendments" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarations = List(
+          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp=true, Some(false), correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(2), State.Paid, Some(State.SubmissionFailed), sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(3), State.Paid, Some(State.Paid), sentToEtmp=true, Some(false), correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(4), State.Paid, Some(State.Paid), sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(5), State.Paid, Some(State.Paid), sentToEtmp=true, Some(false), correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(6), State.Paid, Some(State.Paid), sentToEtmp=false, Some(false), correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now)
+        )
+
+        database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .insert(ordered = true)
+            .many(declarations)
+        }.futureValue
+
+        implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+
+        val paidDeclarations = repository.paidAmendmentsForEtmp.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+
+        paidDeclarations.map(_.chargeReference) must contain only (
+          ChargeReference(1), ChargeReference(3), ChargeReference(5)
+        )
+      }
+    }
+
     "must provide a declaration when a paid declaration or amendment is present for given chargeReference, lastName, identification number" in {
 
       database.flatMap(_.drop()).futureValue
