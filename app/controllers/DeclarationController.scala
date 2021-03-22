@@ -7,7 +7,7 @@ package controllers
 
 import com.google.inject.{Inject, Singleton}
 import models.declarations.State
-import models.{ChargeReference, PaymentNotification}
+import models.{ChargeReference, PaymentNotification, PreviousDeclarationRequest}
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
 import repositories.{DeclarationsRepository, LockRepository}
@@ -71,6 +71,21 @@ class DeclarationController @Inject()(
               }.getOrElse(Future.successful(NotFound))
             }
           }
+      }.recoverTotal{
+        e => Future.successful(BadRequest(JsError.toJson(e)))
+      }
+  }
+
+  def retrieveDeclaration(): Action[JsValue] = Action.async(parse.tolerantJson) {
+    implicit request =>
+      request.body.validate[PreviousDeclarationRequest].map {
+        retrieveDeclarationRequest =>
+            repository.get(retrieveDeclarationRequest).flatMap {
+              _.map {
+                declarationResponse =>
+                  Future.successful(Ok(Json.toJsObject(declarationResponse)))
+              }.getOrElse(Future.successful(NotFound))
+            }
       }.recoverTotal{
         e => Future.successful(BadRequest(JsError.toJson(e)))
       }

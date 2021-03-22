@@ -12,8 +12,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, State}
-import models.{ChargeReference, DeclarationsStatus}
-import play.api.Configuration
+import models.{ChargeReference, DeclarationResponse, DeclarationsStatus, PreviousDeclarationRequest}
+import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsNumber, JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoApi
 import reactivemongo.akkastream.cursorProducer
@@ -95,6 +95,25 @@ class DefaultDeclarationsRepository @Inject() (
 
   override def get(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.find(Json.obj("_id" -> id.toString), None).one[Declaration])
+
+  override def get(retrieveDeclarationRequest: PreviousDeclarationRequest): Future[Option[DeclarationResponse]] = {
+
+    val selector = Json.obj(
+      "_id" -> Json.obj("$regex" -> s"^${retrieveDeclarationRequest.referenceNumber}$$", "$options" -> "i"),
+      "data.simpleDeclarationRequest.requestDetail.customerReference.idValue" -> retrieveDeclarationRequest.identificationNumber.toUpperCase,
+      "data.simpleDeclarationRequest.requestDetail.personalDetails.lastName" -> Json.obj("$regex" -> s"^${retrieveDeclarationRequest.lastName}$$", "$options" -> "i"),
+      "$and" -> Json.arr(
+        Json.obj("state" -> "paid"),
+        Json.obj("$or" -> Json.arr(
+          Json.obj("amendState" -> Json.obj("$exists" -> false)),
+          Json.obj("amendState" -> "paid"))
+        ))
+    )
+
+    Logger.debug("[DeclarationRepository] [retrieveDeclaration] search query - "+selector)
+
+    collection.flatMap(_.find(selector, None).one[DeclarationResponse])
+  }
 
   override def remove(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.findAndRemove(Json.obj("_id" -> id.toString)).map(_.result[Declaration]))
@@ -263,6 +282,7 @@ trait DeclarationsRepository {
   val started: Future[Unit]
   def insert(data: JsObject, correlationId: String, sentToEtmp: Boolean): Future[Either[List[String], Declaration]]
   def get(id: ChargeReference): Future[Option[Declaration]]
+  def get(retrieveDeclarationRequest: PreviousDeclarationRequest): Future[Option[DeclarationResponse]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def setState(id: ChargeReference, state: State): Future[Declaration]
   def setSentToEtmp(id: ChargeReference, sentToEtmp: Boolean): Future[Declaration]
