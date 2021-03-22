@@ -308,7 +308,7 @@ class SendEmailServiceSpec extends BaseSpec {
           |    "lastUpdated" : "2020-12-07T01:37:30.832"
           |}""".stripMargin
 
-      val declaration:Declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId,Json.parse(journeyData).as[JsObject], Json.parse(data).as[JsObject])
+      val declaration:Declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId,Json.parse(journeyData).as[JsObject], Json.parse(data).as[JsObject])
       val bfEmail: String = "borderforce@digital.hmrc.gov.uk"
       val isleOfManEmail: String = "isleofman@digital.hmrc.gov.uk"
 
@@ -576,28 +576,28 @@ class SendEmailServiceSpec extends BaseSpec {
 
   "constructAndSendEmail" should {
     "send an email for a zero pound journey when disable-zero-pound-email feature is false" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment,sentToEtmp = false, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
     }
 
     "not send an email for a zero pound journey when disable-zero-pound-email feature is true" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment,sentToEtmp = false, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe false
     }
 
     "send an email for a non zero pound journey when disable-zero-pound-email feature is true" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment,sentToEtmp = false, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
     }
 
     "send an email for a non zero pound journey when disable-zero-pound-email feature is false" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment,sentToEtmp = false, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
+      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true

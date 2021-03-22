@@ -49,8 +49,8 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
           .insert(ordered = true)
           .many(
             List(
-              Declaration(ChargeReference(0), State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-              Declaration(ChargeReference(1), State.PaymentFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+              Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+              Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
             )
           )
       }.futureValue
@@ -77,9 +77,9 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
             .insert(ordered = true)
             .many(
               List(
-                Declaration(ChargeReference(2), State.Paid,sentToEtmp = false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-                Declaration(ChargeReference(3), State.PaymentCancelled,sentToEtmp = false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-                Declaration(ChargeReference(4), State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+                Declaration(ChargeReference(2), State.Paid, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+                Declaration(ChargeReference(3), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
+                Declaration(ChargeReference(4), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
               )
             )
         }.futureValue

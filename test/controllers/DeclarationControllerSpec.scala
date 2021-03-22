@@ -6,7 +6,7 @@
 package controllers
 
 import models.declarations.{Declaration, State}
-import models.ChargeReference
+import models.{ChargeReference, DeclarationResponse, PreviousDeclarationRequest}
 import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => eqTo, _}
@@ -63,7 +63,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val journeyData = Json.obj("foo" -> "bar")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, journeyData, message)
+          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, journeyData, message)
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(message).withHeaders("X-Correlation-ID" -> correlationId)
@@ -113,7 +113,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val chargeReference = ChargeReference(1234567890)
 
-        val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
+        val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
 
         val request = FakeRequest(POST, routes.DeclarationController.submit().url)
           .withJsonBody(requestBody)
@@ -180,7 +180,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.SubmissionFailed,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -204,7 +204,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.Paid,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.Paid, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -229,7 +229,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
 
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
@@ -260,7 +260,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
           val updatedDeclaration = declaration copy (state = State.Paid)
 
           when(declarationsRepository.get(chargeReference))
@@ -294,7 +294,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Failed")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
           val updatedDeclaration = declaration copy (state = State.PaymentFailed)
 
           when(declarationsRepository.get(chargeReference))
@@ -328,7 +328,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Cancelled")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj())
+          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
           val updatedDeclaration = declaration copy (state = State.PaymentCancelled)
 
           when(declarationsRepository.get(chargeReference))
@@ -388,6 +388,100 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
         val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
         val result = route(app, request).value
         status(result) mustBe BAD_REQUEST
+      }
+    }
+  }
+
+  "retrieve" - {
+
+    "when given a valid request" - {
+
+      "and mongo is available" - {
+
+        "must return OK and a matched Declaration" in {
+
+          val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+
+          val declarationResponse = DeclarationResponse("greatBritain", false, true, Some(true), false, Json.obj("calculation" -> "somecalcultaion"), Json.arr("oldPurchaseProductInstances" -> Json.obj()))
+
+          when(declarationsRepository.get(input))
+            .thenReturn(Future.successful(Some(declarationResponse)))
+
+          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
+
+          val result = route(app, request).value
+
+          status(result) mustBe OK
+          contentAsJson(result) mustBe Json.toJsObject(declarationResponse)
+
+          whenReady(result) {
+            _ =>
+              verify(declarationsRepository, times(1)).get(input)
+          }
+        }
+      }
+
+      "and mongo is unavailable" - {
+
+        "must throw an exception" in {
+
+          val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+
+          when(declarationsRepository.get(input))
+            .thenReturn(Future.failed(new Exception()))
+
+          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
+
+          val result = route(app, request).value
+
+          whenReady(result.failed) {
+            _ mustBe an[Exception]
+          }
+        }
+      }
+    }
+
+    "when given an invalid request" - {
+
+      "must return BAD_REQUEST when not supplied with a correlation id in the headers" in {
+
+        val requestBody = Json.obj()
+
+        val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+
+        val declarationResponse = DeclarationResponse("greatBritain", false, true, Some(true), false, Json.obj("calculation" -> "somecalcultaion"), Json.arr("oldPurchaseProductInstances" -> Json.obj()))
+
+        val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
+          .withJsonBody(requestBody)
+
+        when(declarationsRepository.get(input))
+          .thenReturn(Future.successful(Some(declarationResponse)))
+
+        val result = route(app, request).value
+
+        status(result) mustBe BAD_REQUEST
+      }
+    }
+
+    "when a matching declaration is not found" - {
+
+      "must return NOT_FOUND" in {
+
+        val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+
+        when(declarationsRepository.get(input))
+          .thenReturn(Future.successful(None))
+
+        val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
+
+        val result = route(app, request).value
+
+        status(result) mustBe NOT_FOUND
+
+        whenReady(result) {
+          _ =>
+            verify(declarationsRepository, times(1)).get(input)
+        }
       }
     }
   }

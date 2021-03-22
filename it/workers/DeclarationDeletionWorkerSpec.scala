@@ -57,9 +57,9 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, sentToEtmp = false,correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, sentToEtmp = true,correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PendingPayment, sentToEtmp = false,correlationId,journeyData, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp = true, None, correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId,journeyData, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -90,9 +90,9 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, sentToEtmp = true,correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, sentToEtmp = true, correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid,sentToEtmp = true, correlationId,journeyData, Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, None, sentToEtmp = true, None, correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp = true, None, correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Paid, None, sentToEtmp = true, None, correlationId,journeyData, Json.obj(), LocalDateTime.now)
         )
 
         database.flatMap {
@@ -127,8 +127,8 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
         val worker = app.injector.instanceOf[DeclarationDeletionWorker]
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid,sentToEtmp = true, correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid,sentToEtmp = true, correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5))
+          Declaration(ChargeReference(0), State.Paid, None, sentToEtmp = true, None, correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp = true, None, correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5))
         )
 
         database.flatMap {
@@ -149,8 +149,8 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Paid, sentToEtmp = true, correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference(1), State.Paid, sentToEtmp = true,correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), State.Paid, None, sentToEtmp = true, None, correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)),
+        Declaration(ChargeReference(1), State.Paid, None, sentToEtmp = true, None, correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5))
       )
 
       database.flatMap {
@@ -187,7 +187,7 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
       database.flatMap {
         _.collection[JSONCollection]("declarations")
           .insert(ordered = true)
-          .one(Declaration(ChargeReference(0), State.Paid, sentToEtmp = true,correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)))
+          .one(Declaration(ChargeReference(0), State.Paid, None, sentToEtmp = true, None, correlationId,journeyData, Json.obj(), LocalDateTime.now.minusMinutes(5)))
       }.futureValue
 
       val reactor = new NioReactor()
@@ -217,7 +217,7 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
           database.flatMap {
             _.collection[JSONCollection]("declarations")
               .insert(ordered = true)
-              .one(Declaration(ChargeReference(1), State.Paid, sentToEtmp = true,correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)))
+              .one(Declaration(ChargeReference(1), State.Paid, None, sentToEtmp = true, None, correlationId, journeyData,Json.obj(), LocalDateTime.now.minusMinutes(5)))
           }.futureValue
 
           proxy.open()

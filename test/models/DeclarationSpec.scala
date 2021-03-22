@@ -35,7 +35,9 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
         Declaration(
           ChargeReference(1234567890),
           State.PendingPayment,
+          None,
           sentToEtmp = false,
+          None,
           correlationId,
           Json.obj(),
           Json.obj(),
@@ -60,7 +62,61 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
         "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment,sentToEtmp = false, correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
+      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
+    }
+
+    "must deserialise with amendState and amendSentToEtmp" in {
+
+      val lastUpdated = LocalDateTime.now
+
+      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
+      val json = Json.obj(
+        "_id"         -> "XHPR1234567890",
+        "state"              -> State.PendingPayment,
+        "amendState"         -> State.PendingPayment,
+        "sentToEtmp"         -> false,
+        "amendSentToEtmp"    -> false,
+        "correlationId"      -> correlationId,
+        "journeyData"        -> Json.obj(),
+        "data"               -> Json.obj(),
+        "lastUpdated"        -> Json.toJson(lastUpdated)
+      )
+
+      json.as[Declaration] mustEqual
+        Declaration(
+          ChargeReference(1234567890),
+          State.PendingPayment,
+          Some(State.PendingPayment),
+          sentToEtmp = false,
+          amendSentToEtmp = Some(false),
+          correlationId,
+          Json.obj(),
+          Json.obj(),
+          lastUpdated
+        )
+    }
+
+    "must serialise with amendState and amendSentToEtmp" in {
+
+      val lastUpdated = LocalDateTime.now
+
+      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+
+
+      val json = Json.obj(
+        "_id"           -> "XHPR1234567890",
+        "state"                -> State.PendingPayment,
+        "amendState"           -> State.PendingPayment,
+        "sentToEtmp"           -> false,
+        "amendSentToEtmp"      -> false,
+        "correlationId"        -> correlationId,
+        "journeyData"          -> Json.obj(),
+        "data"                 -> Json.obj(),
+        "lastUpdated"          -> Json.toJson(lastUpdated)
+      )
+
+      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, Some(State.PendingPayment), sentToEtmp = false, amendSentToEtmp = Some(false), correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
     }
   }
 }
