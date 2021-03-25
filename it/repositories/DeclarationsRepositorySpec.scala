@@ -37,8 +37,8 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
           "iid" -> "UCLFeP",
           "country" -> Json.obj(
             "code" -> "IN",
-            "countryName" -> "title.india",
-            "alphaTwoCode" -> "IN",
+            "countryName" -> "title.south_georgia_and_the_south_sandwich_islands",
+            "alphaTwoCode" -> "GS",
             "isEu" -> false,
             "isCountry" -> true,
             "countrySynonyms" -> Json.arr()
@@ -259,8 +259,8 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         "iid" -> "UCLFeP",
         "country" -> Json.obj(
           "code" -> "IN",
-          "countryName" -> "title.india",
-          "alphaTwoCode" -> "IN",
+          "countryName" -> "title.south_georgia_and_the_south_sandwich_islands",
+          "alphaTwoCode" -> "GS",
           "isEu" -> false,
           "isCountry" -> true,
           "countrySynonyms" -> Json.arr()
