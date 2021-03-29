@@ -201,7 +201,7 @@
 					"$ref": "#/definitions/TimeType"
 				},
 				"travellingFrom": {
-					"$ref": "#/definitions/String40"
+					"$ref": "#/definitions/String60"
 				},
 				"uccRelief": {
 					"type": "boolean"
@@ -341,7 +341,7 @@
 					"$ref": "#/definitions/String40"
 				},
 				"originCountryName": {
-					"$ref": "#/definitions/String40"
+					"$ref": "#/definitions/String60"
 				},
 				"ukVATPaid": {
 					"type": "boolean"
@@ -401,7 +401,7 @@
 					"$ref": "#/definitions/String40"
 				},
 				"originCountryName": {
-					"$ref": "#/definitions/String40"
+					"$ref": "#/definitions/String60"
 				},
 				"ukVATPaid": {
 					"type": "boolean"
@@ -479,7 +479,7 @@
 					"$ref": "#/definitions/String40"
 				},
 				"originCountryName": {
-					"$ref": "#/definitions/String40"
+					"$ref": "#/definitions/String60"
 				},
 				"ukVATPaid": {
 					"type": "boolean"
@@ -515,6 +515,11 @@
 			"type": "string",
 			"minLength": 1,
 			"maxLength": 40
+		},
+		"String60": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 60
 		},
 		"String14": {
 			"type": "string",
