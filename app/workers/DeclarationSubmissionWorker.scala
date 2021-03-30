@@ -33,11 +33,23 @@ class DeclarationSubmissionWorker @Inject() (
 
     private val logger = Logger(this.getClass)
 
-    private val initialDelay = config.get[FiniteDuration]("workers.declaration-submission-worker.initial-delay")
-    private val interval = config.get[FiniteDuration]("workers.declaration-submission-worker.interval")
+    private val initialDelayFromConfig = config.get[String]("workers.declaration-submission-worker.initial-delay").replace('.',' ')
+    private val initialDelayFromConfigFiniteDuration = config.get[FiniteDuration]("workers.declaration-submission-worker.initial-delay")
+    private val finiteInitialDelay = Duration(initialDelayFromConfig)
+    private val initialDelay = Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
+
+    private val intervalFromConfig = config.get[String]("workers.declaration-submission-worker.interval").replace('.',' ')
+    private val intervalFromConfigFiniteDuration = config.get[FiniteDuration]("workers.declaration-submission-worker.interval")
+    private val finiteInterval = Duration(intervalFromConfig)
+    private val interval = Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)
+
     private val parallelism = config.get[Int]("workers.declaration-submission-worker.parallelism")
     private val elements = config.get[Int]("workers.declaration-submission-worker.throttle.elements")
-    private val per = config.get[FiniteDuration]("workers.declaration-submission-worker.throttle.per")
+
+    private val perFromConfig = config.get[String]("workers.declaration-submission-worker.throttle.per").replace('.',' ')
+    private val perFromConfigFiniteDuration = config.get[FiniteDuration]("workers.declaration-submission-worker.throttle.per")
+    private val finitePer = Duration(perFromConfig)
+    private val per = Some(finitePer).collect { case d: FiniteDuration => d }.getOrElse(perFromConfigFiniteDuration)
 
     private val supervisionStrategy: Supervision.Decider = {
       case NonFatal(_) => Supervision.resume
