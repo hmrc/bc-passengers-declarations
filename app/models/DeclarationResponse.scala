@@ -13,7 +13,9 @@ case class DeclarationResponse(
                                 isOver17: Boolean,
                                 isUKResident: Option[Boolean],
                                 isPrivateTravel: Boolean,
+                                userInformation: JsObject,
                                 calculation: JsObject,
+                                liabilityDetails: JsObject,
                                 oldPurchaseProductInstances: JsArray
                               )
 
@@ -29,7 +31,9 @@ object DeclarationResponse {
         (__ \ "journeyData" \ "ageOver17").read[Boolean] and
         (__ \ "journeyData" \ "isUKResident").readNullable[Boolean] and
         (__ \ "journeyData" \ "privateCraft").read[Boolean] and
+        (__ \ "journeyData" \ "userInformation").read[JsObject] and
         (__ \ "journeyData" \ "calculatorResponse" \ "calculation").read[JsObject] and
+        (__ \ "data" \ "simpleDeclarationRequest" \ "requestDetail" \ "liabilityDetails").read[JsObject] and
         (__ \ "journeyData" \ "purchasedProductInstances").read[JsArray]
       )(DeclarationResponse.apply _)
   }

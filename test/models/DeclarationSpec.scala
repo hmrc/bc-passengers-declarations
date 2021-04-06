@@ -41,6 +41,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
           correlationId,
           Json.obj(),
           Json.obj(),
+          None,
           lastUpdated
         )
     }
@@ -62,7 +63,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
         "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
+      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj(), None, lastUpdated)) mustEqual json
     }
 
     "must deserialise with amendState and amendSentToEtmp" in {
@@ -93,6 +94,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
           correlationId,
           Json.obj(),
           Json.obj(),
+          None,
           lastUpdated
         )
     }
@@ -116,7 +118,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
         "lastUpdated"          -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, Some(State.PendingPayment), sentToEtmp = false, amendSentToEtmp = Some(false), correlationId, Json.obj(), Json.obj(), lastUpdated)) mustEqual json
+      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, Some(State.PendingPayment), sentToEtmp = false, amendSentToEtmp = Some(false), correlationId, Json.obj(), Json.obj(), None, lastUpdated)) mustEqual json
     }
   }
 }

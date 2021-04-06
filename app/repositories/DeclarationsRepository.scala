@@ -93,6 +93,31 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
+  override def insertAmendment(amendmentData: JsObject, correlationId: String, id: ChargeReference): Future[Declaration] = {
+
+    val selector = Json.obj(
+      "_id" -> id
+    )
+
+    val update = Json.obj(
+      "$set" -> Json.obj(
+        "amendSentToEtmp" -> false,
+        "amendState" -> State.PendingPayment,
+        "journeyData" -> amendmentData.apply("journeyData").as[JsObject],
+        "amendData" -> (amendmentData - "journeyData"),
+        "lastUpdated" -> LocalDateTime.now
+      )
+    )
+      collection.flatMap {
+      _.findAndUpdate(selector, update, fetchNewObject = true)
+        .map {
+          _.result[Declaration]
+            .getOrElse(throw new Exception(s"unable to update amendment for declaration $id"))
+        }
+    }
+
+  }
+
   override def get(id: ChargeReference): Future[Option[Declaration]] =
     collection.flatMap(_.find(Json.obj("_id" -> id.toString), None).one[Declaration])
 
@@ -281,6 +306,7 @@ trait DeclarationsRepository {
 
   val started: Future[Unit]
   def insert(data: JsObject, correlationId: String, sentToEtmp: Boolean): Future[Either[List[String], Declaration]]
+  def insertAmendment(amendData: JsObject, correlationId: String, id: ChargeReference): Future[Declaration]
   def get(id: ChargeReference): Future[Option[Declaration]]
   def get(retrieveDeclarationRequest: PreviousDeclarationRequest): Future[Option[DeclarationResponse]]
   def remove(id: ChargeReference): Future[Option[Declaration]]

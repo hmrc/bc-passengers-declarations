@@ -8,6 +8,7 @@ package services
 import com.github.fge.jackson.JsonLoader
 import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
 import com.google.inject.Inject
+import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
 
 import scala.collection.JavaConverters._
@@ -29,7 +30,8 @@ class Validator(schema: JsonSchema) {
   }
 }
 
-class ValidationService @Inject() (resourceService: ResourceService) {
+class ValidationService @Inject() (resourceService: ResourceService,
+                                   config: Configuration) {
 
   private val factory = JsonSchemaFactory.byDefault()
 
@@ -39,5 +41,10 @@ class ValidationService @Inject() (resourceService: ResourceService) {
     val schema     = factory.getJsonSchema(schemaJson)
 
     new Validator(schema)
+  }
+
+  def validator(schemaVersion: String): Validator = {
+    val schema = config.get[String](s"declarations.schemas.$schemaVersion")
+    get(schema)
   }
 }

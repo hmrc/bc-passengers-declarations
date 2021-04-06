@@ -24,38 +24,53 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
 
+  val userInformation = Json.obj(
+    "firstName" -> "Harry",
+    "lastName" -> "Potter",
+    "identificationType" -> "passport",
+    "identificationNumber" -> "SX12345",
+    "emailAddress" -> "abc@gmail.com",
+    "selectPlaceOfArrival" -> "LHR",
+    "enterPlaceOfArrival" -> "Heathrow Airport",
+    "dateOfArrival" -> "2018-05-31",
+    "timeOfArrival" -> "13:20:00.000"
+  )
+
+  val journeyData: JsObject = Json.obj(
+    "euCountryCheck" -> "greatBritain",
+    "arrivingNICheck" -> true,
+    "isUKResident" -> false,
+    "bringingOverAllowance" -> true,
+    "privateCraft" -> true,
+    "ageOver17" -> true,
+    "userInformation" -> userInformation,
+    "purchasedProductInstances" -> Json.arr(
+      Json.obj("path" -> "other-goods/adult/adult-clothing",
+        "iid" -> "UCLFeP",
+        "country" -> Json.obj(
+          "code" -> "IN",
+          "countryName" -> "title.south_georgia_and_the_south_sandwich_islands",
+          "alphaTwoCode" -> "GS",
+          "isEu" -> false,
+          "isCountry" -> true,
+          "countrySynonyms" -> Json.arr()
+        ),
+        "currency" -> "GBP",
+        "cost" -> 500,
+        "isVatPaid" -> false,
+        "isCustomPaid" -> false,
+        "isUccRelief" -> false)),
+    "calculatorResponse" -> Json.obj(
+      "calculation" -> Json.obj(
+        "excise" -> "0.00",
+        "customs" -> "12.50",
+        "vat" -> "102.50",
+        "allTax" -> "115.00"
+      )
+    ))
+
   val inputData: JsObject = Json.obj(
-    "journeyData" -> Json.obj(
-      "euCountryCheck" -> "greatBritain",
-      "arrivingNICheck" -> true,
-      "isUKResident" -> false,
-      "bringingOverAllowance" -> true,
-      "privateCraft" -> true,
-      "ageOver17" -> true,
-      "purchasedProductInstances" -> Json.arr(
-        Json.obj("path" -> "other-goods/adult/adult-clothing",
-          "iid" -> "UCLFeP",
-          "country" -> Json.obj(
-            "code" -> "IN",
-            "countryName" -> "title.south_georgia_and_the_south_sandwich_islands",
-            "alphaTwoCode" -> "GS",
-            "isEu" -> false,
-            "isCountry" -> true,
-            "countrySynonyms" -> Json.arr()
-          ),
-          "currency" -> "GBP",
-          "cost" -> 500,
-          "isVatPaid" -> false,
-          "isCustomPaid" -> false,
-          "isUccRelief" -> false)),
-      "calculatorResponse" -> Json.obj(
-        "calculation" -> Json.obj(
-          "excise" -> "0.00",
-          "customs" -> "12.50",
-          "vat" -> "102.50",
-          "allTax" -> "115.00"
-        )
-      )),
+    "journeyData" -> journeyData,
     "simpleDeclarationRequest" -> Json.obj(
       "requestCommon" -> Json.obj(
         "receiptDate" -> "2020-12-29T12:14:08Z",
@@ -247,37 +262,242 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
     )
   )
 
-  val journeyData: JsObject = Json.obj(
-    "euCountryCheck" -> "greatBritain",
-    "arrivingNICheck" -> true,
-    "isUKResident" -> false,
-    "bringingOverAllowance" -> true,
-    "privateCraft" -> true,
-    "ageOver17" -> true,
-    "purchasedProductInstances" -> Json.arr(
-      Json.obj("path" -> "other-goods/adult/adult-clothing",
-        "iid" -> "UCLFeP",
-        "country" -> Json.obj(
-          "code" -> "IN",
-          "countryName" -> "title.south_georgia_and_the_south_sandwich_islands",
-          "alphaTwoCode" -> "GS",
-          "isEu" -> false,
-          "isCountry" -> true,
-          "countrySynonyms" -> Json.arr()
+  val actualAmendmentData: JsObject = Json.obj(
+    "simpleDeclarationRequest" -> Json.obj(
+      "requestCommon" -> Json.obj(
+        "receiptDate" -> "2020-12-29T14:00:08Z",
+        "requestParameters" -> Json.arr(
+          Json.obj(
+            "paramName" -> "REGIME",
+            "paramValue" -> "PNGR"
+          )
         ),
-        "currency" -> "GBP",
-        "cost" -> 500,
-        "isVatPaid" -> false,
-        "isCustomPaid" -> false,
-        "isUccRelief" -> false)),
-    "calculatorResponse" -> Json.obj(
-      "calculation" -> Json.obj(
-        "excise" -> "0.00",
-        "customs" -> "12.50",
-        "vat" -> "102.50",
-        "allTax" -> "115.00"
+        "acknowledgementReference" -> "XMPR00000000000"
+      ),
+      "requestDetail" -> Json.obj(
+        "declarationAlcohol" -> Json.obj(
+          "totalExciseAlcohol" -> "2.00",
+          "totalCustomsAlcohol" -> "0.30",
+          "totalVATAlcohol" -> "18.70",
+          "declarationItemAlcohol" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Cider",
+              "volume" -> "5",
+              "goodsValue" -> "120.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "91.23",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "2.00",
+              "customsGBP" -> "0.30",
+              "vatGBP" -> "18.70"
+            ),
+            Json.obj(
+              "commodityDescription" -> "Beer",
+              "volume" -> "110",
+              "goodsValue" -> "500.00",
+              "valueCurrency" -> "GBP",
+              "valueCurrencyName" -> "British pounds (GBP)",
+              "originCountry" -> "FR",
+              "originCountryName" -> "France",
+              "exchangeRate" -> "1.00",
+              "exchangeRateDate" -> "2020-12-29",
+              "goodsValueGBP" -> "500.00",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "88.00",
+              "customsGBP" -> "0.00",
+              "vatGBP" -> "117.60"
+            )
+          )
+        ),
+        "liabilityDetails" -> Json.obj(
+          "totalExciseGBP" -> "102.54",
+          "totalCustomsGBP" -> "534.89",
+          "totalVATGBP" -> "725.03",
+          "grandTotalGBP" -> "1362.46"
+        ),
+        "amendmentLiabilityDetails" -> Json.obj(
+          "additionalExciseGBP" -> "88.00",
+          "additionalCustomsGBP" -> "0.00",
+          "additionalVATGBP" -> "117.60",
+          "additionalTotalGBP" -> "205.60"
+        ),
+        "customerReference" -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+        "personalDetails" -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
+        "declarationTobacco" -> Json.obj(
+          "totalExciseTobacco" -> "100.54",
+          "totalCustomsTobacco" -> "192.94",
+          "totalVATTobacco" -> "149.92",
+          "declarationItemTobacco" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Cigarettes",
+              "quantity" -> "250",
+              "goodsValue" -> "400.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "304.11",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "74.00",
+              "customsGBP" -> "79.06",
+              "vatGBP" -> "91.43"
+            )
+          )
+        ),
+        "declarationHeader" -> Json.obj("travellingFrom" -> "NON_EU Only", "expectedDateOfArrival" -> "2018-05-31", "ukVATPaid" -> false, "uccRelief" -> false, "portOfEntryName" -> "Heathrow Airport", "ukExcisePaid" -> false, "chargeReference" -> "XMPR0000000000", "portOfEntry" -> "LHR", "timeOfEntry" -> "13:20", "onwardTravelGBNI" -> "GB", "messageTypes" -> Json.obj("messageType" -> "DeclarationAmend")),
+        "contactDetails" -> Json.obj("emailAddress" -> "abc@gmail.com"),
+        "declarationOther" -> Json.obj(
+          "totalExciseOther" -> "0.00",
+          "totalCustomsOther" -> "341.65",
+          "totalVATOther" -> "556.41",
+          "declarationItemOther" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Television",
+              "quantity" -> "1",
+              "goodsValue" -> "1500.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "1140.42",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "0.00",
+              "customsGBP" -> "159.65",
+              "vatGBP" -> "260.01"
+            )
+          )
+        )
       )
-    ))
+    )
+  )
+
+  val inputAmendmentData: JsObject = Json.obj(
+    "journeyData" -> journeyData,
+    "simpleDeclarationRequest" -> Json.obj(
+      "requestCommon" -> Json.obj(
+        "receiptDate" -> "2020-12-29T14:00:08Z",
+        "requestParameters" -> Json.arr(
+          Json.obj(
+            "paramName" -> "REGIME",
+            "paramValue" -> "PNGR"
+          )
+        ),
+        "acknowledgementReference" -> "XMPR00000000000"
+      ),
+      "requestDetail" -> Json.obj(
+        "declarationAlcohol" -> Json.obj(
+          "totalExciseAlcohol" -> "2.00",
+          "totalCustomsAlcohol" -> "0.30",
+          "totalVATAlcohol" -> "18.70",
+          "declarationItemAlcohol" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Cider",
+              "volume" -> "5",
+              "goodsValue" -> "120.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "91.23",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "2.00",
+              "customsGBP" -> "0.30",
+              "vatGBP" -> "18.70"
+            ),
+            Json.obj(
+              "commodityDescription" -> "Beer",
+              "volume" -> "110",
+              "goodsValue" -> "500.00",
+              "valueCurrency" -> "GBP",
+              "valueCurrencyName" -> "British pounds (GBP)",
+              "originCountry" -> "FR",
+              "originCountryName" -> "France",
+              "exchangeRate" -> "1.00",
+              "exchangeRateDate" -> "2020-12-29",
+              "goodsValueGBP" -> "500.00",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "88.00",
+              "customsGBP" -> "0.00",
+              "vatGBP" -> "117.60"
+            )
+          )
+        ),
+        "liabilityDetails" -> Json.obj(
+          "totalExciseGBP" -> "102.54",
+          "totalCustomsGBP" -> "534.89",
+          "totalVATGBP" -> "725.03",
+          "grandTotalGBP" -> "1362.46"
+        ),
+        "amendmentLiabilityDetails" -> Json.obj(
+          "additionalExciseGBP" -> "88.00",
+          "additionalCustomsGBP" -> "0.00",
+          "additionalVATGBP" -> "117.60",
+          "additionalTotalGBP" -> "205.60"
+        ),
+        "customerReference" -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+        "personalDetails" -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
+        "declarationTobacco" -> Json.obj(
+          "totalExciseTobacco" -> "100.54",
+          "totalCustomsTobacco" -> "192.94",
+          "totalVATTobacco" -> "149.92",
+          "declarationItemTobacco" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Cigarettes",
+              "quantity" -> "250",
+              "goodsValue" -> "400.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "304.11",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "74.00",
+              "customsGBP" -> "79.06",
+              "vatGBP" -> "91.43"
+            )
+          )
+        ),
+        "declarationHeader" -> Json.obj("travellingFrom" -> "NON_EU Only", "expectedDateOfArrival" -> "2018-05-31", "ukVATPaid" -> false, "uccRelief" -> false, "portOfEntryName" -> "Heathrow Airport", "ukExcisePaid" -> false, "chargeReference" -> "XMPR0000000000", "portOfEntry" -> "LHR", "timeOfEntry" -> "13:20", "onwardTravelGBNI" -> "GB", "messageTypes" -> Json.obj("messageType" -> "DeclarationAmend")),
+        "contactDetails" -> Json.obj("emailAddress" -> "abc@gmail.com"),
+        "declarationOther" -> Json.obj(
+          "totalExciseOther" -> "0.00",
+          "totalCustomsOther" -> "341.65",
+          "totalVATOther" -> "556.41",
+          "declarationItemOther" -> Json.arr(
+            Json.obj(
+              "commodityDescription" -> "Television",
+              "quantity" -> "1",
+              "goodsValue" -> "1500.00",
+              "valueCurrency" -> "USD",
+              "valueCurrencyName" -> "USA dollars (USD)",
+              "originCountry" -> "US",
+              "originCountryName" -> "United States of America",
+              "exchangeRate" -> "1.20",
+              "exchangeRateDate" -> "2018-10-29",
+              "goodsValueGBP" -> "1140.42",
+              "VATRESClaimed" -> false,
+              "exciseGBP" -> "0.00",
+              "customsGBP" -> "159.65",
+              "vatGBP" -> "260.01"
+            )
+          )
+        )
+      )
+    )
+  )
 
   "a declarations repository" - {
 
@@ -298,7 +518,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         val document = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.right.value
 
         inside(document) {
-          case Declaration(id, _, None, false, None, cid, jd, data, _) =>
+          case Declaration(id, _, None, false, None, cid, jd, data, None, _) =>
 
             id mustEqual document.chargeReference
             cid mustEqual correlationId
@@ -308,6 +528,38 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         repository.remove(document.chargeReference).futureValue
         repository.get(document.chargeReference).futureValue mustNot be(defined)
+      }
+    }
+
+    "must update a declaration record with amendments and remove record" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarationDocument = repository.insert(inputData, correlationId, sentToEtmp = false).futureValue.right.value
+        val amendmentDocument = repository.insertAmendment(inputAmendmentData, correlationId, declarationDocument.chargeReference).futureValue
+
+        inside(amendmentDocument) {
+          case Declaration(id, _, amendState, false, amendSentToEtmp, cid, jd, data, amendData, _) =>
+
+            id mustEqual amendmentDocument.chargeReference
+            amendState mustBe Some(State.PendingPayment)
+            amendSentToEtmp mustBe Some(false)
+            cid mustEqual correlationId
+            jd mustEqual journeyData
+            data mustEqual actualData
+            amendData mustEqual Some(actualAmendmentData)
+        }
+
+        repository.remove(amendmentDocument.chargeReference).futureValue
+        repository.get(amendmentDocument.chargeReference).futureValue mustNot be(defined)
       }
     }
 
@@ -354,13 +606,13 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PaymentCancelled, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(3), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(4), State.SubmissionFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(5), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(6), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PaymentCancelled, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(4), State.SubmissionFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(5), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(6), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now)
         )
 
         database.flatMap {
@@ -411,11 +663,11 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.SubmissionFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(3), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(2), State.SubmissionFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(3), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(4), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now)
         )
 
         database.flatMap {
@@ -434,7 +686,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
       }
     }
 
-    "must provide a paid declaration or amendment for given chargeReference, lastName, identification number" in {
+    "must provide a declaration when a paid declaration or amendment is present for given chargeReference, lastName, identification number" in {
 
       database.flatMap(_.drop()).futureValue
 
@@ -444,6 +696,8 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
       val resultCalculation = Json.obj("excise" -> "0.00", "customs" -> "12.50", "vat" -> "102.50", "allTax" -> "115.00")
 
+      val resultLiabilityDetails = Json.obj("totalExciseGBP" -> "102.54","totalCustomsGBP" -> "534.89","totalVATGBP" -> "725.03","grandTotalGBP" -> "1362.46")
+
       running(app) {
 
         val repository = app.injector.instanceOf[DeclarationsRepository]
@@ -451,11 +705,11 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.Paid), sentToEtmp=false, None, correlationId, journeyData, actualData, LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.SubmissionFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(3), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.Paid), sentToEtmp=false, None, correlationId, journeyData, actualData, None, LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(2), State.SubmissionFailed, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(3), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now),
+          Declaration(ChargeReference(4), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), None, LocalDateTime.now)
         )
 
         database.flatMap {
@@ -471,10 +725,12 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         paidDeclaration.get.isUKResident.get mustBe false
         paidDeclaration.get.isPrivateTravel mustBe true
         paidDeclaration.get.calculation mustBe resultCalculation
+        paidDeclaration.get.userInformation mustBe userInformation
+        paidDeclaration.get.liabilityDetails mustBe resultLiabilityDetails
       }
     }
 
-    "must not provide an unpaid declaration or amendment for given chargeReference, lastName, identification number" in {
+    "must not provide a declaration when unpaid declaration or amendment is present for given chargeReference, lastName, identification number" in {
 
       database.flatMap(_.drop()).futureValue
 
@@ -489,8 +745,8 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp=false, None, correlationId, journeyData, actualData, LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp=false, None, correlationId, journeyData, actualData, Some(actualAmendmentData), LocalDateTime.now),
+          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp=false, None, correlationId, Json.obj(), Json.obj(), Some(actualAmendmentData), LocalDateTime.now)
         )
 
         database.flatMap {
