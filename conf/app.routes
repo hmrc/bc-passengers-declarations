@@ -3,3 +3,4 @@
 POST      /submit-declaration                       controllers.DeclarationController.submit()
 POST      /update-payment                           controllers.DeclarationController.update()
 POST      /retrieve-declaration                     controllers.DeclarationController.retrieveDeclaration()
+POST      /submit-amendment                         controllers.DeclarationController.submitAmendment()
