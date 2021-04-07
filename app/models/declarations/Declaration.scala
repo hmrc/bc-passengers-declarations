@@ -19,6 +19,7 @@ final case class Declaration (
   correlationId: String,
   journeyData: JsObject,
   data: JsObject,
+  amendData: Option[JsObject] = None,
   lastUpdated: LocalDateTime = LocalDateTime.now
 )
 
@@ -37,6 +38,7 @@ object Declaration {
       (__ \ "correlationId").read[String] and
       (__ \ "journeyData").read[JsObject] and
       (__ \ "data").read[JsObject] and
+      (__ \ "amendData").readNullable[JsObject] and
       (__ \ "lastUpdated").read[LocalDateTime]
     )(Declaration.apply _)
   }
@@ -54,6 +56,7 @@ object Declaration {
       (__ \ "correlationId").write[String] and
       (__ \ "journeyData").write[JsObject] and
       (__ \ "data").write[JsObject] and
+      (__ \ "amendData").writeNullable[JsObject] and
       (__ \ "lastUpdated").write[LocalDateTime]
     )(unlift(Declaration.unapply))
   }

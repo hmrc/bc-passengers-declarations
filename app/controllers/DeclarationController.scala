@@ -11,7 +11,7 @@ import models.{ChargeReference, PaymentNotification, PreviousDeclarationRequest}
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
 import repositories.{DeclarationsRepository, LockRepository}
-import services.SendEmailServiceImpl
+import services.{SendEmailServiceImpl, ValidationService}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,7 +20,8 @@ class DeclarationController @Inject()(
   cc: ControllerComponents,
   repository: DeclarationsRepository,
   lockRepository: LockRepository,
-  sendEmailService: SendEmailServiceImpl
+  sendEmailService: SendEmailServiceImpl,
+  validationService: ValidationService,
 )(implicit ec: ExecutionContext) extends BackendController(cc) {
 
   val CorrelationIdKey = "X-Correlation-ID"
@@ -40,6 +41,30 @@ class DeclarationController @Inject()(
           Future.successful {
             BadRequest(Json.obj("errors" -> Json.arr("Missing X-Correlation-ID header")))
           }
+      }
+  }
+
+  def submitAmendment(): Action[JsValue] = Action.async(parse.tolerantJson) {
+    implicit request =>
+
+      request.headers.get(CorrelationIdKey) match {
+        case Some(cid) => {
+          val amendmentData = request.body.as[JsObject]
+          val validationErrors = validationService.validator("request").validate(amendmentData)
+          if (validationErrors.isEmpty) {
+            val id = (amendmentData \ "simpleDeclarationRequest" \ "requestDetail" \ "declarationHeader" \ "chargeReference").as[String]
+            val chargeReference = ChargeReference(id).getOrElse(throw new Exception(s"unable to extract charge reference:$id"))
+            withLock(chargeReference) {
+              repository.insertAmendment(amendmentData, cid, chargeReference).map {
+                case declaration => Accepted(declaration.amendData.get).withHeaders(CorrelationIdKey -> cid)
+                case _ => InternalServerError(s"Unable to update record $chargeReference")
+              }
+            }
+          } else
+            Future.successful(BadRequest(Json.obj("errors" -> validationErrors)).withHeaders(CorrelationIdKey -> cid))
+        }
+        case None =>
+          Future.successful(BadRequest(Json.obj("errors" -> Json.arr("Missing X-Correlation-ID header"))))
       }
   }
 
