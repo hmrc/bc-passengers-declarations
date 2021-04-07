@@ -166,6 +166,28 @@ class DefaultDeclarationsRepository @Inject() (
     }
   }
 
+  override def setAmendState(id: ChargeReference, state: State): Future[Declaration] = {
+
+    val selector = Json.obj(
+      "_id" -> id
+    )
+
+    val update = Json.obj(
+      "$set" -> Json.obj(
+        "amendState" -> state,
+        "lastUpdated" -> LocalDateTime.now
+      )
+    )
+
+    collection.flatMap {
+      _.findAndUpdate(selector, update, fetchNewObject = true)
+        .map {
+          _.result[Declaration]
+            .getOrElse(throw new Exception(s"unable to update declaration $id"))
+        }
+    }
+  }
+
 
   override def setSentToEtmp(id: ChargeReference, sentToEtmp: Boolean): Future[Declaration] = {
 
@@ -311,6 +333,7 @@ trait DeclarationsRepository {
   def get(retrieveDeclarationRequest: PreviousDeclarationRequest): Future[Option[DeclarationResponse]]
   def remove(id: ChargeReference): Future[Option[Declaration]]
   def setState(id: ChargeReference, state: State): Future[Declaration]
+  def setAmendState(id: ChargeReference, amendState: State): Future[Declaration]
   def setSentToEtmp(id: ChargeReference, sentToEtmp: Boolean): Future[Declaration]
   def unpaidDeclarations: Source[Declaration, Future[NotUsed]]
   def paidDeclarationsForEtmp: Source[Declaration, Future[NotUsed]]
