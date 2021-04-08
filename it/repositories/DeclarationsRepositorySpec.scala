@@ -650,6 +650,27 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
       }
     }
 
+    "must set the state of an amendment" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declaration = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.right.value
+        val amendment = repository.insertAmendment(inputAmendmentData, correlationId, declaration.chargeReference).futureValue
+
+        val updatedAmendment = repository.setAmendState(amendment.chargeReference, State.Paid).futureValue
+
+        updatedAmendment.amendState.get mustEqual State.Paid
+      }
+    }
+
     "must provide a stream of paid declarations" in {
 
       database.flatMap(_.drop()).futureValue

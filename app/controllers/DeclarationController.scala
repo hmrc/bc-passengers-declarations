@@ -6,12 +6,13 @@
 package controllers
 
 import com.google.inject.{Inject, Singleton}
-import models.declarations.State
+import models.declarations.{Declaration, State}
 import models.{ChargeReference, PaymentNotification, PreviousDeclarationRequest}
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents, Result}
 import repositories.{DeclarationsRepository, LockRepository}
 import services.{SendEmailServiceImpl, ValidationService}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -78,7 +79,7 @@ class DeclarationController @Inject()(
                 declaration =>
                   declaration.state match {
                     case State.Paid =>
-                      Future.successful(Accepted)
+                      updateAmendState(declaration, paymentNotification)
                     case State.SubmissionFailed =>
                       Future.successful(Conflict)
                     case _ =>
@@ -114,6 +115,29 @@ class DeclarationController @Inject()(
       }.recoverTotal{
         e => Future.successful(BadRequest(JsError.toJson(e)))
       }
+  }
+
+  private def updateAmendState(declaration: Declaration, paymentNotification: PaymentNotification)(implicit hc: HeaderCarrier): Future[Status] = {
+    if (declaration.amendState.isDefined) {
+      declaration.amendState.get match {
+        case State.Paid =>
+          Future.successful(Accepted)
+        case State.SubmissionFailed =>
+          Future.successful(Conflict)
+        case _ =>
+          paymentNotification.status match {
+            case PaymentNotification.Successful =>
+              sendEmailService.constructAndSendEmail(paymentNotification.reference)
+              repository.setAmendState(paymentNotification.reference, State.Paid).map(_ => Accepted)
+            case PaymentNotification.Failed =>
+              repository.setAmendState(paymentNotification.reference, State.PaymentFailed).map(_ => Accepted)
+            case PaymentNotification.Cancelled =>
+              repository.setAmendState(paymentNotification.reference, State.PaymentCancelled).map(_ => Accepted)
+          }
+      }
+    } else {
+      Future.successful(Accepted)
+    }
   }
 
   private def withLock(chargeReference: ChargeReference)(f: => Future[Result]): Future[Result] = {
