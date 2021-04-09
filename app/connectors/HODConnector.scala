@@ -33,7 +33,7 @@ class HODConnector @Inject() (
   private val FORWARDED_HOST: String = "X-Forwarded-Host"
   private val MDTP: String = "MDTP"
 
-  def submit(declaration: Declaration): Future[SubmissionResponse] = {
+  def submit(declaration: Declaration, isAmendment: Boolean): Future[SubmissionResponse] = {
 
     implicit val hc: HeaderCarrier = {
 
@@ -46,15 +46,21 @@ class HODConnector @Inject() (
           FORWARDED_HOST -> MDTP)
     }
 
-    def call: Future[SubmissionResponse] = {
+    def call(isAmend: Boolean): Future[SubmissionResponse] = {
 
-      val data = Json.toJsObject(declaration.data.as[Etmp])
 
-      http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", data)
-        .filter(_ != SubmissionResponse.Error)
+      if (isAmend) {
+        val amendData = Json.toJsObject(declaration.amendData.get.as[Etmp])
+        http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", amendData)
+          .filter(_ != SubmissionResponse.Error)
+      } else {
+        val data = Json.toJsObject(declaration.data.as[Etmp])
+        http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", data)
+          .filter(_ != SubmissionResponse.Error)
+      }
     }
 
-    circuitBreaker.withCircuitBreaker(call)
+    circuitBreaker.withCircuitBreaker(call(isAmendment))
       .fallbackTo(Future.successful(SubmissionResponse.Error))
   }
 }

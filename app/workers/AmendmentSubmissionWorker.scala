@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
-class DeclarationSubmissionWorker @Inject() (
+class AmendmentSubmissionWorker @Inject()(
   declarationsRepository: DeclarationsRepository,
   override protected val lockRepository: LockRepository,
   hodConnector: HODConnector,
@@ -33,11 +33,11 @@ class DeclarationSubmissionWorker @Inject() (
 
     private val logger = Logger(this.getClass)
 
-    private val initialDelay = config.get[FiniteDuration]("workers.declaration-submission-worker.initial-delay")
-    private val interval = config.get[FiniteDuration]("workers.declaration-submission-worker.interval")
-    private val parallelism = config.get[Int]("workers.declaration-submission-worker.parallelism")
-    private val elements = config.get[Int]("workers.declaration-submission-worker.throttle.elements")
-    private val per = config.get[FiniteDuration]("workers.declaration-submission-worker.throttle.per")
+    private val initialDelay = config.get[FiniteDuration]("workers.amendment-submission-worker.initial-delay")
+    private val interval = config.get[FiniteDuration]("workers.amendment-submission-worker.interval")
+    private val parallelism = config.get[Int]("workers.amendment-submission-worker.parallelism")
+    private val elements = config.get[Int]("workers.amendment-submission-worker.throttle.elements")
+    private val per = config.get[FiniteDuration]("workers.amendment-submission-worker.throttle.per")
 
     private val supervisionStrategy: Supervision.Decider = {
       case NonFatal(_) => Supervision.resume
@@ -46,9 +46,9 @@ class DeclarationSubmissionWorker @Inject() (
 
     val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] = {
 
-      logger.info("Declaration submission worker started")
+      logger.info("Amendment submission worker started")
 
-      Source.tick(initialDelay, interval, declarationsRepository.paidDeclarationsForEtmp)
+      Source.tick(initialDelay, interval, declarationsRepository.paidAmendmentsForEtmp)
         .flatMapConcat(identity)
         .throttle(elements, per)
         .mapAsync(parallelism)(getLock)
@@ -56,17 +56,17 @@ class DeclarationSubmissionWorker @Inject() (
         .mapAsync(parallelism) {
           declaration => {
             for {
-              result <- hodConnector.submit(declaration,false)
+              result <- hodConnector.submit(declaration, true)
               _      <- result match {
                 case SubmissionResponse.Submitted =>
                   auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
-                  declarationsRepository.setSentToEtmp(declaration.chargeReference,sentToEtmp = true)
+                  declarationsRepository.setAmendSentToEtmp(declaration.chargeReference,amendSentToEtmp = true)
                 case SubmissionResponse.Error =>
-                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
+                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [AmendmentSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
                   Future.successful(())
                 case SubmissionResponse.Failed =>
-                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 400")
-                  declarationsRepository.setState(declaration.chargeReference, State.SubmissionFailed)
+                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [AmendmentSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 400")
+                  declarationsRepository.setAmendState(declaration.chargeReference, State.SubmissionFailed)
               }
             } yield (declaration, result)
           }
