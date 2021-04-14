@@ -862,7 +862,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
           val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
 
-          val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()))
+          val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()), amendCount = 0)
 
           when(declarationsRepository.get(input))
             .thenReturn(Future.successful(Some(declarationResponse)))
@@ -909,7 +909,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
 
-        val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()))
+        val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()), amendCount = 0)
 
         val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
           .withJsonBody(requestBody)

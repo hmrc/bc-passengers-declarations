@@ -105,7 +105,8 @@ class DefaultDeclarationsRepository @Inject() (
         "amendState" -> State.PendingPayment,
         "journeyData" -> amendmentData.apply("journeyData").as[JsObject],
         "amendData" -> (amendmentData - "journeyData"),
-        "lastUpdated" -> LocalDateTime.now
+        "lastUpdated" -> LocalDateTime.now,
+        "correlationId" -> correlationId
       )
     )
       collection.flatMap {

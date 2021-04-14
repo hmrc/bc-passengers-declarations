@@ -44,6 +44,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
     "privateCraft" -> true,
     "ageOver17" -> true,
     "userInformation" -> userInformation,
+    "amendCount" -> 0,
     "purchasedProductInstances" -> Json.arr(
       Json.obj("path" -> "other-goods/adult/adult-clothing",
         "iid" -> "UCLFeP",
@@ -272,7 +273,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
             "paramValue" -> "PNGR"
           )
         ),
-        "acknowledgementReference" -> "XMPR00000000000"
+        "acknowledgementReference" -> "XMPR00000000001"
       ),
       "requestDetail" -> Json.obj(
         "declarationAlcohol" -> Json.obj(
@@ -391,7 +392,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
             "paramValue" -> "PNGR"
           )
         ),
-        "acknowledgementReference" -> "XMPR00000000000"
+        "acknowledgementReference" -> "XMPR00000000001"
       ),
       "requestDetail" -> Json.obj(
         "declarationAlcohol" -> Json.obj(
@@ -545,6 +546,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         val declarationDocument = repository.insert(inputData, correlationId, sentToEtmp = false).futureValue.right.value
         val amendmentDocument = repository.insertAmendment(inputAmendmentData, correlationId, declarationDocument.chargeReference).futureValue
+        journeyData.deepMerge(Json.obj("amendCount" -> 1))
 
         inside(amendmentDocument) {
           case Declaration(id, _, amendState, false, amendSentToEtmp, cid, jd, data, amendData, _) =>
