@@ -17,7 +17,7 @@ case class DeclarationResponse(
                                 calculation: JsObject,
                                 liabilityDetails: JsObject,
                                 oldPurchaseProductInstances: JsArray,
-                                amendCount: Int
+                                amendmentCount: Option[Int]
                               )
 
 object DeclarationResponse {
@@ -36,7 +36,7 @@ object DeclarationResponse {
         (__ \ "journeyData" \ "calculatorResponse" \ "calculation").read[JsObject] and
         (__ \ "data" \ "simpleDeclarationRequest" \ "requestDetail" \ "liabilityDetails").read[JsObject] and
         (__ \ "journeyData" \ "purchasedProductInstances").read[JsArray] and
-        (__ \ "journeyData" \ "amendCount").read[Int]
+        (__ \ "journeyData" \ "amendmentCount").readNullable[Int]
       )(DeclarationResponse.apply _)
   }
 
