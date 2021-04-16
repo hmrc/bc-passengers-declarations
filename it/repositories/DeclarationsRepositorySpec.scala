@@ -755,7 +755,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
       val app = builder.build()
 
-      val input = PreviousDeclarationRequest("POTTER", "SX12345", ChargeReference(0).toString)
+      val input = PreviousDeclarationRequest("POTTER", ChargeReference(0).toString)
 
       val resultCalculation = Json.obj("excise" -> "0.00", "customs" -> "12.50", "vat" -> "102.50", "allTax" -> "115.00")
 
@@ -799,7 +799,7 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
       val app = builder.build()
 
-      val input = PreviousDeclarationRequest("POTTER", "SX12345", ChargeReference(0).toString)
+      val input = PreviousDeclarationRequest("POTTER", ChargeReference(0).toString)
 
       running(app) {
 

@@ -13,6 +13,5 @@ object PreviousDeclarationRequest {
 
 case class PreviousDeclarationRequest(
                                 lastName: String,
-                                identificationNumber: String,
                                 referenceNumber: String
                               )
