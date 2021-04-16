@@ -860,7 +860,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         "must return OK and a matched Declaration" in {
 
-          val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+          val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
           val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()), amendmentCount = Some(0))
 
@@ -885,7 +885,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         "must throw an exception" in {
 
-          val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+          val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
           when(declarationsRepository.get(input))
             .thenReturn(Future.failed(new Exception()))
@@ -907,7 +907,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
         val requestBody = Json.obj()
 
-        val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+        val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
         val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()), amendmentCount = Some(0))
 
@@ -927,7 +927,7 @@ class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOne
 
       "must return NOT_FOUND" in {
 
-        val input = PreviousDeclarationRequest("POTTER", "SX12345", "1234567890")
+        val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
         when(declarationsRepository.get(input))
           .thenReturn(Future.successful(None))

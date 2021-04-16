@@ -126,7 +126,6 @@ class DefaultDeclarationsRepository @Inject() (
 
     val selector = Json.obj(
       "_id" -> Json.obj("$regex" -> s"^${retrieveDeclarationRequest.referenceNumber}$$", "$options" -> "i"),
-      "data.simpleDeclarationRequest.requestDetail.customerReference.idValue" -> retrieveDeclarationRequest.identificationNumber.toUpperCase,
       "data.simpleDeclarationRequest.requestDetail.personalDetails.lastName" -> Json.obj("$regex" -> s"^${retrieveDeclarationRequest.lastName}$$", "$options" -> "i"),
       "$and" -> Json.arr(
         Json.obj("state" -> "paid"),
