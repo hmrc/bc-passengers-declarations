@@ -17,6 +17,7 @@ final case class Declaration (
   sentToEtmp: Boolean,
   amendSentToEtmp: Option[Boolean] = None,
   correlationId: String,
+  amendCorrelationId: Option[String] = None,
   journeyData: JsObject,
   data: JsObject,
   amendData: Option[JsObject] = None,
@@ -36,6 +37,7 @@ object Declaration {
       (__ \ "sentToEtmp").read[Boolean] and
       (__ \ "amendSentToEtmp").readNullable[Boolean] and
       (__ \ "correlationId").read[String] and
+      (__ \ "amendCorrelationId").readNullable[String] and
       (__ \ "journeyData").read[JsObject] and
       (__ \ "data").read[JsObject] and
       (__ \ "amendData").readNullable[JsObject] and
@@ -54,6 +56,7 @@ object Declaration {
       (__ \ "sentToEtmp").write[Boolean] and
       (__ \ "amendSentToEtmp").writeNullable[Boolean] and
       (__ \ "correlationId").write[String] and
+      (__ \ "amendCorrelationId").writeNullable[String] and
       (__ \ "journeyData").write[JsObject] and
       (__ \ "data").write[JsObject] and
       (__ \ "amendData").writeNullable[JsObject] and

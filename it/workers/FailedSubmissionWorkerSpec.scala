@@ -32,9 +32,9 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
+        Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -67,8 +67,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -101,8 +101,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -132,8 +132,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
       )
 
       database.flatMap {
@@ -167,8 +167,8 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, Json.obj(), Json.obj())
+        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj()),
+        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
       )
 
       database.flatMap {
