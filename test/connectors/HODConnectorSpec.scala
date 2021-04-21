@@ -242,9 +242,9 @@ class HODConnectorSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSui
     )
   )
 
-  private lazy val declaration = Declaration(ChargeReference(123), State.Paid, None,sentToEtmp = false, None,correlationId, journeyData, data)
+  private lazy val declaration = Declaration(ChargeReference(123), State.Paid, None,sentToEtmp = false, None,correlationId, None, journeyData, data)
 
-  private lazy val amendment = Declaration(ChargeReference(123), State.Paid, None,sentToEtmp = false, None,correlationId, journeyData, data, Some(amendData))
+  private lazy val amendment = Declaration(ChargeReference(123), State.Paid, None,sentToEtmp = false, None,correlationId, Some(correlationId), journeyData, data, Some(amendData))
 
   private def stubCall: MappingBuilder =
     post(urlEqualTo("/declarations/passengerdeclaration/v1"))

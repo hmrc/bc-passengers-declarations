@@ -37,12 +37,16 @@ class HODConnector @Inject() (
 
     implicit val hc: HeaderCarrier = {
 
+      def geCorrelationId(isAmendment: Boolean) : String = {
+        if (isAmendment) declaration.amendCorrelationId.getOrElse(throw new Exception(s"AmendCorrelation Id is empty")) else declaration.correlationId
+      }
+
       HeaderCarrier()
         .withExtraHeaders(
           HeaderNames.ACCEPT -> ContentTypes.JSON,
           HeaderNames.DATE -> now,
           HeaderNames.AUTHORIZATION -> s"Bearer $bearerToken",
-          CORRELATION_ID -> declaration.correlationId,
+          CORRELATION_ID -> geCorrelationId(isAmendment),
           FORWARDED_HOST -> MDTP)
     }
 
