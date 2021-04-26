@@ -15,7 +15,9 @@ import reactivemongo.api.indexes.IndexType
 import reactivemongo.play.json.collection.JSONCollection
 import suite.FailOnUnindexedQueries
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
 import scala.language.implicitConversions
 
 class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnUnindexedQueries
@@ -628,6 +630,43 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
         val staleDeclarations = repository.unpaidDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+
+        staleDeclarations.size mustEqual 5
+        staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2), ChargeReference(5), ChargeReference(6))
+      }
+    }
+
+    "must provide a stream of unpaid amendments" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val app = builder.configure("declarations.payment-no-response-timeout" -> "1 minute").build()
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarations = List(
+          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp=true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp=true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentCancelled), sentToEtmp=true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(3), State.Paid, Some(State.Paid), sentToEtmp=true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(4), State.Paid, Some(State.SubmissionFailed), sentToEtmp=true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
+          Declaration(ChargeReference(5), State.Paid, Some(State.PendingPayment), sentToEtmp=true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now),
+          Declaration(ChargeReference(6), State.Paid, Some(State.PaymentFailed), sentToEtmp=true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+        )
+
+        database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .insert(ordered = true)
+            .many(declarations)
+        }.futureValue
+
+        implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+
+        val staleDeclarations = repository.unpaidAmendments.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
         staleDeclarations.size mustEqual 5
         staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2), ChargeReference(5), ChargeReference(6))
