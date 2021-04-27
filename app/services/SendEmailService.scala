@@ -65,6 +65,8 @@ trait SendEmailService {
       .equalsIgnoreCase("0.00")
   }
 
+  private[services] def getDataOrAmendmentData(declaration: Declaration): JsObject = if (declaration.amendState.isDefined) declaration.amendData.getOrElse(throw new Exception(s"No Amendment data found")) else declaration.data
+
   private[services] def getEmailParamsFromData(data: JsObject): Map[String, Map[String, String]] = {
     val simpleDeclarationRequest: JsValue = data.value.apply("simpleDeclarationRequest")
     val requestCommon: JsLookupResult = simpleDeclarationRequest.\("requestCommon")
@@ -139,7 +141,7 @@ trait SendEmailService {
   def constructAndSendEmail(reference: ChargeReference)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val disableZeroPoundEmail = servicesConfig.getBoolean("features.disable-zero-pound-email")
     getDeclaration(reference).flatMap(x => {
-      val data: JsObject = x.data
+      val data: JsObject = getDataOrAmendmentData(x)
       val emailParams = getEmailParamsFromData(data)
       val emailId = emailParams.keys.head
       val params = emailParams.getOrElse(emailId, Map.empty)

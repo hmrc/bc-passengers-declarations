@@ -532,6 +532,29 @@ class SendEmailServiceSpec extends BaseSpec {
     }
   }
 
+  "getEmailParamsFromAmendedData" should{
+    "Return a map of emailId and parameters" in new Setup{
+      val localTestParams =  Map(
+        "subject" -> "Receipt for payment on goods brought into the UK - Reference number  XAPR0000001074",
+        "NAME" -> "John Doe",
+        "DATE" -> "10 November 2020",
+        "PLACEOFARRIVAL" -> "Heathrow Airport",
+        "DATEOFARRIVAL" -> "10 November 2020",
+        "TIMEOFARRIVAL" -> "12:16 PM",
+        "REFERENCE" -> "XAPR0000001074",
+        "TOTAL" -> "£3000.00",
+        "TOTALEXCISEGBP" -> "£1000.00",
+        "TOTALCUSTOMSGBP" -> "£1000.00",
+        "TOTALVATGBP" -> "£1000.00",
+        "TRAVELLINGFROM" -> "NON_EU Only",
+        "AllITEMS" -> "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false,\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\",\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\",\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false,\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
+      )
+      val amendData:JsObject = Json.parse(emailService.data).as[JsObject] deepMerge Json.obj("amendmentLiabilityDetails" -> Json.obj("additionalExciseGBP" -> "100.00", "additionalCustomsGBP" -> "100.00", "additionalVATGBP" -> "100.00", "additionalTotalGBP" -> "300.00"))
+      val emailParams = Map(emailService.testEmail->localTestParams)
+      emailService.getEmailParamsFromData(amendData) shouldBe emailParams
+    }
+  }
+
   "Generating an email request" should {
     "construct the correct JSON" in new Setup {
       val result: SendEmailRequest = emailService.generateEmailRequest(Seq(emailService.testEmail),emailService.testParams)
