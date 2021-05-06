@@ -29,10 +29,22 @@ class PaymentTimeoutWorker @Inject()(
 
     private val logger: Logger = Logger(this.getClass)
 
-    private val initialDelay = config.get[FiniteDuration]("workers.payment-timeout-worker.initial-delay")
-    private val interval = config.get[FiniteDuration]("workers.payment-timeout-worker.interval")
+    private val initialDelayFromConfig = config.get[String]("workers.payment-timeout-worker.initial-delay").replace('.',' ')
+    private val initialDelayFromConfigFiniteDuration = config.get[FiniteDuration]("workers.payment-timeout-worker.initial-delay")
+    private val finiteInitialDelay = Duration(initialDelayFromConfig)
+    private val initialDelay = Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
+
+    private val intervalFromConfig = config.get[String]("workers.payment-timeout-worker.interval").replace('.',' ')
+    private val intervalFromConfigFiniteDuration = config.get[FiniteDuration]("workers.payment-timeout-worker.interval")
+    private val finiteInterval = Duration(intervalFromConfig)
+    private val interval = Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)
+
     private val parallelism = config.get[Int]("workers.payment-timeout-worker.parallelism")
-    private val paymentTimeout = config.get[Duration]("declarations.payment-no-response-timeout")
+
+    private val paymentTimeoutFromConfig = config.get[String]("declarations.payment-no-response-timeout").replace('.',' ')
+    private val paymentTimeoutFromConfigFiniteDuration = config.get[FiniteDuration]("declarations.payment-no-response-timeout")
+    private val finitePaymentTimeout = Duration(paymentTimeoutFromConfig)
+    private val paymentTimeout = Some(finitePaymentTimeout).collect { case d: FiniteDuration => d }.getOrElse(paymentTimeoutFromConfigFiniteDuration)
 
 
     private val supervisionStrategy: Supervision.Decider = {

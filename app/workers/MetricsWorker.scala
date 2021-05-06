@@ -27,9 +27,16 @@ class MetricsWorker @Inject() (
 )(implicit mat: Materializer, ec: ExecutionContext) {
 
   private val logger = Logger(this.getClass)
+  
+  private val initialDelayFromConfig = config.get[String]("workers.metrics-worker.initial-delay").replace('.',' ')
+  private val initialDelayFromConfigFiniteDuration = config.get[FiniteDuration]("workers.metrics-worker.initial-delay")
+  private val finiteInitialDelay = Duration(initialDelayFromConfig)
+  private val initialDelay = Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
 
-  private val initialDelay = config.get[FiniteDuration]("workers.metrics-worker.initial-delay")
-  private val interval = config.get[FiniteDuration]("workers.metrics-worker.interval")
+  private val intervalFromConfig = config.get[String]("workers.metrics-worker.interval").replace('.',' ')
+  private val intervalFromConfigFiniteDuration = config.get[FiniteDuration]("workers.metrics-worker.interval")
+  private val finiteInterval = Duration(intervalFromConfig)
+  private val interval = Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)
 
   private val supervisionStrategy: Supervision.Decider = {
     case NonFatal(e) =>
