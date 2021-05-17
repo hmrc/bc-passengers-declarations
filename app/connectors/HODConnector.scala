@@ -10,9 +10,9 @@ import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, Etmp}
 import models.{Service, SubmissionResponse}
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.http.{ContentTypes, HeaderNames}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsError, JsObject, Json}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
@@ -50,21 +50,30 @@ class HODConnector @Inject() (
           FORWARDED_HOST -> MDTP)
     }
 
-    def call(isAmend: Boolean): Future[SubmissionResponse] = {
-
-
-      if (isAmend) {
-        val amendData = Json.toJsObject(declaration.amendData.get.as[Etmp])
-        http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", amendData)
-          .filter(_ != SubmissionResponse.Error)
-      } else {
-        val data = Json.toJsObject(declaration.data.as[Etmp])
-        http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", data)
-          .filter(_ != SubmissionResponse.Error)
+    def getRefinedData (dataOrAmendData: JsObject): JsObject = {
+      dataOrAmendData.validate(Etmp.formats) match {
+        case exception : JsError => Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [HODConnector] There is problem with parsing declaration, Parsing failed for this ChargeReference :  ${declaration.chargeReference}, CorrelationId :  ${declaration.correlationId}, Exception : $exception")
+          JsObject.empty
+        case _ => Json.toJsObject(dataOrAmendData.as[Etmp])
       }
     }
 
-    circuitBreaker.withCircuitBreaker(call(isAmendment))
+    def call : Future[SubmissionResponse] = {
+      if (isAmendment)
+        getRefinedData(declaration.amendData.get) match {
+          case returnedJsObject if returnedJsObject.value.isEmpty => Future.successful(SubmissionResponse.ParsingException)
+          case returnedJsObject => http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", returnedJsObject)
+            .filter(_ != SubmissionResponse.Error)
+        }
+      else
+        getRefinedData(declaration.data) match {
+          case returnedJsObject if returnedJsObject.value.isEmpty => Future.successful(SubmissionResponse.ParsingException)
+          case returnedJsObject => http.POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", returnedJsObject)
+            .filter(_ != SubmissionResponse.Error)
+        }
+    }
+
+    circuitBreaker.withCircuitBreaker(call)
       .fallbackTo(Future.successful(SubmissionResponse.Error))
-  }
+    }
 }
