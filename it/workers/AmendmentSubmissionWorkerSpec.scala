@@ -488,7 +488,7 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
 
         val (declaration, result) = worker.tap.pull.futureValue.value
-        result mustEqual SubmissionResponse.Error
+        result mustEqual SubmissionResponse.ParsingException
 
         repository.get(declaration.chargeReference).futureValue must be(defined)
       }

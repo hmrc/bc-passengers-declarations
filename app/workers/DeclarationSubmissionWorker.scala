@@ -74,10 +74,12 @@ class DeclarationSubmissionWorker @Inject() (
                   auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
                   declarationsRepository.setSentToEtmp(declaration.chargeReference,sentToEtmp = true)
                 case SubmissionResponse.Error =>
-                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 5XX")
+                  Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [DeclarationSubmissionWorker] call to DES (EIS) is failed. ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.correlationId}")
+                  Future.successful(())
+                case SubmissionResponse.ParsingException =>
                   Future.successful(())
                 case SubmissionResponse.Failed =>
-                  Logger.error("PNGRS_DES_SUBMISSION_FAILURE [DeclarationSubmissionWorker] [SinkQueueWithCancel] Call to DES failed with 400")
+                  Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [DeclarationSubmissionWorker] BAD Request is received from DES (EIS). ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.correlationId}")
                   declarationsRepository.setState(declaration.chargeReference, State.SubmissionFailed)
               }
             } yield (declaration, result)

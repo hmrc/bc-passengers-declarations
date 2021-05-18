@@ -383,7 +383,7 @@ class DeclarationSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mo
         val worker = app.injector.instanceOf[DeclarationSubmissionWorker]
 
         val (declaration, result) = worker.tap.pull.futureValue.value
-        result mustEqual SubmissionResponse.Error
+        result mustEqual SubmissionResponse.ParsingException
 
         repository.get(declaration.chargeReference).futureValue must be(defined)
       }
