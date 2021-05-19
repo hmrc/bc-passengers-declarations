@@ -5,12 +5,13 @@
 
 package workers
 
-import java.time.LocalDateTime
-
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{ActorAttributes, Materializer, Supervision}
 import com.google.inject.{Inject, Singleton}
 import models.declarations.Declaration
+import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import play.api.libs.json.JsObject
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 
@@ -70,7 +71,14 @@ class DeclarationDeletionWorker @Inject()(
       .run()
   }
   def checkDeleteCondition(declaration : Declaration) : Boolean = {
-    declaration.lastUpdated.plusMinutes(timeToHold.toMinutes).isBefore(LocalDateTime.now())
+    val dateString = declaration.data
+      .apply("simpleDeclarationRequest").as[JsObject]
+      .apply("requestCommon").as[JsObject]
+      .apply("receiptDate").as[String]
+    val dateFormatter: DateTimeFormatter =
+      DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(DateTimeZone.UTC)
+    val receiptDateTime = DateTime.parse(dateString, dateFormatter)
+    receiptDateTime.plusMinutes(timeToHold.toMinutes.toInt).isBefore(DateTime.now.withZone(DateTimeZone.UTC))
   }
 }
 
