@@ -5,8 +5,7 @@
 
 package models
 
-import java.time.LocalDateTime
-
+import java.time.{LocalDateTime, ZoneOffset}
 import models.declarations.{Declaration, State}
 import org.scalatest.{FreeSpec, MustMatchers}
 import play.api.libs.json.Json
@@ -17,7 +16,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
     "must deserialise" in {
 
-      val lastUpdated = LocalDateTime.now
+      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
 
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
@@ -49,7 +48,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
     "must serialise" in {
 
-      val lastUpdated = LocalDateTime.now
+      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
 
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
@@ -69,7 +68,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
     "must deserialise with amendState and amendSentToEtmp" in {
 
-      val lastUpdated = LocalDateTime.now
+      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
 
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
@@ -103,7 +102,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
     "must serialise with amendState, amendCorrelationId and amendSentToEtmp" in {
 
-      val lastUpdated = LocalDateTime.now
+      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
 
       val amendCorrelationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"

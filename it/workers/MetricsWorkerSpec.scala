@@ -1,7 +1,6 @@
 package workers
 
-import java.time.LocalDateTime
-
+import java.time.{LocalDateTime, ZoneOffset}
 import akka.stream.Materializer
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus}
@@ -49,8 +48,8 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
           .insert(ordered = true)
           .many(
             List(
-              Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now),
-              Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now)
+              Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC)),
+              Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
             )
           )
       }.futureValue
@@ -77,9 +76,9 @@ class MetricsWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
             .insert(ordered = true)
             .many(
               List(
-                Declaration(ChargeReference(2), State.Paid, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now),
-                Declaration(ChargeReference(3), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now),
-                Declaration(ChargeReference(4), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now)
+                Declaration(ChargeReference(2), State.Paid, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC)),
+                Declaration(ChargeReference(3), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC)),
+                Declaration(ChargeReference(4), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
               )
             )
         }.futureValue

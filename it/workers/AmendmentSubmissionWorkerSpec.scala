@@ -1,8 +1,7 @@
 package workers
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 import java.time.temporal.ChronoUnit
-
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
 import models.declarations.{Declaration, Etmp, State}
 import models.{ChargeReference, SubmissionResponse}
@@ -261,10 +260,10 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.SubmissionFailed, None,sentToEtmp = false, None, correlationId, Some(amendmentCorrelationId), journeyData, data, None,  LocalDateTime.now),
-          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None,correlationId, Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = true, None, correlationId, Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now),
-          Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.SubmissionFailed, None,sentToEtmp = false, None, correlationId, Some(amendmentCorrelationId), journeyData, data, None,  LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None,correlationId, Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = true, None, correlationId, Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -316,13 +315,13 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
 
         worker.tap.pull.futureValue
 
-        val startTime = LocalDateTime.now
+        val startTime = LocalDateTime.now(ZoneOffset.UTC)
 
         worker.tap.pull.futureValue
         worker.tap.pull.futureValue
         worker.tap.pull.futureValue
 
-        val endTime = LocalDateTime.now
+        val endTime = LocalDateTime.now(ZoneOffset.UTC)
 
         ChronoUnit.MILLIS.between(startTime, endTime) must be > 2000L
       }
@@ -343,8 +342,8 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -379,7 +378,7 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -416,9 +415,9 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -473,9 +472,9 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -509,9 +508,9 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now),
+          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
         )
 
         database.flatMap {
@@ -543,8 +542,8 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -565,8 +564,8 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now),
-        Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+        Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+        Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
       )
 
       database.flatMap {
@@ -608,7 +607,7 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
       database.flatMap {
         _.collection[JSONCollection]("declarations")
           .insert(ordered = true)
-          .one(Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data,Some(amendData), LocalDateTime.now))
+          .one(Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data,Some(amendData), LocalDateTime.now(ZoneOffset.UTC)))
       }.futureValue
 
       val reactor = new NioReactor()
@@ -638,7 +637,7 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
           database.flatMap {
             _.collection[JSONCollection]("declarations")
               .insert(ordered = true)
-              .one(Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data,Some(amendData), LocalDateTime.now))
+              .one(Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data,Some(amendData), LocalDateTime.now(ZoneOffset.UTC)))
           }.futureValue
 
           proxy.open()
@@ -672,10 +671,10 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now),
-          Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = false, None,correlationId,  Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now),
-          Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = false, None,correlationId,  Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {

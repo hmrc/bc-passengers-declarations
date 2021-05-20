@@ -1,7 +1,6 @@
 package workers
 
-import java.time.LocalDateTime
-
+import java.time.{LocalDateTime, ZoneOffset}
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
@@ -52,11 +51,11 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(3), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now),
-          Declaration(ChargeReference(4), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(3), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(4), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -111,9 +110,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -144,9 +143,9 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false,  None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now)
+          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false,  None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -181,8 +180,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
         val worker = app.injector.instanceOf[PaymentTimeoutWorker]
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5))
+          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
         )
 
         database.flatMap {
@@ -203,8 +202,8 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+        Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
       )
 
       database.flatMap {
@@ -241,7 +240,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
       database.flatMap {
         _.collection[JSONCollection]("declarations")
           .insert(ordered = true)
-          .one(Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)))
+          .one(Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
       }.futureValue
 
       val reactor = new NioReactor()
@@ -271,7 +270,7 @@ class PaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with MongoSuit
           database.flatMap {
             _.collection[JSONCollection]("declarations")
               .insert(ordered = true)
-              .one(Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj(), None, LocalDateTime.now.minusMinutes(5)))
+              .one(Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
           }.futureValue
 
           proxy.open()

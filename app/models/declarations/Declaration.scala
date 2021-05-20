@@ -5,8 +5,7 @@
 
 package models.declarations
 
-import java.time.LocalDateTime
-
+import java.time.{LocalDateTime, ZoneOffset}
 import models.ChargeReference
 import play.api.libs.json._
 
@@ -21,7 +20,7 @@ final case class Declaration (
   journeyData: JsObject,
   data: JsObject,
   amendData: Option[JsObject] = None,
-  lastUpdated: LocalDateTime = LocalDateTime.now
+  lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
 )
 
 object Declaration {

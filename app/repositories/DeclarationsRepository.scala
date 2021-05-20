@@ -5,8 +5,7 @@
 
 package repositories
 
-import java.time.LocalDateTime
-
+import java.time.{LocalDateTime, ZoneOffset}
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -105,7 +104,7 @@ class DefaultDeclarationsRepository @Inject() (
         "amendState" -> State.PendingPayment,
         "journeyData" -> amendmentData.apply("journeyData").as[JsObject],
         "amendData" -> (amendmentData - "journeyData"),
-        "lastUpdated" -> LocalDateTime.now,
+        "lastUpdated" -> LocalDateTime.now(ZoneOffset.UTC),
         "amendCorrelationId" -> correlationId
       )
     )
@@ -153,7 +152,7 @@ class DefaultDeclarationsRepository @Inject() (
     val update = Json.obj(
       "$set" -> Json.obj(
         "state" -> state,
-        "lastUpdated" -> LocalDateTime.now
+        "lastUpdated" -> LocalDateTime.now(ZoneOffset.UTC)
       )
     )
 
@@ -175,7 +174,7 @@ class DefaultDeclarationsRepository @Inject() (
     val update = Json.obj(
       "$set" -> Json.obj(
         "amendState" -> state,
-        "lastUpdated" -> LocalDateTime.now
+        "lastUpdated" -> LocalDateTime.now(ZoneOffset.UTC)
       )
     )
 
