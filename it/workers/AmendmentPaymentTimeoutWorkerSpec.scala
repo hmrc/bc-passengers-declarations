@@ -1,7 +1,6 @@
 package workers
 
-import java.time.LocalDateTime
-
+import java.time.{LocalDateTime, ZoneOffset}
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
@@ -54,11 +53,11 @@ class AmendmentPaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with 
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentCancelled), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(3), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now),
-          Declaration(ChargeReference(4), State.Paid, Some(State.PaymentFailed), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentCancelled), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(3), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(4), State.Paid, Some(State.PaymentFailed), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -113,9 +112,9 @@ class AmendmentPaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with 
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -147,9 +146,9 @@ class AmendmentPaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with 
         started(app).futureValue
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentCancelled), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now)
+          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentCancelled), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
         )
 
         database.flatMap {
@@ -184,9 +183,9 @@ class AmendmentPaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with 
         val worker = app.injector.instanceOf[AmendmentPaymentTimeoutWorker]
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentCancelled), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5))
+          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentCancelled), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
         )
 
         database.flatMap {
@@ -208,8 +207,8 @@ class AmendmentPaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with 
       database.flatMap(_.drop()).futureValue
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.Paid, Some(State.PaymentCancelled), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)),
-        Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5))
+        Declaration(ChargeReference(0), State.Paid, Some(State.PaymentCancelled), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+        Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
       )
 
       database.flatMap {
@@ -247,7 +246,7 @@ class AmendmentPaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with 
       database.flatMap {
         _.collection[JSONCollection]("declarations")
           .insert(ordered = true)
-          .one(Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)))
+          .one(Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
       }.futureValue
 
       val reactor = new NioReactor()
@@ -277,7 +276,7 @@ class AmendmentPaymentTimeoutWorkerSpec extends FreeSpec with MustMatchers with 
           database.flatMap {
             _.collection[JSONCollection]("declarations")
               .insert(ordered = true)
-              .one(Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now.minusMinutes(5)))
+              .one(Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
           }.futureValue
 
           proxy.open()

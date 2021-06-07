@@ -5,11 +5,11 @@
 
 package workers
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 import java.time.temporal.ChronoUnit
-
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{ActorAttributes, Materializer, Supervision}
+
 import javax.inject.{Inject, Singleton}
 import models.declarations.Declaration
 import play.api.{Configuration, Logger}
@@ -56,7 +56,7 @@ class AmendmentPaymentTimeoutWorker @Inject()(
 
       logger.info(" Amendment payment timeout worker started")
 
-      def timeout = LocalDateTime.now.minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
+      def timeout = LocalDateTime.now(ZoneOffset.UTC).minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
 
       Source.tick(initialDelay, interval, declarationsRepository.unpaidAmendments)
         .flatMapConcat(identity)

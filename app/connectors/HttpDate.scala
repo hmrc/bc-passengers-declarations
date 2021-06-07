@@ -5,7 +5,7 @@
 
 package connectors
 
-import org.joda.time.{DateTimeZone, LocalDateTime}
+import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 
 trait HttpDate {
@@ -16,5 +16,5 @@ trait HttpDate {
       .withZone(DateTimeZone.UTC)
 
   def now: String =
-    dateFormatter.print(LocalDateTime.now)
+    dateFormatter.print(DateTime.now.withZone(DateTimeZone.UTC))
 }
