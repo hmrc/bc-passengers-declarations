@@ -130,7 +130,8 @@ class DefaultDeclarationsRepository @Inject() (
         Json.obj("state" -> "paid"),
         Json.obj("$or" -> Json.arr(
           Json.obj("amendState" -> Json.obj("$exists" -> false)),
-          Json.obj("amendState" -> "paid"))
+          Json.obj("amendState" -> State.Paid),
+          Json.obj("amendState" -> State.PendingPayment))
         ))
     )
 
