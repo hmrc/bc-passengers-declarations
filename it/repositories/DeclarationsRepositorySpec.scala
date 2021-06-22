@@ -69,7 +69,13 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
         "vat" -> "102.50",
         "allTax" -> "115.00"
       )
-    ))
+    ),
+    "deltaCalculation" -> Some(Json.obj(
+      "excise" -> "10.00",
+      "customs" -> "10.50",
+      "vat" -> "10.50",
+      "allTax" -> "31.00"))
+  )
 
   val inputData: JsObject = Json.obj(
     "journeyData" -> journeyData,
@@ -833,9 +839,42 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
       }
     }
 
-    "must not provide a declaration when unpaid declaration or amendment is present for given chargeReference, lastName, identification number" in {
+    "must not provide a declaration when payment failed for declaration or amendment is present for given chargeReference, lastName, identification number" in {
 
       database.flatMap(_.drop()).futureValue
+
+      val app = builder.build()
+
+      val input = PreviousDeclarationRequest("POTTER", ChargeReference(0).toString)
+
+      running(app) {
+
+        val repository = app.injector.instanceOf[DeclarationsRepository]
+
+        started(app).futureValue
+
+        val declarations = List(
+          Declaration(ChargeReference(0), State.Paid, Some(State.PaymentFailed), sentToEtmp=false, None, correlationId, Some(amendCorrelationId), journeyData, actualData, Some(actualAmendmentData), LocalDateTime.now(ZoneOffset.UTC)),
+          Declaration(ChargeReference(1), State.Paid, None, sentToEtmp=false, None, correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(actualAmendmentData), LocalDateTime.now(ZoneOffset.UTC))
+        )
+
+        database.flatMap {
+          _.collection[JSONCollection]("declarations")
+            .insert(ordered = true)
+            .many(declarations)
+        }.futureValue
+
+        implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+
+        repository.get(input).futureValue mustBe None
+      }
+    }
+
+    "must provide a declaration when paid declaration & pending payment amendment is present for given chargeReference, lastName" in {
+
+      database.flatMap(_.drop()).futureValue
+
+      val deltaCalculation = Some(Json.obj("excise" -> "10.00", "customs" -> "10.50", "vat" -> "10.50", "allTax" -> "31.00"))
 
       val app = builder.build()
 
@@ -860,7 +899,10 @@ class DeclarationsRepositorySpec extends FreeSpec with MustMatchers with FailOnU
 
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
-        repository.get(input).futureValue mustBe None
+        val pendingAmendment = repository.get(input).futureValue
+
+        pendingAmendment.get.amendState.get mustBe "pending-payment"
+        pendingAmendment.get.deltaCalculation mustBe deltaCalculation
       }
     }
 

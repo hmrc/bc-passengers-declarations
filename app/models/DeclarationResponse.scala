@@ -17,7 +17,9 @@ case class DeclarationResponse(
                                 calculation: JsObject,
                                 liabilityDetails: JsObject,
                                 oldPurchaseProductInstances: JsArray,
-                                amendmentCount: Option[Int]
+                                amendmentCount: Option[Int],
+                                deltaCalculation: Option[JsObject],
+                                amendState: Option[String]
                               )
 
 object DeclarationResponse {
@@ -36,7 +38,9 @@ object DeclarationResponse {
         (__ \ "journeyData" \ "calculatorResponse" \ "calculation").read[JsObject] and
         (__ \ "data" \ "simpleDeclarationRequest" \ "requestDetail" \ "liabilityDetails").read[JsObject] and
         (__ \ "journeyData" \ "purchasedProductInstances").read[JsArray] and
-        (__ \ "journeyData" \ "amendmentCount").readNullable[Int]
+        (__ \ "journeyData" \ "amendmentCount").readNullable[Int] and
+        (__ \ "journeyData" \ "deltaCalculation").readNullable[JsObject] and
+        (__ \ "amendState").readNullable[String]
       )(DeclarationResponse.apply _)
   }
 
