@@ -71,7 +71,7 @@ class AmendmentSubmissionWorker @Inject()(
               result <- hodConnector.submit(declaration, true)
               _      <- result match {
                 case SubmissionResponse.Submitted =>
-                  auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
+                  auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration.amendData.get))
                   declarationsRepository.setAmendSentToEtmp(declaration.chargeReference,amendSentToEtmp = true)
                 case SubmissionResponse.Error =>
                   Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] call to DES (EIS) is failed. ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.amendCorrelationId.getOrElse("amendCorrelationId is not available in Mongo")}")

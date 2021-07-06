@@ -122,10 +122,10 @@ class AuditingToolsSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSu
 
       val declaration = Declaration(chargeReference, State.PendingPayment, None,sentToEtmp = false, None,correlationId, None, journeyData, data)
 
-      val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration)
+      val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration.data)
 
       declarationEvent.tags mustBe Map("transactionName" -> "passengerdeclarationsubmitted")
-      declarationEvent.detail mustBe Json.toJsObject(declaration.data.as[Etmp])
+      declarationEvent.detail mustBe Json.toJsObject(data.as[Etmp])
       declarationEvent.auditSource mustBe "bc-passengers-declarations"
     }
   }

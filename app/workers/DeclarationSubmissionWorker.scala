@@ -71,7 +71,7 @@ class DeclarationSubmissionWorker @Inject() (
               result <- hodConnector.submit(declaration,false)
               _      <- result match {
                 case SubmissionResponse.Submitted =>
-                  auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration))
+                  auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration.data))
                   declarationsRepository.setSentToEtmp(declaration.chargeReference,sentToEtmp = true)
                 case SubmissionResponse.Error =>
                   Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [DeclarationSubmissionWorker] call to DES (EIS) is failed. ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.correlationId}")
