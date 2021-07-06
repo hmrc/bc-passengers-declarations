@@ -7,7 +7,7 @@ package util
 
 import javax.inject.{Inject, Named, Singleton}
 import models.declarations.{Declaration, Etmp}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
 @Singleton
@@ -15,12 +15,12 @@ class AuditingTools @Inject() (
   @Named("appName") val appName: String
 ) {
 
-  def buildDeclarationSubmittedDataEvent(declaration: Declaration) = {
+  def buildDeclarationSubmittedDataEvent(data: JsObject) = {
     ExtendedDataEvent(
       auditSource = appName,
       auditType =  "passengerdeclaration",
       tags = Map("transactionName" -> "passengerdeclarationsubmitted"),
-      detail = Json.toJsObject(declaration.data.as[Etmp])
+      detail = Json.toJsObject(data.as[Etmp])
     )
   }
 }
