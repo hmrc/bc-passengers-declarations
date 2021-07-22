@@ -127,3 +127,8 @@ The `chargeReference` in the url should match one returned from a previous call 
 | `404`  | This means that no declaration for the given charge reference exists in MongoDB. |
 | `409`  | This means that the declaration is not in a valid state to be set to `Paid`, for example, if a declaration is in a `Failed` state. |
 | `423`  | This means that the declaration is already locked for processing by another part of the system. This should only be able to happen if the `update` is submitted at the same time as the `PaymentTimeoutWorker` is attempting to process the record. |
+
+### License
+
+This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
+
