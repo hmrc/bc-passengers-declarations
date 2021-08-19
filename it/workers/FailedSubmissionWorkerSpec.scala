@@ -1,35 +1,69 @@
+
 package workers
 
+import akka.stream.Materializer
+
+import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
+import com.typesafe.config.ConfigFactory
+import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, Lock}
-import org.mockito.Matchers.any
-import org.mockito.Mockito.when
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.test.Helpers.running
-import reactivemongo.play.json.collection.JSONCollection
-import repositories.LockRepository
-import suite.MongoSuite
+import play.api.test.Helpers._
+import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import services.{ChargeReferenceService, ValidationService}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import utils.WireMockHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.language.postfixOps
 
-class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
-  with ScalaFutures with IntegrationPatience with OptionValues with MockitoSugar {
+class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
+
+  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
+
+  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+    chargeReferenceService,
+    validationService,
+    Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+  )
+
+  def lockRepository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    super.afterEach()
+    await(repository.collection.drop().toFuture())
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    await(repository.collection.drop().toFuture())
+  }
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
 
-  "a failed submission worker" - {
+  "a failed submission worker" should  {
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
     "must lock failed records when it processes them" in {
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
 
       val declarations = List(
         Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
@@ -37,24 +71,17 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
         Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
       )
 
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .many(declarations)
-      }.futureValue
+      await(repository.collection.insertMany(declarations).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-        started(app).futureValue
-
-        val worker = app.injector.instanceOf[FailedSubmissionWorker]
+        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
         worker.tap.pull.futureValue
         worker.tap.pull.futureValue
 
-        val lockRepository = app.injector.instanceOf[LockRepository]
 
         lockRepository.isLocked(0).futureValue mustEqual true
         lockRepository.isLocked(1).futureValue mustEqual true
@@ -64,126 +91,70 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
 
     "must not process locked records" in {
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
 
       val declarations = List(
         Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
         Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
       )
 
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .many(declarations)
-      }.futureValue
+      await(repository.collection.insertMany(declarations).toFuture())
 
-      database.flatMap {
-        _.collection[JSONCollection]("locks")
-          .insert(ordered = true)
-          .one(Lock(0))
-      }.futureValue
+      await(lockRepository.collection.insertOne(Lock(0)).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-        started(app).futureValue
 
-        val worker = app.injector.instanceOf[FailedSubmissionWorker]
+        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-        val declaration = worker.tap.pull.futureValue.value
+        val declaration = worker.tap.pull.futureValue.get
         declaration.chargeReference.value mustEqual 1
       }
     }
 
     "must set failed records to have a status of Paid" in {
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
 
       val declarations = List(
         Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
         Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
       )
 
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .many(declarations)
-      }.futureValue
+      await(repository.collection.insertMany(declarations).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-        started(app).futureValue
+        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-        val worker = app.injector.instanceOf[FailedSubmissionWorker]
-
-        val declaration = worker.tap.pull.futureValue.value
+        val declaration = worker.tap.pull.futureValue.get
         declaration.chargeReference.value mustEqual 0
         declaration.state mustEqual State.Paid
       }
     }
 
-    "must continue processing after a transient failure acquiring a lock" in {
-
-      import play.api.inject._
-
-      database.flatMap(_.drop()).futureValue
-
-      val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
-      )
-
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .many(declarations)
-      }.futureValue
-
-      val mockLockRepository = mock[LockRepository]
-
-      when(mockLockRepository.started) thenReturn Future.successful(())
-
-      when(mockLockRepository.lock(any()))
-        .thenReturn(Future.failed(new Exception))
-        .thenReturn(Future.successful(true))
-
-      val app = builder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val worker = app.injector.instanceOf[FailedSubmissionWorker]
-
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(1)
-      }
-    }
 
     "must complete when all failed declarations have been processed" in {
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
 
       val declarations = List(
         Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj()),
         Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
       )
 
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .many(declarations)
-      }.futureValue
+      await(repository.collection.insertMany(declarations).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-        started(app).futureValue
 
-        val worker = app.injector.instanceOf[FailedSubmissionWorker]
+        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
         worker.tap.pull.futureValue
         worker.tap.pull.futureValue
@@ -193,3 +164,4 @@ class FailedSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSu
     }
   }
 }
+

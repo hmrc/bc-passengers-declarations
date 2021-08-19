@@ -85,12 +85,12 @@ class AmendmentSubmissionWorker @Inject()(
                   auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration.amendData.get))
                   declarationsRepository.setAmendSentToEtmp(declaration.chargeReference,amendSentToEtmp = true)
                 case SubmissionResponse.Error =>
-                  Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] call to DES (EIS) is failed. ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.amendCorrelationId.getOrElse("amendCorrelationId is not available in Mongo")}")
+                  logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] call to DES (EIS) is failed. ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.amendCorrelationId.getOrElse("amendCorrelationId is not available in Mongo")}")
                   Future.successful(())
                 case SubmissionResponse.ParsingException =>
                   Future.successful(())
                 case SubmissionResponse.Failed =>
-                  Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] BAD Request is received from DES (EIS) ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.amendCorrelationId.getOrElse("amendCorrelationId is not available in Mongo")}")
+                  logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] BAD Request is received from DES (EIS) ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.amendCorrelationId.getOrElse("amendCorrelationId is not available in Mongo")}")
                   declarationsRepository.setAmendState(declaration.chargeReference, State.SubmissionFailed)
               }
             } yield (declaration, result)

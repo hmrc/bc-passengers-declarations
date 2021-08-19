@@ -23,7 +23,7 @@ import org.mockito.Mockito._
 import play.api.libs.json.JsValue
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.Future
 
@@ -64,7 +64,7 @@ class SendEmailConnectorSpec extends BaseSpec {
   "send Email" should {
 
     "Return a true when a request to send a new email is successful" in new Setup {
-      mockHttpPOST(connector.sendEmailURL, HttpResponse(ACCEPTED))
+      mockHttpPOST(connector.sendEmailURL, HttpResponse.apply(ACCEPTED,""))
       await(connector.requestEmail(emailRequest)) shouldBe true
     }
 

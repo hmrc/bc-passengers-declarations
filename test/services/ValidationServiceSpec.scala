@@ -16,12 +16,13 @@
 
 package services
 
-import org.scalatest.{FreeSpec, MustMatchers}
-import org.scalatestplus.play.OneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Injecting
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-class ValidationServiceSpec extends FreeSpec with MustMatchers with OneAppPerSuite with Injecting {
+class ValidationServiceSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with Injecting {
 
   private lazy val validationService: ValidationService = inject[ValidationService]
   private lazy val validator: Validator = validationService.get("test-schema.json")

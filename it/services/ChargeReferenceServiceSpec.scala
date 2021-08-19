@@ -1,63 +1,69 @@
+
 package services
 
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{FreeSpec, MustMatchers}
+import helpers.IntegrationSpecCommonBase
+import models.ChargeRefJsons.ChargeRefJson
+import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
 import play.api.test.Helpers._
-import reactivemongo.play.json.collection.JSONCollection
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
-import suite.MongoSuite
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ChargeReferenceServiceSpec extends FreeSpec with MustMatchers with MongoSuite
-  with ScalaFutures with IntegrationPatience {
+class ChargeReferenceServiceSpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[ChargeRefJson] {
+
+  override def repository = new SequentialChargeReferenceService(mongoComponent)
 
   private lazy val builder = new GuiceApplicationBuilder()
 
-  "a charge reference service" - {
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    super.afterEach()
+    await(repository.collection.drop().toFuture())
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    await(repository.collection.drop().toFuture())
+  }
+
+  "a charge reference service" should {
 
     "must return sequential ids" in {
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-        val service = app.injector.instanceOf[ChargeReferenceService]
 
-        started(app).futureValue
-
-        val first  = service.nextChargeReference().futureValue
-        val second = service.nextChargeReference().futureValue
+        val first  = repository.nextChargeReference().futureValue
+        val second = repository.nextChargeReference().futureValue
 
         (second.value - first.value) mustEqual 1
       }
     }
 
     "must not fail if the collection already has a document on startup" in {
+      await(repository.collection.drop().toFuture())
 
-      database.flatMap {
-        db =>
-          db.drop().flatMap {
-            _ =>
-              db.collection[JSONCollection]("charge-reference")
-                .insert(Json.obj(
-                  "_id"             -> "counter",
-                  "chargeReference" -> 10
-                ))
-          }
-      }.futureValue
+      repository.collection.insertOne(ChargeRefJson("counter", 10))
 
       val app = builder.build()
 
       running(app) {
 
-        val service = app.injector.instanceOf[ChargeReferenceService]
-        started(app).futureValue
+        repository.nextChargeReference().futureValue
       }
     }
   }
 }
+

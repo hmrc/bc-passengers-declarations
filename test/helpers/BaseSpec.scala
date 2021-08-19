@@ -17,7 +17,9 @@
 package helpers
 
 import mocks.WSHttpMock
-import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 
-trait BaseSpec extends WordSpec with Matchers with MockitoSugar with BeforeAndAfterEach with WSHttpMock
+trait BaseSpec extends AnyWordSpec with Matchers with MockitoSugar with BeforeAndAfterEach with WSHttpMock

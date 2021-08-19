@@ -16,11 +16,12 @@
 
 package models
 
-import org.scalatest.{FreeSpec, Inside, MustMatchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
-class SubmissionResponseSpec extends FreeSpec with MustMatchers {
+class SubmissionResponseSpec extends AnyFreeSpec with Matchers {
 
   private val reads: HttpReads[SubmissionResponse] = implicitly[HttpReads[SubmissionResponse]]
 
@@ -28,7 +29,7 @@ class SubmissionResponseSpec extends FreeSpec with MustMatchers {
 
     "must be read from an http response" in {
 
-      val result = reads.read("POST", "/", HttpResponse(NO_CONTENT))
+      val result = reads.read("POST", "/", HttpResponse.apply(NO_CONTENT, ""))
 
       result mustEqual SubmissionResponse.Submitted
     }
@@ -38,7 +39,7 @@ class SubmissionResponseSpec extends FreeSpec with MustMatchers {
 
     "must be read from an http response" in {
 
-      val result = reads.read("POST", "/", HttpResponse(BAD_REQUEST, responseString = Some("bad request")))
+      val result = reads.read("POST", "/", HttpResponse.apply(BAD_REQUEST, "bad request"))
 
       result mustEqual SubmissionResponse.Failed
     }
@@ -48,7 +49,7 @@ class SubmissionResponseSpec extends FreeSpec with MustMatchers {
 
     "must be read from an http response" in {
 
-      val result = reads.read("POST", "/", HttpResponse(INTERNAL_SERVER_ERROR, responseString = Some("internal server error")))
+      val result = reads.read("POST", "/", HttpResponse.apply(INTERNAL_SERVER_ERROR, "internal server error"))
 
       result mustEqual SubmissionResponse.Error
     }

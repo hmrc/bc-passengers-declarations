@@ -18,67 +18,47 @@ package repositories
 
 import javax.inject.{Inject, Singleton}
 import models.Lock
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.Indexes.{ascending}
 import play.api.Configuration
-import play.api.libs.json.Json
-import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.api.commands.LastError
-import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.BSONDocument
-import reactivemongo.play.json.collection.JSONCollection
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
+
 @Singleton
-class DefaultLockRepository @Inject()(
-                                mongo: ReactiveMongoApi,
-                                config: Configuration
-                              )(implicit ec: ExecutionContext) extends LockRepository {
-
-  private val collectionName: String = "locks"
-
-  private lazy val documentExistsErrorCode = Some(11000)
-
-  private val cacheTtl = config.get[Int]("locks.ttl")
-
-  private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](collectionName))
-
-  private val index = Index(
-    key     = Seq("lastUpdated" -> IndexType.Ascending),
-    name    = Some("locks-index"),
-    options = BSONDocument("expireAfterSeconds" -> cacheTtl)
+  class DefaultLockRepository @Inject()(
+                                         mongoComponent: MongoComponent,
+                                         config: Configuration
+                                       )(implicit ec: ExecutionContext) extends PlayMongoRepository[Lock](
+  collectionName = "locks",
+  mongoComponent = mongoComponent,
+  domainFormat   = Lock.formats,
+  indexes = Seq(
+    IndexModel(ascending("lastUpdated"), IndexOptions().name("locks-index")
+      .expireAfter(300, TimeUnit.SECONDS)),
   )
+  ) with LockRepository {
+
 
   val started: Future[Unit] = {
-    collection.flatMap {
-      _.indexesManager.ensure(index)
-    }.map(_ => ())
+    null
   }
 
-  override def lock(id: Int): Future[Boolean] =
-    collection
-      .flatMap {
-        _.insert(Lock(id))
-          .map(_ => true)
-      } recover {
-      case e: LastError if e.code == documentExistsErrorCode =>
-        false
-      }
+  override def lock(id: Int): Future[Boolean] = collection.insertOne(Lock(id)).toFuture().map(_ => true).fallbackTo(Future.successful(false))
 
-  override def release(id: Int): Future[Unit] =
-    collection
-      .flatMap {
-        _.findAndRemove(Json.obj("_id" -> id))
-          .map(_ => ())
-      }.fallbackTo(Future.successful(()))
+  override def release(id: Int): Future[Unit] = collection.findOneAndDelete(equal("_id", Codecs.toBson(id))).map(_ => ()).head().fallbackTo(Future.successful(()))
 
-  override def isLocked(id: Int): Future[Boolean] =
-    collection
-      .flatMap{
-        _.find(Json.obj("_id" -> id), None).one[Lock]
-      }.map(_.isDefined)
+  override def isLocked(id: Int): Future[Boolean] = collection.find(equal("_id", Codecs.toBson(id)))
+    .first().toFuture().map {
+    case locks if locks != null => true
+    case _ =>  false
+  }
 }
+
 
 trait LockRepository {
 

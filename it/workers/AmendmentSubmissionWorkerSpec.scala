@@ -1,32 +1,64 @@
 package workers
 
+import akka.stream.Materializer
+
 import java.time.{LocalDateTime, ZoneOffset}
 import java.time.temporal.ChronoUnit
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
-import models.declarations.{Declaration, Etmp, State}
+import com.typesafe.config.ConfigFactory
+import connectors.HODConnector
+import helpers.IntegrationSpecCommonBase
+import models.declarations.{Declaration, State}
 import models.{ChargeReference, SubmissionResponse}
-import org.mockito.Matchers._
-import org.mockito.Mockito._
-import org.netcrusher.core.reactor.NioReactor
-import org.netcrusher.tcp.TcpCrusherBuilder
-import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
-import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.concurrent.Eventually.eventually
+import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+
+import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
-import reactivemongo.play.json.collection.JSONCollection
-import repositories.{DeclarationsRepository, LockRepository}
-import suite.MongoSuite
+import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import services.{ChargeReferenceService, ValidationService}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import util.AuditingTools
 import utils.WireMockHelper
-import utils.WireMockUtils._
+import utils.WireMockUtils.WireMockServerImprovements
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.language.postfixOps
 
-class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
-  with ScalaFutures with IntegrationPatience with OptionValues with MockitoSugar with WireMockHelper with Eventually {
+class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
+
+  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
+
+  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+    chargeReferenceService,
+    validationService,
+    Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+  )
+
+  def lockRepository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    super.afterEach()
+    await(repository.collection.drop().toFuture())
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    await(repository.collection.drop().toFuture())
+  }
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
@@ -240,7 +272,7 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
     "isUKResident" -> false,
     "bringingOverAllowance" -> true)
 
-  "an amendment submission worker" - {
+  "an amendment submission worker" should  {
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
     val amendmentCorrelationId = "ge28db96-d9db-4220-9e12-f2d267267c30"
@@ -251,13 +283,13 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
+      await(lockRepository.collection.drop().toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-        started(app).futureValue
 
         val declarations = List(
           Declaration(ChargeReference(0), State.SubmissionFailed, None,sentToEtmp = false, None, correlationId, Some(amendmentCorrelationId), journeyData, data, None,  LocalDateTime.now(ZoneOffset.UTC)),
@@ -266,20 +298,22 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
           Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
         )
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
+        await(repository.collection.insertMany(declarations).toFuture())
 
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
+        val hODConnector = app.injector.instanceOf[HODConnector]
 
-        val (declaration, response) = worker.tap.pull.futureValue.value
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+        val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+
+        val (declaration, response) = worker.tap.pull.futureValue.get
         declaration.chargeReference mustEqual ChargeReference(3)
         declaration.amendCorrelationId.get mustBe amendmentCorrelationId
         response mustEqual SubmissionResponse.Submitted
       }
     }
+
 
     "must throttle submissions" in {
 
@@ -287,7 +321,7 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
         .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
 
       val app = builder.configure(
         "workers.amendment-submission-worker.throttle.elements" -> "1",
@@ -296,8 +330,6 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
 
       running(app) {
 
-        started(app).futureValue
-
         val declarations = List(
           Declaration(ChargeReference(0), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj())),
           Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj())),
@@ -305,13 +337,15 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
           Declaration(ChargeReference(3), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()))
         )
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
+        await(repository.collection.insertMany(declarations).toFuture())
 
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
+
+        val hODConnector = app.injector.instanceOf[HODConnector]
+
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+        val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
         worker.tap.pull.futureValue
 
@@ -327,377 +361,230 @@ class AmendmentSubmissionWorkerSpec extends FreeSpec with MustMatchers with Mong
       }
     }
 
-    "must not process locked records" in {
+     "must not process locked records" in {
 
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(NO_CONTENT))
-      )
-
-      database.flatMap(_.drop()).futureValue
-
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+        server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
         )
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
+       await(repository.collection.drop().toFuture())
+       await(lockRepository.collection.drop().toFuture())
 
-        val lockRepository = app.injector.instanceOf[LockRepository]
-
-        lockRepository.lock(1)
-
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-
-        val (declaration, _) = worker.tap.pull.futureValue.value
-        declaration.chargeReference mustEqual ChargeReference(2)
-      }
-    }
-
-    "must lock records when processing them" in {
-
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(NO_CONTENT))
-      )
-
-      database.flatMap(_.drop()).futureValue
-
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        val lockRepository = app.injector.instanceOf[LockRepository]
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-
-        val (declaration, _) = worker.tap.pull.futureValue.value
-        lockRepository.isLocked(1)
-        declaration.chargeReference mustEqual ChargeReference(1)
-      }
-    }
-
-    "must not remove successfully submitted amendments from mongo" in {
-
-      server.stubFor(post(urlPathEqualTo("/write/audit"))
-        .willReturn(aResponse().withStatus(OK)
-      ))
-
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(NO_CONTENT))
-      )
-
-      database.flatMap(_.drop()).futureValue
-
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-
-        val repository = app.injector.instanceOf[DeclarationsRepository]
-
-        val (declaration, _) = worker.tap.pull.futureValue.value
-
-        val expectedJsonBody: String = Json.obj(
-          "auditSource" -> "bc-passengers-declarations",
-          "auditType" -> "passengerdeclaration",
-          "tags" -> Json.obj(
-            "clientIP" -> "-",
-            "path" -> "-",
-            "X-Session-ID" -> "-",
-            "Akamai-Reputation" -> "-",
-            "X-Request-ID" -> "-",
-            "deviceID" -> "-",
-            "clientPort" -> "-",
-            "transactionName" -> "passengerdeclarationsubmitted"
-          ),
-          "detail" -> Json.toJsObject(amendData.as[Etmp])).toString().stripMargin
-
-        val request = postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(equalToJson(expectedJsonBody, true, true))
-
-        eventually {
-          server.requestsWereSent(times = 1, request) mustEqual true
-        }
-
-        repository.get(declaration.chargeReference).futureValue must be(defined)
-      }
-    }
-
-    "must not remove errored declarations from mongo" in {
-
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
-      )
-
-      database.flatMap(_.drop()).futureValue
-
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        val repository = app.injector.instanceOf[DeclarationsRepository]
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-
-        val (declaration, result) = worker.tap.pull.futureValue.value
-        result mustEqual SubmissionResponse.ParsingException
-
-        repository.get(declaration.chargeReference).futureValue must be(defined)
-      }
-    }
-
-    "must set the state of failed amended declarations to failed" in {
-
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(BAD_REQUEST))
-      )
-
-      database.flatMap(_.drop()).futureValue
-
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        val repository = app.injector.instanceOf[DeclarationsRepository]
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-
-        val (declaration, result) = worker.tap.pull.futureValue.value
-        result mustEqual SubmissionResponse.Failed
-
-        repository.get(declaration.chargeReference).futureValue.value.amendState.get mustBe State.SubmissionFailed
-      }
-    }
-
-    "must continue to process amendments" in {
-
-      database.flatMap(_.drop()).futureValue
-
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
-      }
-    }
-
-    "must continue processing after a transient failure acquiring a lock" in {
-
-      import play.api.inject._
-
-      database.flatMap(_.drop()).futureValue
-
-      val declarations = List(
-        Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-        Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-      )
-
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .many(declarations)
-      }.futureValue
-
-      val mockLockRepository = mock[LockRepository]
-
-      when(mockLockRepository.started) thenReturn Future.successful(())
-
-      when(mockLockRepository.lock(any()))
-        .thenReturn(Future.failed(new Exception))
-        .thenReturn(Future.successful(true))
-
-      val app = builder.overrides(
-        bind[LockRepository].toInstance(mockLockRepository)
-      ).build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-
-        worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(1)
-        worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(0)
-      }
-    }
-
-    "must continue processing after a transient failure getting paid declarations" in {
-
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(NO_CONTENT))
-      )
-      database.flatMap(_.drop()).futureValue
-
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .one(Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data,Some(amendData), LocalDateTime.now(ZoneOffset.UTC)))
-      }.futureValue
-
-      val reactor = new NioReactor()
-
-      val proxy = TcpCrusherBuilder.builder()
-        .withReactor(reactor)
-        .withBindAddress("localhost", 27018)
-        .withConnectAddress("localhost", 27017)
-        .buildAndOpen()
-
-      val app = builder.configure(
-        "mongodb.uri" -> s"mongodb://localhost:${proxy.getBindAddress.getPort}/bc-passengers-declarations-integration"
-      ).build()
-
-      try {
+        val app = builder.build()
 
         running(app) {
 
-          started(app).futureValue
+          val declarations = List(
+            Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+            Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+          )
 
-          val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
+          await(repository.collection.insertMany(declarations).toFuture())
 
-          worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(0)
 
-          proxy.close()
+          val hODConnector = app.injector.instanceOf[HODConnector]
+          val auditConnector = app.injector.instanceOf[AuditConnector]
+          val auditingTools =  app.injector.instanceOf[AuditingTools]
 
-          database.flatMap {
-            _.collection[JSONCollection]("declarations")
-              .insert(ordered = true)
-              .one(Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data,Some(amendData), LocalDateTime.now(ZoneOffset.UTC)))
-          }.futureValue
+          lockRepository.lock(1)
 
-          proxy.open()
+          val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
-          worker.tap.pull.futureValue.value._1.chargeReference mustEqual ChargeReference(1)
+
+          val (declaration, _) = worker.tap.pull.futureValue.get
+          declaration.chargeReference mustEqual ChargeReference(2)
         }
-      } finally {
-
-        proxy.close()
-        reactor.close()
       }
-    }
 
+       "must lock records when processing them" in {
 
-    "must only make one request to the HOD" in {
-
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(NO_CONTENT))
-      )
-
-      server.stubFor(post(urlPathEqualTo("/write/audit"))
-        .willReturn(aResponse().withStatus(OK)
-      ))
-
-
-      database.flatMap(_.drop()).futureValue
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = false, None,correlationId,  Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
+        server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
         )
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
+         await(repository.collection.drop().toFuture())
+         await(lockRepository.collection.drop().toFuture())
 
-        val repository = app.injector.instanceOf[DeclarationsRepository]
-        val worker = app.injector.instanceOf[AmendmentSubmissionWorker]
-        val (declaration, result) = worker.tap.pull.futureValue.value
+        val app = builder.build()
 
-        val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
-        val desRequest = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        running(app) {
 
-        eventually{
-          server.requestsWereSent(times = 1, auditRequest) mustEqual true
-          server.requestsWereSent(times = 1, desRequest) mustEqual true
+          val declarations = List(
+            Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+          )
+
+          await(repository.collection.insertMany(declarations).toFuture())
+
+          val hODConnector = app.injector.instanceOf[HODConnector]
+
+          val auditConnector = app.injector.instanceOf[AuditConnector]
+          val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+          val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+
+          val (declaration, _) = worker.tap.pull.futureValue.get
+          declaration.chargeReference mustEqual ChargeReference(1)
         }
-
-        result mustEqual SubmissionResponse.Submitted
-        repository.get(declaration.chargeReference).futureValue must be(defined)
       }
-    }
+
+         "must not remove errored declarations from mongo" in {
+
+            server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+              .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
+            )
+
+           await(repository.collection.drop().toFuture())
+           await(lockRepository.collection.drop().toFuture())
+
+            val app = builder.build()
+
+            running(app) {
+
+
+              val declarations = List(
+                Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+                Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+                Declaration(ChargeReference(2), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+              )
+
+              await(repository.collection.insertMany(declarations).toFuture())
+
+
+              val hODConnector = app.injector.instanceOf[HODConnector]
+
+              val auditConnector = app.injector.instanceOf[AuditConnector]
+              val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+              val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+
+
+              val (declaration, result) = worker.tap.pull.futureValue.get
+              result mustEqual SubmissionResponse.ParsingException
+
+              repository.get(declaration.chargeReference).futureValue must be(defined)
+
+            }
+          }
+
+             "must set the state of failed amended declarations to failed" in {
+
+              server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+                .willReturn(aResponse().withStatus(BAD_REQUEST))
+              )
+
+               await(repository.collection.drop().toFuture())
+               await(lockRepository.collection.drop().toFuture())
+
+              val app = builder.build()
+
+              running(app) {
+
+
+                val declarations = List(
+                  Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+                  Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+                  Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+                )
+
+                await(repository.collection.insertMany(declarations).toFuture())
+
+
+                val hODConnector = app.injector.instanceOf[HODConnector]
+
+                val auditConnector = app.injector.instanceOf[AuditConnector]
+                val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+                val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+
+
+                val (declaration, result) = worker.tap.pull.futureValue.get
+                result mustEqual SubmissionResponse.Failed
+
+                repository.get(declaration.chargeReference).futureValue.get.amendState.get mustBe State.SubmissionFailed
+
+
+              }
+            }
+
+         "must continue to process amendments" in {
+
+            await(repository.collection.drop().toFuture())
+            await(lockRepository.collection.drop().toFuture())
+
+               val app = builder.build()
+
+               running(app) {
+
+                 val hODConnector = app.injector.instanceOf[HODConnector]
+
+                 val auditConnector = app.injector.instanceOf[AuditConnector]
+                 val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+
+                 val declarations = List(
+                   Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
+                   Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+                 )
+
+                 await(repository.collection.insertMany(declarations).toFuture())
+
+                 val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+
+                 worker.tap.pull.futureValue
+                 worker.tap.pull.futureValue
+               }
+             }
+
+
+            "must only make one request to the HOD" in {
+
+              server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+                .willReturn(aResponse().withStatus(NO_CONTENT))
+              )
+
+              server.stubFor(post(urlPathEqualTo("/write/audit"))
+                .willReturn(aResponse().withStatus(OK)
+              ))
+
+
+              await(repository.collection.drop().toFuture())
+              await(lockRepository.collection.drop().toFuture())
+
+              val app = builder.build()
+
+              running(app) {
+
+
+                val declarations = List(
+                  Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+                  Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
+                  Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = false, None,correlationId,  Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
+                  Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
+                )
+
+                await(repository.collection.insertMany(declarations).toFuture())
+
+                val hODConnector = app.injector.instanceOf[HODConnector]
+
+                val auditConnector = app.injector.instanceOf[AuditConnector]
+                val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+                val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+
+                val (declaration, result) = worker.tap.pull.futureValue.get
+
+                val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
+                val desRequest = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+
+                eventually{
+                  server.requestsWereSent(times = 1, auditRequest) mustEqual true
+                  server.requestsWereSent(times = 1, desRequest) mustEqual true
+                }
+
+                result mustEqual SubmissionResponse.Submitted
+                repository.get(declaration.chargeReference).futureValue must be(defined)
+              }
+            }
+
   }
 }

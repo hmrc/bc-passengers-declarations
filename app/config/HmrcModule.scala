@@ -19,9 +19,10 @@ package config
 import akka.pattern.CircuitBreaker
 import play.api.{Configuration, Environment}
 import play.api.inject.{Binding, Module}
-import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository, LockRepository}
+import play.api.libs.json.{JsObject, Json, OFormat}
+import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository, LockRepository, MongoDateTimeFormats}
 import services.{ChargeReferenceService, SequentialChargeReferenceService}
-import workers.{AmendmentSubmissionWorker, AmendmentFailedSubmissionWorker, AmendmentPaymentTimeoutWorker, DeclarationDeletionWorker, DeclarationSubmissionWorker, FailedSubmissionWorker, MetricsWorker, PaymentTimeoutWorker}
+import workers.{AmendmentFailedSubmissionWorker, AmendmentPaymentTimeoutWorker, AmendmentSubmissionWorker, DeclarationDeletionWorker, DeclarationSubmissionWorker, FailedSubmissionWorker, MetricsWorker, PaymentTimeoutWorker}
 
 class HmrcModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {

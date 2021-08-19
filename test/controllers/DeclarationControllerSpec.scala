@@ -22,8 +22,8 @@ import org.mockito.Mockito
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => eqTo, _}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterEach, FreeSpec, MustMatchers, OptionValues}
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -31,10 +31,12 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.{DeclarationsRepository, LockRepository}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 
 import scala.concurrent.Future
 
-class DeclarationControllerSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite
+class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite
   with OptionValues with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
   private val declarationsRepository = mock[DeclarationsRepository]
