@@ -1,12 +1,11 @@
 import play.sbt.routes.RoutesKeys
 import scoverage.ScoverageKeys
-import uk.gov.hmrc.SbtArtifactory
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
 val appName = "bc-passengers-declarations"
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+  .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
   .settings(inConfig(Test)(testSettings): _*)
@@ -19,6 +18,7 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings(publishingSettings: _*)
   .settings(resolvers += Resolver.jcenterRepo)
+  .settings(resolvers += Resolver.typesafeRepo("releases"))
   .settings(
     ScoverageKeys.coverageExcludedFiles := "<empty>;Reverse.*;..*Routes.*;",
     ScoverageKeys.coverageMinimum := 80

@@ -25,8 +25,7 @@ import play.api.i18n.Lang.logger.logger
 import play.api.{Configuration, Logger}
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.{JsError, JsObject, Json}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 
 import scala.concurrent.{ExecutionContext, Future}
 

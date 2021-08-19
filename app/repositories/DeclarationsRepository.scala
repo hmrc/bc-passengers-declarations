@@ -30,7 +30,7 @@ import org.bson.BsonValue
 import org.mongodb.scala.model.Aggregates.group
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{Filters, FindOneAndReplaceOptions, FindOneAndUpdateOptions, IndexModel, IndexOptions, ReturnDocument, Updates}
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import play.api.libs.json.{JsArray, JsObject, Json}
 import services.{ChargeReferenceService, ValidationService, Validator}
 import uk.gov.hmrc.mongo.MongoComponent
@@ -43,10 +43,10 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 
 @Singleton
 class DefaultDeclarationsRepository @Inject()(
-    mongoComponent: MongoComponent,
-    chargeReferenceService: ChargeReferenceService,
-    validationService: ValidationService,
-    config: Configuration)(implicit val ec: ExecutionContext, mat: Materializer)
+   mongoComponent: MongoComponent,
+   chargeReferenceService: ChargeReferenceService,
+   validationService: ValidationService,
+   config: Configuration)(implicit val ec: ExecutionContext, mat: Materializer)
   extends PlayMongoRepository[Declaration](
     collectionName = "declarations",
     mongoComponent = mongoComponent,
@@ -98,20 +98,20 @@ class DefaultDeclarationsRepository @Inject()(
   override def insertAmendment(amendmentData: JsObject, correlationId: String, id: ChargeReference): Future[Declaration] = {
 
     val declarations = Await.ready(get(id) map[Declaration] (
-        declaration =>  {
-          Declaration(
-            chargeReference = declaration.get.chargeReference,
-            state = declaration.get.state,
-            amendState = Some(State.PendingPayment),
-            sentToEtmp = declaration.get.sentToEtmp,
-            amendSentToEtmp = Some(false),
-            correlationId = declaration.get.correlationId,
-            amendCorrelationId = Some(correlationId),
-            journeyData = amendmentData.apply("journeyData").as[JsObject],
-            data = declaration.get.data,
-            amendData = Some((amendmentData - "journeyData").as[JsObject]),
-            lastUpdated = LocalDateTime.now(ZoneOffset.UTC))
-        }
+      declaration =>  {
+        Declaration(
+          chargeReference = declaration.get.chargeReference,
+          state = declaration.get.state,
+          amendState = Some(State.PendingPayment),
+          sentToEtmp = declaration.get.sentToEtmp,
+          amendSentToEtmp = Some(false),
+          correlationId = declaration.get.correlationId,
+          amendCorrelationId = Some(correlationId),
+          journeyData = amendmentData.apply("journeyData").as[JsObject],
+          data = declaration.get.data,
+          amendData = Some((amendmentData - "journeyData").as[JsObject]),
+          lastUpdated = LocalDateTime.now(ZoneOffset.UTC))
+      }
       ),2 seconds).value.get.get
 
     collection.
@@ -121,15 +121,15 @@ class DefaultDeclarationsRepository @Inject()(
         options = FindOneAndReplaceOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
       ).toFuture()
 
-   /* collection.findOneAndUpdate(equal("_id", Codecs.toBson(id)),
-      Updates.combine(
-        Updates.set("amendSentToEtmp", false),
-        Updates.set("amendState", "pending-payment"),
-        Updates.set("journeyData", Codecs.toBson(amendmentData.\("journeyData").as[JsObject])),
-        Updates.set("amendData",  Codecs.toBson(amendmentData.value("journeyData").as[JsObject])),
-        Updates.set("lastUpdated", Codecs.toBson(LocalDateTime.now(ZoneOffset.UTC))),
-        Updates.set("amendCorrelationId", correlationId),
-    )).toFuture()*/
+  /* collection.findOneAndUpdate(equal("_id", Codecs.toBson(id)),
+     Updates.combine(
+       Updates.set("amendSentToEtmp", false),
+       Updates.set("amendState", "pending-payment"),
+       Updates.set("journeyData", Codecs.toBson(amendmentData.\("journeyData").as[JsObject])),
+       Updates.set("amendData",  Codecs.toBson(amendmentData.value("journeyData").as[JsObject])),
+       Updates.set("lastUpdated", Codecs.toBson(LocalDateTime.now(ZoneOffset.UTC))),
+       Updates.set("amendCorrelationId", correlationId),
+   )).toFuture()*/
 
   }
 

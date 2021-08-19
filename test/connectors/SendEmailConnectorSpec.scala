@@ -23,7 +23,7 @@ import org.mockito.Mockito._
 import play.api.libs.json.JsValue
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.{HttpClient, HttpResponse}
 
 import scala.concurrent.Future
 
