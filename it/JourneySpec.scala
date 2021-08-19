@@ -1,21 +1,61 @@
-import com.github.tomakehurst.wiremock.client.WireMock._
+/*
+
+import akka.stream.Materializer
+import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
+import com.typesafe.config.ConfigFactory
+import connectors.HODConnector
 import controllers.routes
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import helpers.IntegrationSpecCommonBase
+import models.declarations.Declaration
+
 import org.scalatest.time.{Minutes, Seconds, Span}
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
-import org.scalatestplus.mockito.MockitoSugar
+import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{NO_CONTENT, running, _}
-import suite.MongoSuite
+import play.api.test.Helpers._
+import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import services.{ChargeReferenceService, ValidationService}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import util.AuditingTools
 import utils.WireMockHelper
 import workers.DeclarationSubmissionWorker
 
+import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class JourneySpec extends FreeSpec with MustMatchers with MongoSuite
-  with ScalaFutures with IntegrationPatience with OptionValues with MockitoSugar with WireMockHelper {
+class JourneySpec extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
+
+  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
+
+  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+    chargeReferenceService,
+    validationService,
+    Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+  )
+
+  def lockRepository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    super.afterEach()
+    await(repository.collection.drop().toFuture())
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    await(repository.collection.drop().toFuture())
+  }
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = scaled(Span(2, Minutes)),
@@ -24,9 +64,7 @@ class JourneySpec extends FreeSpec with MustMatchers with MongoSuite
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
-      "microservice.services.des.port" -> server.port(),
-      "workers.declaration-submission-worker.interval" -> "5 seconds",
-      "locks.ttl" -> 1
+      "microservice.services.des.port" -> server.port()
     )
 
   val data: JsObject = Json.obj(
@@ -134,28 +172,33 @@ class JourneySpec extends FreeSpec with MustMatchers with MongoSuite
       .willReturn(aResponse().withStatus(NO_CONTENT))
     )
 
-    database.flatMap(_.drop()).futureValue
+    await(repository.collection.drop().toFuture())
 
     val app = builder.build()
 
     running(app) {
 
-      started(app).futureValue
-
       val response = route(app, FakeRequest(POST, routes.DeclarationController.submit().url)
-        .withJsonBody(data).withHeaders("X-Correlation-ID" -> correlationId)).value
+        .withJsonBody(data).withHeaders("X-Correlation-ID" -> correlationId)).get
 
       val chargeReference: String = (contentAsJson(response) \ "simpleDeclarationRequest" \ "requestDetail" \ "declarationHeader" \ "chargeReference").as[JsString].value
 
       route(app, FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(
         Json.obj("reference" -> chargeReference, "status" -> "Successful")
-      )).value.futureValue
+      )).get.futureValue
 
-      val submissionWorker = app.injector.instanceOf[DeclarationSubmissionWorker]
+      val hODConnector = app.injector.instanceOf[HODConnector]
 
-      submissionWorker.tap.pull.futureValue
+      val auditConnector = app.injector.instanceOf[AuditConnector]
+      val auditingTools =  app.injector.instanceOf[AuditingTools]
+
+      val submissionWorker = new DeclarationSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+
+    //  submissionWorker.tap.pull.futureValue.get
 
       server.verify(1, postRequestedFor(urlEqualTo("/declarations/passengerdeclaration/v1")))
     }
   }
 }
+
+*/

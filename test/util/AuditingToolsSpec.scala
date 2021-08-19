@@ -18,12 +18,12 @@ package util
 
 import models.ChargeReference
 import models.declarations.{Declaration, Etmp, State}
-import org.scalatest.{FreeSpec, MustMatchers}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Injecting
-
-class AuditingToolsSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with Injecting {
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+class AuditingToolsSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with Injecting {
 
   private lazy val auditingTools: AuditingTools = inject[AuditingTools]
 

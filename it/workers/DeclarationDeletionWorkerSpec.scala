@@ -1,30 +1,59 @@
 package workers
 
+
+import com.typesafe.config.ConfigFactory
+import helpers.IntegrationSpecCommonBase
+
 import java.time.{LocalDateTime, ZoneOffset}
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
-import org.joda.time.{DateTime, DateTimeZone}
-import org.mockito.Matchers._
-import org.mockito.Mockito._
-import org.netcrusher.core.reactor.NioReactor
-import org.netcrusher.tcp.TcpCrusherBuilder
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{FreeSpec, MustMatchers, OptionValues}
+import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
-import play.api.test.Helpers.running
-import reactivemongo.play.json.collection._
-import repositories.LockRepository
-import suite.MongoSuite
+import play.api.test.Helpers.{await, running}
+import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import services.{ChargeReferenceService, ValidationService}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.language.postfixOps
+import play.api.test.Helpers._
+import akka.stream.Materializer
+import org.joda.time.{DateTime, DateTimeZone}
+import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 
-class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with MongoSuite
-  with ScalaFutures with IntegrationPatience with OptionValues with MockitoSugar {
+class DeclarationDeletionWorkerSpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[Declaration] {
+
+  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
+
+  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+    chargeReferenceService,
+    validationService,
+    Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+  )
+
+  def lockRepository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    super.afterEach()
+    await(repository.collection.drop().toFuture())
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    await(repository.collection.drop().toFuture())
+  }
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
@@ -58,14 +87,15 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
     )
   )
 
-  "A declaration deletion  worker" - {
+  "A declaration deletion  worker" should {
 
     val correlationId = "fk28db96-d9db-4110-9e12-f2d268541c29"
 
 
     "must not log locked UnPaid records" in {
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
+      await(lockRepository.collection.drop().toFuture())
 
       TestLoggerAppender.queue.dequeueAll(_ => true)
 
@@ -73,40 +103,31 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
 
       running(app) {
 
-        started(app).futureValue
-
         val declarations = List(
           Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
           Declaration(ChargeReference(1), State.Paid, None, sentToEtmp = true, None, correlationId, None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
           Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId,None,journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC))
         )
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        val lockRepository = app.injector.instanceOf[LockRepository]
+        await(repository.collection.insertMany(declarations).toFuture())
 
         lockRepository.lock(0)
 
-        val worker = app.injector.instanceOf[DeclarationDeletionWorker]
+        val worker = new DeclarationDeletionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-        val declaration = worker.tap.pull.futureValue.value
+        val declaration = worker.tap.pull.futureValue.get
         declaration.chargeReference.value mustEqual 1
       }
     }
 
     "must lock Paid records when it processes them" in {
 
-      database.flatMap(_.drop()).futureValue
+      await(repository.collection.drop().toFuture())
+      await(lockRepository.collection.drop().toFuture())
 
       val app = builder.build()
 
       running(app) {
-
-        started(app).futureValue
 
         val declarations = List(
           Declaration(ChargeReference(0), State.Paid, None, sentToEtmp = true, None,correlationId, None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
@@ -116,18 +137,14 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
           Declaration(ChargeReference(4), State.Paid, amendState = Some(State.PendingPayment), sentToEtmp = true, amendSentToEtmp = Some(false), correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
         )
 
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
+        await(repository.collection.insertMany(declarations).toFuture())
 
-        val worker = app.injector.instanceOf[DeclarationDeletionWorker]
+        val worker = new DeclarationDeletionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
         worker.tap.pull.futureValue
         worker.tap.pull.futureValue
 
-        val lockRepository = app.injector.instanceOf[LockRepository]
+
 
         lockRepository.isLocked(0).futureValue mustEqual true
         lockRepository.isLocked(1).futureValue mustEqual false
@@ -137,150 +154,32 @@ class DeclarationDeletionWorkerSpec extends FreeSpec with MustMatchers with Mong
       }
     }
 
-    "must continue to process data" in {
+      "must continue to process data" in {
 
-      database.flatMap(_.drop()).futureValue
+        await(repository.collection.drop().toFuture())
+        await(lockRepository.collection.drop().toFuture())
 
-      val app = builder.build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val worker = app.injector.instanceOf[DeclarationDeletionWorker]
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, None,sentToEtmp = true, None, correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, None,sentToEtmp = true, None, correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), true, Some(true), correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(3), State.Paid, Some(State.Paid), true, Some(false), correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
-        )
-
-        database.flatMap {
-          _.collection[JSONCollection]("declarations")
-            .insert(ordered = true)
-            .many(declarations)
-        }.futureValue
-
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
-      }
-    }
-
-    "must continue processing after a transient failure acquiring a lock" in {
-
-      import play.api.inject._
-
-      database.flatMap(_.drop()).futureValue
-
-      val declarations = List(
-        Declaration(ChargeReference(0), State.Paid, None,sentToEtmp = true, None, correlationId, None, journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-        Declaration(ChargeReference(1), State.Paid, None,sentToEtmp = true, None, correlationId, None, journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-        Declaration(ChargeReference(2), State.Paid, Some(State.Paid),sentToEtmp = true, Some(true), correlationId, None, journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-        Declaration(ChargeReference(3), State.Paid, Some(State.PendingPayment),sentToEtmp = true, None, correlationId, None, journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
-      )
-
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .many(declarations)
-      }.futureValue
-
-      val mockLockRepository = mock[LockRepository]
-
-      when(mockLockRepository.started) thenReturn Future.successful(())
-
-      when(mockLockRepository.lock(any()))
-        .thenReturn(Future.failed(new Exception))
-        .thenReturn(Future.successful(true))
-
-      val app = builder.overrides(bind[LockRepository].toInstance(mockLockRepository)).build()
-
-      running(app) {
-
-        started(app).futureValue
-
-        val worker = app.injector.instanceOf[DeclarationDeletionWorker]
-
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(1)
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(2)
-        worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(0)
-      }
-    }
-
-    "must continue processing after a transient failure getting Paid declarations" in {
-
-      database.flatMap(_.drop()).futureValue
-
-      database.flatMap {
-        _.collection[JSONCollection]("declarations")
-          .insert(ordered = true)
-          .one(Declaration(ChargeReference(0), State.Paid, None, sentToEtmp = true, None, correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
-      }.futureValue
-
-      val reactor = new NioReactor()
-
-      val proxy = TcpCrusherBuilder.builder()
-        .withReactor(reactor)
-        .withBindAddress("localhost", 27018)
-        .withConnectAddress("localhost", 27017)
-        .buildAndOpen()
-
-      val app = builder.configure(
-        "mongodb.uri" -> s"mongodb://localhost:${proxy.getBindAddress.getPort}/bc-passengers-declarations-integration"
-      ).build()
-
-      try {
+        val app = builder.build()
 
         running(app) {
 
-          started(app).futureValue
 
-          val worker = app.injector.instanceOf[DeclarationDeletionWorker]
+          val declarations = List(
+            Declaration(ChargeReference(0), State.Paid, None,sentToEtmp = true, None, correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+            Declaration(ChargeReference(1), State.Paid, None,sentToEtmp = true, None, correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+            Declaration(ChargeReference(2), State.Paid, Some(State.Paid), true, Some(true), correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
+            Declaration(ChargeReference(3), State.Paid, Some(State.Paid), true, Some(false), correlationId,None,journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
+          )
 
-          worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(0)
+          await(repository.collection.insertMany(declarations).toFuture())
 
-          proxy.close()
+          val worker = new DeclarationDeletionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-          database.flatMap {
-            _.collection[JSONCollection]("declarations")
-              .insert(ordered = true)
-              .one(Declaration(ChargeReference(1), State.Paid, None, sentToEtmp = true, None, correlationId, None, journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
-          }.futureValue
-
-          proxy.open()
-
-          worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(1)
-
-          proxy.close()
-
-          database.flatMap {
-            _.collection[JSONCollection]("declarations")
-              .insert(ordered = true)
-              .one(Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(true), correlationId, None, journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
-          }.futureValue
-
-          proxy.open()
-
-          worker.tap.pull.futureValue.value.chargeReference mustEqual ChargeReference(2)
-
-          proxy.close()
-
-          database.flatMap {
-            _.collection[JSONCollection]("declarations")
-              .insert(ordered = true)
-              .one(Declaration(ChargeReference(3), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, None, journeyData, dataInPast, None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)))
-          }.futureValue
-
-          proxy.open()
-
+          worker.tap.pull.futureValue
+          worker.tap.pull.futureValue
+          worker.tap.pull.futureValue
         }
-      } finally {
-
-        proxy.close()
-        reactor.close()
       }
-    }
   }
 }
+

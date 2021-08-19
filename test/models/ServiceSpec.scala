@@ -16,10 +16,12 @@
 
 package models
 
-import org.scalatest.{FreeSpec, MustMatchers}
+
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.freespec.AnyFreeSpec
 import play.api.Configuration
 
-class ServiceSpec extends FreeSpec with MustMatchers {
+class ServiceSpec extends AnyFreeSpec with Matchers {
 
   "a service" - {
 

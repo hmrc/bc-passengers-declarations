@@ -17,15 +17,18 @@
 package services
 
 import connectors.{EmailErrorResponse, SendEmailConnector, SendEmailConnectorImpl}
+
+
 import javax.inject.Inject
 import models.declarations.Declaration
 import models.{ChargeReference, SendEmailRequest}
 import org.joda.time.{LocalDate, LocalTime}
-import play.api.Logger
+import play.api.i18n.Lang.logger.logger
 import play.api.libs.json._
 import repositories.{DeclarationsRepository, DefaultDeclarationsRepository}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -57,12 +60,12 @@ trait SendEmailService {
     if (emailAddress.nonEmpty) {
       emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map {
         _ =>
-          Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
+          logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
       }
     }
     emailConnector.requestEmail(generateEmailRequest(Seq(configuredEmailFirst, configuredEmailSecond), parameters)).map {
       result =>
-        Logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
+        logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
         result
     }
   }
@@ -157,7 +160,7 @@ trait SendEmailService {
       val emailId = emailParams.keys.head
       val params = emailParams.getOrElse(emailId, Map.empty)
       if (disableZeroPoundEmail && isZeroPound(data)) {
-        Logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
+        logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
         Future.successful(false)
       } else {
         sendPassengerEmail(emailId, params)
@@ -173,7 +176,7 @@ trait SendEmailService {
   private[services] def sendPassengerEmail(emailAddressAll: String, parameters: Map[String, String])(implicit hc: HeaderCarrier): Future[Boolean] =
     sendEmail(emailAddressAll, parameters) recover {
       case _: EmailErrorResponse =>
-        Logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
+        logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
         true
     }
 

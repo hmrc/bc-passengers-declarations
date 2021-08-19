@@ -17,52 +17,33 @@
 package services
 
 import com.google.inject.{Inject, Singleton}
-import models.ChargeReference
-import play.api.libs.json.{Json, Reads}
-import play.modules.reactivemongo.ReactiveMongoApi
-import reactivemongo.api.commands.LastError
-import reactivemongo.play.json.ImplicitBSONHandlers.JsObjectDocumentWriter
-import reactivemongo.play.json.collection.JSONCollection
+import models.ChargeRefJsons.ChargeRefJson
+import models.{ChargeReference}
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.{FindOneAndUpdateOptions, ReturnDocument, Updates}
+import play.api.libs.json.{Format, JsObject, Json, OFormat, Reads, Writes}
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
 @Singleton
-class SequentialChargeReferenceService @Inject() (
-                                                   mongo: ReactiveMongoApi
-                                                 )(implicit ec: ExecutionContext) extends ChargeReferenceService {
+class SequentialChargeReferenceService @Inject() (mongoComponent: MongoComponent)
+                                                 (implicit ec: ExecutionContext)
+                                                    extends PlayMongoRepository[ChargeRefJson](
+    collectionName = "charge-reference",
+    mongoComponent = mongoComponent,
+    domainFormat   = ChargeRefJson.format,
+    indexes = Seq()
+  ) with ChargeReferenceService {
 
-  private implicit lazy val chargeReferenceReads: Reads[ChargeReference] = {
-
-    import play.api.libs.json._
-
-    (__ \ "chargeReference").read[Int].map {
-      int =>
-        ChargeReference(int)
-    }
-  }
-
-  private val collectionName: String = "charge-reference"
   private val id: String = "counter"
-
-  private def collection: Future[JSONCollection] =
-    mongo.database.map(_.collection[JSONCollection](collectionName))
 
   val started: Future[Unit] = {
 
-    lazy val documentExistsErrorCode = Some(11000)
+    Future.successful(collection.insertOne(ChargeRefJson.apply(id, 0)))
 
-    val document = Json.obj(
-      "_id"   -> id,
-      "chargeReference" -> 0
-    )
-
-    collection.flatMap {
-      _.insert(document)
-        .map(_ => ())
-    } recover {
-      case e: LastError if e.code == documentExistsErrorCode =>
-        Future.successful(())
-    }
   }
 
   override def nextChargeReference(): Future[ChargeReference] = {
@@ -76,16 +57,13 @@ class SequentialChargeReferenceService @Inject() (
         "chargeReference" -> 1
       )
     )
+    collection.findOneAndUpdate(equal("_id", id), Updates.inc("chargeReference", 1),
+      FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)).toFuture()
+      .map(chargeRef => ChargeReference.apply(chargeRef.chargeReference))
 
-    collection.flatMap {
-      _.findAndUpdate(selector, update)
-        .map {
-          _.result[ChargeReference]
-            .getOrElse(throw new Exception("unable to generate charge reference"))
-        }
-    }
   }
 }
+
 
 trait ChargeReferenceService {
 

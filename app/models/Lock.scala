@@ -16,13 +16,40 @@
 
 package models
 
-import java.time.{LocalDateTime, ZoneOffset}
-import play.api.libs.json.{Json, OFormat}
+import models.declarations.{Declaration, State}
+
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+import play.api.libs.json.{Format, JsObject, Json, OFormat, OWrites, Reads, __}
 import repositories.MongoDateTimeFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 final case class Lock(_id: Int, lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC))
 
-object Lock extends MongoDateTimeFormats {
+object Lock {
+
+
+  implicit lazy val reads: Reads[Lock] = {
+
+    import play.api.libs.functional.syntax._
+
+    (
+      (__ \ "_id").read[Int] and
+        (__ \ "LocalDateTime").read[LocalDateTime]
+
+      )(Lock.apply _)
+  }
+
+  implicit lazy val writes: OWrites[Lock] = {
+
+    import play.api.libs.functional.syntax._
+
+    (
+      (__ \ "_id").write[Int] and
+        (__ \ "LocalDateTime").write[LocalDateTime]
+      )(unlift(Lock.unapply))
+  }
 
   implicit val formats: OFormat[Lock] = Json.format
 }
+
+

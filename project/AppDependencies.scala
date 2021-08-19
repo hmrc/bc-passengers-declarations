@@ -4,16 +4,23 @@ import sbt._
 
 object AppDependencies {
 
-  val akkaVersion = "2.5.31"
+  val akkaVersion = "2.6.14"
   val compile: Seq[ModuleID] = Seq(
     ws,
-    "uk.gov.hmrc"                %% "bootstrap-play-26"        % "2.0.0",
+    "uk.gov.hmrc"             %% "bootstrap-backend-play-28" % "5.3.0",
     "com.github.java-json-tools" % "json-schema-validator"     % "2.2.14",
-    "org.reactivemongo"          %% "play2-reactivemongo"      % "0.18.8-play26",
-    "org.reactivemongo"          %% "reactivemongo-akkastream" % "0.20.3",
-    "com.typesafe.akka"          %% "akka-slf4j"               % akkaVersion,
-    "com.typesafe.akka"          %% "akka-actor"               % akkaVersion,
-    "com.typesafe.akka"          %% "akka-stream"              % akkaVersion
+    "uk.gov.hmrc.mongo"          %% "hmrc-mongo-play-28"         % "0.52.0",
+    "uk.gov.hmrc"                %% "play-json-union-formatter"  % "1.13.0-play-27",
+    "com.typesafe.play" %% "play-json-joda" % "2.9.2",
+    "com.lightbend.akka" %% "akka-stream-alpakka-mongodb" % "3.0.1",
+    "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+    "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+    "com.typesafe.akka" %% "akka-protobuf-v3" % akkaVersion,
+    "org.reactivemongo" %% "reactivemongo-akkastream" % "0.20.13",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.12.3",
+    "com.typesafe.akka"          %% "akka-actor-typed"              % akkaVersion,
+    "com.typesafe.akka"          %% "akka-serialization-jackson"              % akkaVersion
   )
 
   val test: Seq[ModuleID] = Seq(
@@ -24,6 +31,10 @@ object AppDependencies {
     "com.github.tomakehurst"   %  "wiremock-standalone"      % "2.27.2",
     "com.github.netcrusherorg" %  "netcrusher-core"          % "0.10",
     "org.scalatestplus.play"   %% "scalatestplus-play"       % "3.1.3",
-    "org.scalacheck"           %% "scalacheck"               % "1.14.3"
+    "org.scalacheck"           %% "scalacheck"               % "1.14.3",
+    "uk.gov.hmrc.mongo"        %% "hmrc-mongo-test-play-28"    % "0.52.0",
+    "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % "5.3.0",
+    "org.scalatestplus"      %% "mockito-3-4"              % "3.2.9.0",
   ).map(_ % "test,it")
 }
+

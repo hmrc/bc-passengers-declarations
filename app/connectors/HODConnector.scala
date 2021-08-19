@@ -21,11 +21,12 @@ import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, Etmp}
 import models.{Service, SubmissionResponse}
+import play.api.i18n.Lang.logger.logger
 import play.api.{Configuration, Logger}
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.{JsError, JsObject, Json}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -63,7 +64,7 @@ class HODConnector @Inject() (
 
     def getRefinedData (dataOrAmendData: JsObject): JsObject = {
       dataOrAmendData.validate(Etmp.formats) match {
-        case exception : JsError => Logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [HODConnector] There is problem with parsing declaration, Parsing failed for this ChargeReference :  ${declaration.chargeReference}, CorrelationId :  ${declaration.correlationId}, Exception : $exception")
+        case exception : JsError => logger.error(s"PNGRS_DES_SUBMISSION_FAILURE  [HODConnector] There is problem with parsing declaration, Parsing failed for this ChargeReference :  ${declaration.chargeReference}, CorrelationId :  ${declaration.correlationId}, Exception : $exception")
           JsObject.empty
         case _ => Json.toJsObject(dataOrAmendData.as[Etmp])
       }

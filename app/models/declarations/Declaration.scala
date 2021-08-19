@@ -16,9 +16,10 @@
 
 package models.declarations
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 import models.ChargeReference
 import play.api.libs.json._
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 final case class Declaration (
   chargeReference: ChargeReference,
@@ -35,6 +36,8 @@ final case class Declaration (
 )
 
 object Declaration {
+
+  implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
 
   implicit lazy val reads: Reads[Declaration] = {
 
@@ -73,4 +76,9 @@ object Declaration {
       (__ \ "lastUpdated").write[LocalDateTime]
     )(unlift(Declaration.unapply))
   }
+
+  implicit val format: OFormat[Declaration] = OFormat(
+    reads,
+    writes
+  )
 }

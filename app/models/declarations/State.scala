@@ -22,11 +22,31 @@ sealed trait State
 
 object State {
 
-  case object PendingPayment extends State
-  case object Paid extends State
-  case object SubmissionFailed extends State
-  case object PaymentFailed extends State
-  case object PaymentCancelled extends State
+  case object PendingPayment extends State {
+    override def toString() : String = {
+      "pending-payment"
+    }
+  }
+  case object Paid extends State{
+    override def toString() : String = {
+      "paid"
+    }
+  }
+  case object SubmissionFailed extends State{
+    override def toString() : String = {
+      "submission-failed"
+    }
+  }
+  case object PaymentFailed extends State{
+    override def toString() : String = {
+      "payment-failed"
+    }
+  }
+  case object PaymentCancelled extends State{
+    override def toString() : String = {
+      "payment-cancelled"
+    }
+  }
 
   implicit lazy val reads: Reads[State] = Reads {
     case JsString("pending-payment")   => JsSuccess(PendingPayment)
@@ -44,4 +64,5 @@ object State {
     case PaymentFailed    => JsString("payment-failed")
     case PaymentCancelled => JsString("payment-cancelled")
   }
+
 }

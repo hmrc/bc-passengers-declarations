@@ -16,10 +16,12 @@
 
 package models.declarations
 
-import org.scalatest.{FreeSpec, MustMatchers}
-import play.api.libs.json.{JsError, JsString, Json}
 
-class StateSpec extends FreeSpec with MustMatchers {
+import play.api.libs.json.{JsError, JsString, Json}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+
+class StateSpec extends AnyFreeSpec with Matchers {
 
   "a pending-payment state" - {
 
@@ -30,7 +32,7 @@ class StateSpec extends FreeSpec with MustMatchers {
 
     "must serialise to json" in {
 
-      Json.toJson(State.PendingPayment) mustEqual JsString("pending-payment")
+      Json.toJson(State.PendingPayment.toString()) mustEqual JsString("pending-payment")
     }
   }
 
@@ -43,7 +45,7 @@ class StateSpec extends FreeSpec with MustMatchers {
 
     "must serialise to json" in {
 
-      Json.toJson(State.Paid) mustEqual JsString("paid")
+      Json.toJson(State.Paid.toString()) mustEqual JsString("paid")
     }
   }
 
@@ -56,7 +58,7 @@ class StateSpec extends FreeSpec with MustMatchers {
 
     "must serialise to json" in {
 
-      Json.toJson(State.SubmissionFailed) mustEqual JsString("submission-failed")
+      Json.toJson(State.SubmissionFailed.toString()) mustEqual JsString("submission-failed")
     }
   }
 
@@ -69,7 +71,7 @@ class StateSpec extends FreeSpec with MustMatchers {
 
     "must serialise to json" in {
 
-      Json.toJson(State.PaymentFailed) mustEqual JsString("payment-failed")
+      Json.toJson(State.PaymentFailed.toString()) mustEqual JsString("payment-failed")
     }
   }
 
@@ -82,7 +84,7 @@ class StateSpec extends FreeSpec with MustMatchers {
 
     "must serialise to json" in {
 
-      Json.toJson(State.PaymentCancelled) mustEqual JsString("payment-cancelled")
+      Json.toJson(State.PaymentCancelled.toString()) mustEqual JsString("payment-cancelled")
     }
   }
 

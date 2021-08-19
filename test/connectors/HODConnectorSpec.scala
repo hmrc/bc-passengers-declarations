@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.http.Fault
 import models.declarations.{Declaration, Etmp, State}
 import models.{ChargeReference, SubmissionResponse}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{FreeSpec, MustMatchers}
+
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.http.ContentTypes
@@ -32,8 +32,10 @@ import play.api.test.Helpers._
 import play.api.test.Injecting
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.WireMockHelper
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.freespec.AnyFreeSpec
 
-class HODConnectorSpec extends FreeSpec with MustMatchers with GuiceOneAppPerSuite with WireMockHelper
+class HODConnectorSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with WireMockHelper
   with ScalaFutures with IntegrationPatience with Injecting {
 
   override lazy val app: Application = {

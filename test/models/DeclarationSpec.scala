@@ -18,10 +18,11 @@ package models
 
 import java.time.{LocalDateTime, ZoneOffset}
 import models.declarations.{Declaration, State}
-import org.scalatest.{FreeSpec, MustMatchers}
 import play.api.libs.json.Json
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 
-class DeclarationSpec extends FreeSpec with MustMatchers {
+class DeclarationSpec extends AnyFreeSpec with Matchers {
 
   "a Declaration" - {
 
@@ -33,7 +34,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
-        "state"         -> State.PendingPayment,
+        "state"         -> State.PendingPayment.toString,
         "sentToEtmp"    -> false,
         "correlationId" -> correlationId,
         "journeyData"   -> Json.obj(),
@@ -66,7 +67,7 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
-        "state"         -> State.PendingPayment,
+        "state"         -> State.PendingPayment.toString(),
         "sentToEtmp"    -> false,
         "correlationId" -> correlationId,
         "journeyData"   -> Json.obj(),
@@ -85,8 +86,8 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
       val json = Json.obj(
         "_id"         -> "XHPR1234567890",
-        "state"              -> State.PendingPayment,
-        "amendState"         -> State.PendingPayment,
+        "state"              -> State.PendingPayment.toString,
+        "amendState"         -> State.PendingPayment.toString,
         "sentToEtmp"         -> false,
         "amendSentToEtmp"    -> false,
         "correlationId"      -> correlationId,
@@ -121,8 +122,8 @@ class DeclarationSpec extends FreeSpec with MustMatchers {
 
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
-        "state"                -> State.PendingPayment,
-        "amendState"           -> State.PendingPayment,
+        "state"                -> State.PendingPayment.toString,
+        "amendState"           -> State.PendingPayment.toString,
         "sentToEtmp"           -> false,
         "amendSentToEtmp"      -> false,
         "correlationId"        -> correlationId,
