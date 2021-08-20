@@ -30,10 +30,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-  class DefaultLockRepository @Inject()(
-                                         mongoComponent: MongoComponent,
-                                         config: Configuration
-                                       )(implicit ec: ExecutionContext) extends PlayMongoRepository[Lock](
+class DefaultLockRepository @Inject()(
+                                        mongoComponent: MongoComponent,
+                                        config: Configuration
+                                      )(implicit ec: ExecutionContext) extends PlayMongoRepository[Lock](
   collectionName = "locks",
   mongoComponent = mongoComponent,
   domainFormat   = Lock.formats,
@@ -41,7 +41,7 @@ import scala.concurrent.{ExecutionContext, Future}
     IndexModel(ascending("lastUpdated"), IndexOptions().name("locks-index")
       .expireAfter(300, TimeUnit.SECONDS)),
   )
-  ) with LockRepository {
+ ) with LockRepository {
 
 
   val started: Future[Unit] = {
