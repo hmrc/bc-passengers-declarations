@@ -7,7 +7,7 @@
 
     <logger name="uk.gov" level="INFO"/>
 
-    <logger name="connector" level="INFO"/>
+    <logger name="connectors" level="INFO"/>
 
     <logger name="workers" level="INFO"/>
 
