@@ -9,7 +9,7 @@ object AppDependencies {
     ws,
     "uk.gov.hmrc"             %% "bootstrap-backend-play-28" % "5.12.0",
     "com.github.java-json-tools" % "json-schema-validator"     % "2.2.14",
-    "uk.gov.hmrc.mongo"          %% "hmrc-mongo-play-28"         % "0.52.0",
+    "uk.gov.hmrc.mongo"          %% "hmrc-mongo-play-28"         % "0.68.0",
     "uk.gov.hmrc"                %% "play-json-union-formatter"  % "1.15.0-play-28",
     "com.typesafe.play" %% "play-json-joda" % "2.9.2",
     "com.lightbend.akka" %% "akka-stream-alpakka-mongodb" % "3.0.1",
@@ -32,7 +32,7 @@ object AppDependencies {
     "com.github.netcrusherorg" %  "netcrusher-core"          % "0.10",
     "org.scalatestplus.play"   %% "scalatestplus-play" % "5.1.0",
     "org.scalacheck"           %% "scalacheck"               % "1.14.3",
-    "uk.gov.hmrc.mongo"        %% "hmrc-mongo-test-play-28"    % "0.52.0",
+    "uk.gov.hmrc.mongo"        %% "hmrc-mongo-test-play-28"    % "0.68.0",
     "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % "5.12.0",
     "org.scalatestplus"      %% "mockito-3-4"              % "3.2.9.0"
   ).map(_ % "test,it")
