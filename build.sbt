@@ -23,10 +23,6 @@ lazy val microservice = Project(appName, file("."))
     ScoverageKeys.coverageExcludedFiles := "<empty>;Reverse.*;..*Routes.*;",
     ScoverageKeys.coverageMinimum := 80
   )
-  .settings(
-    compileScalastyle := (Compile / scalastyle).toTask("").value,
-    (Compile / compile) := ((Compile / compile) dependsOn compileScalastyle).value
-  )
 
 lazy val testSettings = Seq(
   unmanagedSourceDirectories   += baseDirectory.value / "test-utils",
