@@ -9,7 +9,7 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
   .settings(inConfig(Test)(testSettings): _*)
-  .settings(scalaVersion := "2.12.12")
+  .settings(scalaVersion := "2.12.16")
   .settings(
     PlayKeys.playDefaultPort                      := 9073,
     majorVersion                                  := 0,
@@ -22,6 +22,10 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     ScoverageKeys.coverageExcludedFiles := "<empty>;Reverse.*;..*Routes.*;",
     ScoverageKeys.coverageMinimum := 80
+  )
+  .settings(
+    compileScalastyle := (Compile / scalastyle).toTask("").value,
+    (Compile / compile) := ((Compile / compile) dependsOn compileScalastyle).value
   )
 
 lazy val testSettings = Seq(

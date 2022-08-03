@@ -26,7 +26,6 @@ import utils.WireMockHelper
 import utils.WireMockUtils.WireMockServerImprovements
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.postfixOps
 
 class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
 

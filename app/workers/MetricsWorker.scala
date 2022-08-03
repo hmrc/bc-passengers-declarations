@@ -16,10 +16,8 @@
 
 package workers
 
-import akka.{Done, NotUsed}
-import akka.actor.Cancellable
-import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete}
-import akka.stream.{ActorAttributes, Materializer, OverflowStrategy, Supervision}
+import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
+import akka.stream.{ActorAttributes, Materializer, Supervision}
 import com.google.inject.{Inject, Singleton}
 import metrics.MetricsOperator
 import models.DeclarationsStatus
@@ -27,24 +25,24 @@ import play.api.{Configuration, Logger}
 import repositories.DeclarationsRepository
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 @Singleton
-class MetricsWorker @Inject() (
-  declarationsRepository: DeclarationsRepository,
-  config: Configuration,
-  metricsOperator: MetricsOperator
-)(implicit mat: Materializer, ec: ExecutionContext) {
+class MetricsWorker @Inject()(
+                               declarationsRepository: DeclarationsRepository,
+                               config: Configuration,
+                               metricsOperator: MetricsOperator
+                             )(implicit mat: Materializer, ec: ExecutionContext) {
 
   private val logger = Logger(this.getClass)
-  
-  private val initialDelayFromConfig = config.get[String]("workers.metrics-worker.initial-delay").replace('.',' ')
+
+  private val initialDelayFromConfig = config.get[String]("workers.metrics-worker.initial-delay").replace('.', ' ')
   private val initialDelayFromConfigFiniteDuration = config.get[FiniteDuration]("workers.metrics-worker.initial-delay")
   private val finiteInitialDelay = Duration(initialDelayFromConfig)
   private val initialDelay = Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
 
-  private val intervalFromConfig = config.get[String]("workers.metrics-worker.interval").replace('.',' ')
+  private val intervalFromConfig = config.get[String]("workers.metrics-worker.interval").replace('.', ' ')
   private val intervalFromConfigFiniteDuration = config.get[FiniteDuration]("workers.metrics-worker.interval")
   private val finiteInterval = Duration(intervalFromConfig)
   private val interval = Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)

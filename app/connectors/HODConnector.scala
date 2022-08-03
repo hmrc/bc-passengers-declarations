@@ -22,7 +22,7 @@ import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, Etmp}
 import models.{Service, SubmissionResponse}
 import play.api.i18n.Lang.logger.logger
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.{JsError, JsObject, Json}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}

@@ -3,7 +3,7 @@ package workers
 import akka.stream.Materializer
 
 import java.time.{LocalDateTime, ZoneOffset}
-import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
+import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import logger.TestLoggerAppender
@@ -19,7 +19,6 @@ import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import utils.WireMockHelper
 
-import scala.language.postfixOps
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {

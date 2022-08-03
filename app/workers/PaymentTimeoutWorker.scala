@@ -26,7 +26,7 @@ import models.declarations.Declaration
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 

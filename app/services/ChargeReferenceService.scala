@@ -18,10 +18,9 @@ package services
 
 import com.google.inject.{Inject, Singleton}
 import models.ChargeRefJsons.ChargeRefJson
-import models.{ChargeReference}
+import models.ChargeReference
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, ReturnDocument, Updates}
-import play.api.libs.json.{Format, JsObject, Json, OFormat, Reads, Writes}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
@@ -48,19 +47,9 @@ class SequentialChargeReferenceService @Inject() (mongoComponent: MongoComponent
 
   override def nextChargeReference(): Future[ChargeReference] = {
 
-    val selector = Json.obj(
-      "_id" -> id
-    )
-
-    val update = Json.obj(
-      "$inc" -> Json.obj(
-        "chargeReference" -> 1
-      )
-    )
     collection.findOneAndUpdate(equal("_id", id), Updates.inc("chargeReference", 1),
       FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)).toFuture()
       .map(chargeRef => ChargeReference.apply(chargeRef.chargeReference))
-
   }
 }
 

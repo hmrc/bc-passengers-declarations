@@ -11,7 +11,6 @@ import play.api.test.Helpers.{await, running}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.postfixOps
 import play.api.test.Helpers._
 
 

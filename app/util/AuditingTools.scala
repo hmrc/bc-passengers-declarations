@@ -17,7 +17,7 @@
 package util
 
 import javax.inject.{Inject, Named, Singleton}
-import models.declarations.{Declaration, Etmp}
+import models.declarations.Etmp
 import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 
