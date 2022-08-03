@@ -21,7 +21,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.typesafeRepo("releases"))
   .settings(
     ScoverageKeys.coverageExcludedFiles := "<empty>;Reverse.*;..*Routes.*;",
-    ScoverageKeys.coverageMinimum := 80
+    ScoverageKeys.coverageMinimumStmtTotal := 80
   )
 
 lazy val testSettings = Seq(
