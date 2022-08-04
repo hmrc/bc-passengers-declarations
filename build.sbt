@@ -9,7 +9,7 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
   .settings(inConfig(Test)(testSettings): _*)
-  .settings(scalaVersion := "2.12.12")
+  .settings(scalaVersion := "2.12.16")
   .settings(
     PlayKeys.playDefaultPort                      := 9073,
     majorVersion                                  := 0,
@@ -21,7 +21,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.typesafeRepo("releases"))
   .settings(
     ScoverageKeys.coverageExcludedFiles := "<empty>;Reverse.*;..*Routes.*;",
-    ScoverageKeys.coverageMinimum := 80
+    ScoverageKeys.coverageMinimumStmtTotal := 80
   )
 
 lazy val testSettings = Seq(

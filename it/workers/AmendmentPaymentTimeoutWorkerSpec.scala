@@ -16,7 +16,6 @@ import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.postfixOps
 import play.api.test.Helpers._
 import akka.stream.Materializer
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper

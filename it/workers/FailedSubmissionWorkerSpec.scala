@@ -3,7 +3,7 @@ package workers
 
 import akka.stream.Materializer
 
-import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
+import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
@@ -19,7 +19,6 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import utils.WireMockHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.postfixOps
 
 class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
 

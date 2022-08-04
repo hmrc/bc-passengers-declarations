@@ -16,12 +16,8 @@
 
 package models
 
-import models.declarations.{Declaration, State}
-
-import java.time.{Instant, LocalDateTime, ZoneOffset}
-import play.api.libs.json.{Format, JsObject, Json, OFormat, OWrites, Reads, __}
-import repositories.MongoDateTimeFormats
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import java.time.{LocalDateTime, ZoneOffset}
+import play.api.libs.json.{Json, OFormat, OWrites, Reads, __}
 
 final case class Lock(_id: Int, lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC))
 

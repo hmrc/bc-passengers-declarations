@@ -7,7 +7,7 @@ object AppDependencies {
   val akkaVersion = "2.6.15"
   val compile: Seq[ModuleID] = Seq(
     ws,
-    "uk.gov.hmrc"             %% "bootstrap-backend-play-28" % "5.12.0",
+    "uk.gov.hmrc"             %% "bootstrap-backend-play-28" % "6.4.0",
     "com.github.java-json-tools" % "json-schema-validator"     % "2.2.14",
     "uk.gov.hmrc.mongo"          %% "hmrc-mongo-play-28"         % "0.68.0",
     "uk.gov.hmrc"                %% "play-json-union-formatter"  % "1.15.0-play-28",
@@ -24,7 +24,7 @@ object AppDependencies {
   )
 
   val test: Seq[ModuleID] = Seq(
-    "org.scalatest"            %% "scalatest"                % "3.2.9",
+    "org.scalatest"            %% "scalatest"                % "3.2.12",
     "com.typesafe.play"        %% "play-test"                % current,
     "org.pegdown"              %  "pegdown"                  % "1.6.0",
     "org.mockito"              %  "mockito-all"              % "2.0.2-beta",
@@ -33,8 +33,9 @@ object AppDependencies {
     "org.scalatestplus.play"   %% "scalatestplus-play" % "5.1.0",
     "org.scalacheck"           %% "scalacheck"               % "1.14.3",
     "uk.gov.hmrc.mongo"        %% "hmrc-mongo-test-play-28"    % "0.68.0",
-    "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % "5.12.0",
-    "org.scalatestplus"      %% "mockito-3-4"              % "3.2.9.0"
+    "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % "6.4.0",
+    "org.scalatestplus"      %% "mockito-3-4"              % "3.2.9.0",
+    "com.vladsch.flexmark" % "flexmark-all" % "0.62.2"
   ).map(_ % "test,it")
 }
 

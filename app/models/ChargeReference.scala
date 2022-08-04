@@ -16,7 +16,7 @@
 
 package models
 
-import play.api.libs.json.{JsObject, JsString, JsValue, Json, OFormat, Reads, Writes}
+import play.api.libs.json.{JsString, Reads, Writes}
 import play.api.mvc.PathBindable
 
 import scala.collection.Map
