@@ -26,33 +26,31 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton
-class SequentialChargeReferenceService @Inject() (mongoComponent: MongoComponent)
-                                                 (implicit ec: ExecutionContext)
-                                                    extends PlayMongoRepository[ChargeRefJson](
-    collectionName = "charge-reference",
-    mongoComponent = mongoComponent,
-    domainFormat   = ChargeRefJson.format,
-    indexes = Seq()
-  ) with ChargeReferenceService {
+class SequentialChargeReferenceService @Inject() (mongoComponent: MongoComponent)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[ChargeRefJson](
+      collectionName = "charge-reference",
+      mongoComponent = mongoComponent,
+      domainFormat = ChargeRefJson.format,
+      indexes = Seq()
+    )
+    with ChargeReferenceService {
 
   private val id: String = "counter"
 
-  val started: Future[Unit] = {
-
+  val started: Future[Unit] =
     Future.successful(collection.insertOne(ChargeRefJson.apply(id, 0)))
 
-  }
-
-  override def nextChargeReference(): Future[ChargeReference] = {
-
-    collection.findOneAndUpdate(equal("_id", id), Updates.inc("chargeReference", 1),
-      FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)).toFuture()
+  override def nextChargeReference(): Future[ChargeReference] =
+    collection
+      .findOneAndUpdate(
+        equal("_id", id),
+        Updates.inc("chargeReference", 1),
+        FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)
+      )
+      .toFuture()
       .map(chargeRef => ChargeReference.apply(chargeRef.chargeReference))
-  }
 }
-
 
 trait ChargeReferenceService {
 

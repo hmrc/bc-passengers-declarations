@@ -23,7 +23,6 @@ final case class Lock(_id: Int, lastUpdated: LocalDateTime = LocalDateTime.now(Z
 
 object Lock {
 
-
   implicit lazy val reads: Reads[Lock] = {
 
     import play.api.libs.functional.syntax._
@@ -31,8 +30,7 @@ object Lock {
     (
       (__ \ "_id").read[Int] and
         (__ \ "LocalDateTime").read[LocalDateTime]
-
-      )(Lock.apply _)
+    )(Lock.apply _)
   }
 
   implicit lazy val writes: OWrites[Lock] = {
@@ -42,10 +40,8 @@ object Lock {
     (
       (__ \ "_id").write[Int] and
         (__ \ "LocalDateTime").write[LocalDateTime]
-      )(unlift(Lock.unapply))
+    )(unlift(Lock.unapply))
   }
 
   implicit val formats: OFormat[Lock] = Json.format
 }
-
-

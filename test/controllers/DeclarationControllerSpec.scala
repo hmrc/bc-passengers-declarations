@@ -36,8 +36,14 @@ import org.scalatest.matchers.must.Matchers
 
 import scala.concurrent.Future
 
-class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite
-  with OptionValues with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
+class DeclarationControllerSpec
+    extends AnyFreeSpec
+    with Matchers
+    with GuiceOneAppPerSuite
+    with OptionValues
+    with MockitoSugar
+    with ScalaFutures
+    with BeforeAndAfterEach {
 
   private val declarationsRepository = mock[DeclarationsRepository]
 
@@ -76,10 +82,21 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val journeyData = Json.obj("foo" -> "bar")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, None,sentToEtmp = false, None,correlationId, None, journeyData, message)
+          val declaration = Declaration(
+            chargeReference,
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            journeyData,
+            message
+          )
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-            .withJsonBody(message).withHeaders("X-Correlation-ID" -> correlationId)
+            .withJsonBody(message)
+            .withHeaders("X-Correlation-ID" -> correlationId)
 
           when(declarationsRepository.insert(message, correlationId, sentToEtmp = false))
             .thenReturn(Future.successful(Right(declaration)))
@@ -87,12 +104,11 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
-          headers(result) must contain ("X-Correlation-ID" -> correlationId)
+          headers(result) must contain("X-Correlation-ID" -> correlationId)
           contentAsJson(result) mustBe declaration.data
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).insert(message, correlationId,sentToEtmp = false)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).insert(message, correlationId, sentToEtmp = false)
           }
         }
       }
@@ -104,7 +120,8 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
           val requestBody = Json.obj("foo" -> "bar")
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-            .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
+            .withJsonBody(requestBody)
+            .withHeaders("X-Correlation-ID" -> correlationId)
 
           when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
             .thenReturn(Future.failed(new Exception()))
@@ -126,7 +143,17 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
         val chargeReference = ChargeReference(1234567890)
 
-        val declaration = Declaration(chargeReference, State.PendingPayment, None,sentToEtmp = false, None,correlationId, None, Json.obj(), Json.obj())
+        val declaration = Declaration(
+          chargeReference,
+          State.PendingPayment,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        )
 
         val request = FakeRequest(POST, routes.DeclarationController.submit().url)
           .withJsonBody(requestBody)
@@ -147,15 +174,16 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
         val requestBody = Json.obj()
 
         val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-          .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
+          .withJsonBody(requestBody)
+          .withHeaders("X-Correlation-ID" -> correlationId)
 
-        when(declarationsRepository.insert(requestBody, correlationId,sentToEtmp = false))
+        when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
           .thenReturn(Future.successful(Left(List("foo"))))
 
         val result = route(app, request).value
 
         status(result) mustBe BAD_REQUEST
-        headers(result) must contain ("X-Correlation-ID" -> correlationId)
+        headers(result) must contain("X-Correlation-ID" -> correlationId)
         contentAsJson(result) mustEqual Json.obj(
           "errors" -> Seq("foo")
         )
@@ -170,162 +198,178 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
     val chargeReference = ChargeReference(1234567890)
 
     val userInformation = Json.obj(
-      "firstName" -> "Harry",
-      "lastName" -> "Potter",
-      "identificationType" -> "passport",
+      "firstName"            -> "Harry",
+      "lastName"             -> "Potter",
+      "identificationType"   -> "passport",
       "identificationNumber" -> "SX12345",
-      "emailAddress" -> "abc@gmail.com",
+      "emailAddress"         -> "abc@gmail.com",
       "selectPlaceOfArrival" -> "LHR",
-      "enterPlaceOfArrival" -> "Heathrow Airport",
-      "dateOfArrival" -> "2018-05-31",
-      "timeOfArrival" -> "13:20:00.000"
+      "enterPlaceOfArrival"  -> "Heathrow Airport",
+      "dateOfArrival"        -> "2018-05-31",
+      "timeOfArrival"        -> "13:20:00.000"
     )
 
     val journeyData: JsObject = Json.obj(
-      "euCountryCheck" -> "greatBritain",
-      "arrivingNICheck" -> true,
-      "isUKResident" -> false,
-      "bringingOverAllowance" -> true,
-      "privateCraft" -> true,
-      "ageOver17" -> true,
-      "userInformation" -> userInformation,
+      "euCountryCheck"            -> "greatBritain",
+      "arrivingNICheck"           -> true,
+      "isUKResident"              -> false,
+      "bringingOverAllowance"     -> true,
+      "privateCraft"              -> true,
+      "ageOver17"                 -> true,
+      "userInformation"           -> userInformation,
       "purchasedProductInstances" -> Json.arr(
-        Json.obj("path" -> "other-goods/adult/adult-clothing",
-          "iid" -> "UCLFeP",
-          "country" -> Json.obj(
-            "code" -> "IN",
-            "countryName" -> "title.india",
-            "alphaTwoCode" -> "IN",
-            "isEu" -> false,
-            "isCountry" -> true,
+        Json.obj(
+          "path"         -> "other-goods/adult/adult-clothing",
+          "iid"          -> "UCLFeP",
+          "country"      -> Json.obj(
+            "code"            -> "IN",
+            "countryName"     -> "title.india",
+            "alphaTwoCode"    -> "IN",
+            "isEu"            -> false,
+            "isCountry"       -> true,
             "countrySynonyms" -> Json.arr()
           ),
-          "currency" -> "GBP",
-          "cost" -> 500,
-          "isVatPaid" -> false,
+          "currency"     -> "GBP",
+          "cost"         -> 500,
+          "isVatPaid"    -> false,
           "isCustomPaid" -> false,
-          "isUccRelief" -> false)),
-      "calculatorResponse" -> Json.obj(
-        "calculation" -> Json.obj(
-          "excise" -> "0.00",
-          "customs" -> "12.50",
-          "vat" -> "102.50",
-          "allTax" -> "115.00"
+          "isUccRelief"  -> false
         )
-      ))
+      ),
+      "calculatorResponse"        -> Json.obj(
+        "calculation" -> Json.obj(
+          "excise"  -> "0.00",
+          "customs" -> "12.50",
+          "vat"     -> "102.50",
+          "allTax"  -> "115.00"
+        )
+      )
+    )
 
     val inputAmendmentData: JsObject = Json.obj(
-      "journeyData" -> journeyData,
+      "journeyData"              -> journeyData,
       "simpleDeclarationRequest" -> Json.obj(
         "requestCommon" -> Json.obj(
-          "receiptDate" -> "2020-12-29T14:00:08Z",
-          "requestParameters" -> Json.arr(
+          "receiptDate"              -> "2020-12-29T14:00:08Z",
+          "requestParameters"        -> Json.arr(
             Json.obj(
-              "paramName" -> "REGIME",
+              "paramName"  -> "REGIME",
               "paramValue" -> "PNGR"
             )
           ),
-          "acknowledgementReference" -> (chargeReference.toString+"0")
+          "acknowledgementReference" -> (chargeReference.toString + "0")
         ),
         "requestDetail" -> Json.obj(
-          "declarationAlcohol" -> Json.obj(
-            "totalExciseAlcohol" -> "2.00",
-            "totalCustomsAlcohol" -> "0.30",
-            "totalVATAlcohol" -> "18.70",
+          "declarationAlcohol"        -> Json.obj(
+            "totalExciseAlcohol"     -> "2.00",
+            "totalCustomsAlcohol"    -> "0.30",
+            "totalVATAlcohol"        -> "18.70",
             "declarationItemAlcohol" -> Json.arr(
               Json.obj(
                 "commodityDescription" -> "Cider",
-                "volume" -> "5",
-                "goodsValue" -> "120.00",
-                "valueCurrency" -> "USD",
-                "valueCurrencyName" -> "USA dollars (USD)",
-                "originCountry" -> "US",
-                "originCountryName" -> "United States of America",
-                "exchangeRate" -> "1.20",
-                "exchangeRateDate" -> "2018-10-29",
-                "goodsValueGBP" -> "91.23",
-                "VATRESClaimed" -> false,
-                "exciseGBP" -> "2.00",
-                "customsGBP" -> "0.30",
-                "vatGBP" -> "18.70"
+                "volume"               -> "5",
+                "goodsValue"           -> "120.00",
+                "valueCurrency"        -> "USD",
+                "valueCurrencyName"    -> "USA dollars (USD)",
+                "originCountry"        -> "US",
+                "originCountryName"    -> "United States of America",
+                "exchangeRate"         -> "1.20",
+                "exchangeRateDate"     -> "2018-10-29",
+                "goodsValueGBP"        -> "91.23",
+                "VATRESClaimed"        -> false,
+                "exciseGBP"            -> "2.00",
+                "customsGBP"           -> "0.30",
+                "vatGBP"               -> "18.70"
               ),
               Json.obj(
                 "commodityDescription" -> "Beer",
-                "volume" -> "110",
-                "goodsValue" -> "500.00",
-                "valueCurrency" -> "GBP",
-                "valueCurrencyName" -> "British pounds (GBP)",
-                "originCountry" -> "FR",
-                "originCountryName" -> "France",
-                "exchangeRate" -> "1.00",
-                "exchangeRateDate" -> "2020-12-29",
-                "goodsValueGBP" -> "500.00",
-                "VATRESClaimed" -> false,
-                "exciseGBP" -> "88.00",
-                "customsGBP" -> "0.00",
-                "vatGBP" -> "117.60"
+                "volume"               -> "110",
+                "goodsValue"           -> "500.00",
+                "valueCurrency"        -> "GBP",
+                "valueCurrencyName"    -> "British pounds (GBP)",
+                "originCountry"        -> "FR",
+                "originCountryName"    -> "France",
+                "exchangeRate"         -> "1.00",
+                "exchangeRateDate"     -> "2020-12-29",
+                "goodsValueGBP"        -> "500.00",
+                "VATRESClaimed"        -> false,
+                "exciseGBP"            -> "88.00",
+                "customsGBP"           -> "0.00",
+                "vatGBP"               -> "117.60"
               )
             )
           ),
-          "liabilityDetails" -> Json.obj(
-            "totalExciseGBP" -> "102.54",
+          "liabilityDetails"          -> Json.obj(
+            "totalExciseGBP"  -> "102.54",
             "totalCustomsGBP" -> "534.89",
-            "totalVATGBP" -> "725.03",
-            "grandTotalGBP" -> "1362.46"
+            "totalVATGBP"     -> "725.03",
+            "grandTotalGBP"   -> "1362.46"
           ),
           "amendmentLiabilityDetails" -> Json.obj(
-            "additionalExciseGBP" -> "88.00",
+            "additionalExciseGBP"  -> "88.00",
             "additionalCustomsGBP" -> "0.00",
-            "additionalVATGBP" -> "117.60",
-            "additionalTotalGBP" -> "205.60"
+            "additionalVATGBP"     -> "117.60",
+            "additionalTotalGBP"   -> "205.60"
           ),
-          "customerReference" -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
-          "personalDetails" -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
-          "declarationTobacco" -> Json.obj(
-            "totalExciseTobacco" -> "100.54",
-            "totalCustomsTobacco" -> "192.94",
-            "totalVATTobacco" -> "149.92",
+          "customerReference"         -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+          "personalDetails"           -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
+          "declarationTobacco"        -> Json.obj(
+            "totalExciseTobacco"     -> "100.54",
+            "totalCustomsTobacco"    -> "192.94",
+            "totalVATTobacco"        -> "149.92",
             "declarationItemTobacco" -> Json.arr(
               Json.obj(
                 "commodityDescription" -> "Cigarettes",
-                "quantity" -> "250",
-                "goodsValue" -> "400.00",
-                "valueCurrency" -> "USD",
-                "valueCurrencyName" -> "USA dollars (USD)",
-                "originCountry" -> "US",
-                "originCountryName" -> "United States of America",
-                "exchangeRate" -> "1.20",
-                "exchangeRateDate" -> "2018-10-29",
-                "goodsValueGBP" -> "304.11",
-                "VATRESClaimed" -> false,
-                "exciseGBP" -> "74.00",
-                "customsGBP" -> "79.06",
-                "vatGBP" -> "91.43"
+                "quantity"             -> "250",
+                "goodsValue"           -> "400.00",
+                "valueCurrency"        -> "USD",
+                "valueCurrencyName"    -> "USA dollars (USD)",
+                "originCountry"        -> "US",
+                "originCountryName"    -> "United States of America",
+                "exchangeRate"         -> "1.20",
+                "exchangeRateDate"     -> "2018-10-29",
+                "goodsValueGBP"        -> "304.11",
+                "VATRESClaimed"        -> false,
+                "exciseGBP"            -> "74.00",
+                "customsGBP"           -> "79.06",
+                "vatGBP"               -> "91.43"
               )
             )
           ),
-          "declarationHeader" -> Json.obj("travellingFrom" -> "NON_EU Only", "expectedDateOfArrival" -> "2018-05-31", "ukVATPaid" -> false, "uccRelief" -> false, "portOfEntryName" -> "Heathrow Airport", "ukExcisePaid" -> false, "chargeReference" -> chargeReference.toString, "portOfEntry" -> "LHR", "timeOfEntry" -> "13:20", "onwardTravelGBNI" -> "GB", "messageTypes" -> Json.obj("messageType" -> "DeclarationAmend")),
-          "contactDetails" -> Json.obj("emailAddress" -> "abc@gmail.com"),
-          "declarationOther" -> Json.obj(
-            "totalExciseOther" -> "0.00",
-            "totalCustomsOther" -> "341.65",
-            "totalVATOther" -> "556.41",
+          "declarationHeader"         -> Json.obj(
+            "travellingFrom"        -> "NON_EU Only",
+            "expectedDateOfArrival" -> "2018-05-31",
+            "ukVATPaid"             -> false,
+            "uccRelief"             -> false,
+            "portOfEntryName"       -> "Heathrow Airport",
+            "ukExcisePaid"          -> false,
+            "chargeReference"       -> chargeReference.toString,
+            "portOfEntry"           -> "LHR",
+            "timeOfEntry"           -> "13:20",
+            "onwardTravelGBNI"      -> "GB",
+            "messageTypes"          -> Json.obj("messageType" -> "DeclarationAmend")
+          ),
+          "contactDetails"            -> Json.obj("emailAddress" -> "abc@gmail.com"),
+          "declarationOther"          -> Json.obj(
+            "totalExciseOther"     -> "0.00",
+            "totalCustomsOther"    -> "341.65",
+            "totalVATOther"        -> "556.41",
             "declarationItemOther" -> Json.arr(
               Json.obj(
                 "commodityDescription" -> "Television",
-                "quantity" -> "1",
-                "goodsValue" -> "1500.00",
-                "valueCurrency" -> "USD",
-                "valueCurrencyName" -> "USA dollars (USD)",
-                "originCountry" -> "US",
-                "originCountryName" -> "United States of America",
-                "exchangeRate" -> "1.20",
-                "exchangeRateDate" -> "2018-10-29",
-                "goodsValueGBP" -> "1140.42",
-                "VATRESClaimed" -> false,
-                "exciseGBP" -> "0.00",
-                "customsGBP" -> "159.65",
-                "vatGBP" -> "260.01"
+                "quantity"             -> "1",
+                "goodsValue"           -> "1500.00",
+                "valueCurrency"        -> "USD",
+                "valueCurrencyName"    -> "USA dollars (USD)",
+                "originCountry"        -> "US",
+                "originCountryName"    -> "United States of America",
+                "exchangeRate"         -> "1.20",
+                "exchangeRateDate"     -> "2018-10-29",
+                "goodsValueGBP"        -> "1140.42",
+                "VATRESClaimed"        -> false,
+                "exciseGBP"            -> "0.00",
+                "customsGBP"           -> "159.65",
+                "vatGBP"               -> "260.01"
               )
             )
           )
@@ -341,11 +385,23 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val data = Json.obj("simpleDeclarationRequest" -> Json.obj("foo" -> "bar"))
 
-          val amendData = inputAmendmentData - "journeyData"
-          val declaration = Declaration(chargeReference, State.PendingPayment, Some(State.PendingPayment), sentToEtmp = false, amendSentToEtmp = Some(false), correlationId, None, journeyData, data, Some(amendData))
+          val amendData   = inputAmendmentData - "journeyData"
+          val declaration = Declaration(
+            chargeReference,
+            State.PendingPayment,
+            Some(State.PendingPayment),
+            sentToEtmp = false,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            None,
+            journeyData,
+            data,
+            Some(amendData)
+          )
 
           val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
-            .withJsonBody(inputAmendmentData).withHeaders("X-Correlation-ID" -> correlationId)
+            .withJsonBody(inputAmendmentData)
+            .withHeaders("X-Correlation-ID" -> correlationId)
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -357,13 +413,12 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
-          headers(result) must contain ("X-Correlation-ID" -> correlationId)
+          headers(result) must contain("X-Correlation-ID" -> correlationId)
           contentAsJson(result) mustBe declaration.amendData.get
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).insertAmendment(inputAmendmentData, correlationId, chargeReference)
-              verify(lockRepository, times(1)).release(1234567890)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).insertAmendment(inputAmendmentData, correlationId, chargeReference)
+            verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -375,7 +430,8 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
           val requestBody = Json.obj("foo" -> "bar")
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-            .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
+            .withJsonBody(requestBody)
+            .withHeaders("X-Correlation-ID" -> correlationId)
 
           when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
             .thenReturn(Future.failed(new Exception()))
@@ -395,7 +451,18 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
         val requestBody = Json.obj()
 
-        val declaration = Declaration(chargeReference, State.PendingPayment, Some(State.PendingPayment), sentToEtmp = false, amendSentToEtmp = Some(false), correlationId, None, Json.obj(), Json.obj(), Some(Json.obj()))
+        val declaration = Declaration(
+          chargeReference,
+          State.PendingPayment,
+          Some(State.PendingPayment),
+          sentToEtmp = false,
+          amendSentToEtmp = Some(false),
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj(),
+          Some(Json.obj())
+        )
 
         val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
           .withJsonBody(requestBody)
@@ -416,13 +483,16 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
         val requestBody = Json.obj()
 
         val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
-          .withJsonBody(requestBody).withHeaders("X-Correlation-ID" -> correlationId)
+          .withJsonBody(requestBody)
+          .withHeaders("X-Correlation-ID" -> correlationId)
 
-        val result = route(app, request).value
+        val result  = route(app, request).value
 
         status(result) mustBe BAD_REQUEST
-        headers(result) must contain ("X-Correlation-ID" -> correlationId)
-        contentAsJson(result).toString must include("object has too few properties (found 0 but schema requires at least 1)")
+        headers(result)                must contain("X-Correlation-ID" -> correlationId)
+        contentAsJson(result).toString must include(
+          "object has too few properties (found 0 but schema requires at least 1)"
+        )
       }
     }
   }
@@ -457,7 +527,17 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
+          val declaration = Declaration(
+            chargeReference,
+            State.SubmissionFailed,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj()
+          )
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -481,7 +561,17 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.Paid, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
+          val declaration = Declaration(
+            chargeReference,
+            State.Paid,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj()
+          )
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -506,7 +596,17 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val chargeReference = ChargeReference(1234567890)
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
+          val declaration = Declaration(
+            chargeReference,
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj()
+          )
 
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
@@ -537,7 +637,17 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
+          val declaration        = Declaration(
+            chargeReference,
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj()
+          )
           val updatedDeclaration = declaration copy (state = State.Paid)
 
           when(declarationsRepository.get(chargeReference))
@@ -550,15 +660,14 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe ACCEPTED
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).get(chargeReference)
-              verify(declarationsRepository, times(1)).setState(chargeReference, State.Paid)
-              verify(lockRepository, times(1)).release(1234567890)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(chargeReference)
+            verify(declarationsRepository, times(1)).setState(chargeReference, State.Paid)
+            verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -571,7 +680,17 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Failed")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
+          val declaration        = Declaration(
+            chargeReference,
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj()
+          )
           val updatedDeclaration = declaration copy (state = State.PaymentFailed)
 
           when(declarationsRepository.get(chargeReference))
@@ -584,15 +703,14 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe ACCEPTED
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).get(chargeReference)
-              verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentFailed)
-              verify(lockRepository, times(1)).release(1234567890)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(chargeReference)
+            verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentFailed)
+            verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -605,7 +723,17 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Cancelled")
 
-          val declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
+          val declaration        = Declaration(
+            chargeReference,
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj()
+          )
           val updatedDeclaration = declaration copy (state = State.PaymentCancelled)
 
           when(declarationsRepository.get(chargeReference))
@@ -618,15 +746,14 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe ACCEPTED
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).get(chargeReference)
-              verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentCancelled)
-              verify(lockRepository, times(1)).release(1234567890)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(chargeReference)
+            verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentCancelled)
+            verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -646,13 +773,12 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
           .thenReturn(Future.successful(()))
 
         val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-        val result = route(app, request).value
+        val result  = route(app, request).value
 
         status(result) mustBe NOT_FOUND
 
-        whenReady(result) {
-          _ =>
-            verify(declarationsRepository, times(1)).get(chargeReference)
+        whenReady(result) { _ =>
+          verify(declarationsRepository, times(1)).get(chargeReference)
         }
       }
     }
@@ -662,8 +788,8 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
       "must return BAD_REQUEST" in {
 
         val jsonPayload = Json.obj("reference" -> "XDDD0000000105", "status" -> "Successful")
-        val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-        val result = route(app, request).value
+        val request     = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+        val result      = route(app, request).value
         status(result) mustBe BAD_REQUEST
       }
     }
@@ -683,8 +809,18 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val chargeReference = ChargeReference(1234567890)
 
-          val amendment = Declaration(chargeReference, State.Paid, amendState = Some(State.SubmissionFailed), sentToEtmp = false,
-            amendSentToEtmp = Some(false), correlationId, None, Json.obj(), Json.obj(), amendData = Some(Json.obj()))
+          val amendment = Declaration(
+            chargeReference,
+            State.Paid,
+            amendState = Some(State.SubmissionFailed),
+            sentToEtmp = false,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            amendData = Some(Json.obj())
+          )
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -708,8 +844,18 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val chargeReference = ChargeReference(1234567890)
 
-          val amendment = Declaration(chargeReference, State.Paid, amendState = Some(State.Paid), sentToEtmp = false,
-            amendSentToEtmp = Some(false), correlationId, None, Json.obj(), Json.obj(), amendData = Some(Json.obj()))
+          val amendment = Declaration(
+            chargeReference,
+            State.Paid,
+            amendState = Some(State.Paid),
+            sentToEtmp = false,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            amendData = Some(Json.obj())
+          )
 
           when(lockRepository.lock(1234567890))
             .thenReturn(Future.successful(true))
@@ -734,8 +880,18 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val chargeReference = ChargeReference(1234567890)
 
-          val amendment = Declaration(chargeReference, State.Paid, amendState = Some(State.PendingPayment), sentToEtmp = false,
-            amendSentToEtmp = Some(false), correlationId, None, Json.obj(), Json.obj(), amendData = Some(Json.obj()))
+          val amendment = Declaration(
+            chargeReference,
+            State.Paid,
+            amendState = Some(State.PendingPayment),
+            sentToEtmp = false,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            amendData = Some(Json.obj())
+          )
 
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(amendment)))
@@ -766,8 +922,18 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
 
-          val amendment = Declaration(chargeReference, State.Paid, amendState = Some(State.PendingPayment), sentToEtmp = false,
-            amendSentToEtmp = Some(false), correlationId, None, Json.obj(), Json.obj(), amendData = Some(Json.obj()))
+          val amendment        = Declaration(
+            chargeReference,
+            State.Paid,
+            amendState = Some(State.PendingPayment),
+            sentToEtmp = false,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            amendData = Some(Json.obj())
+          )
           val updatedAmendment = amendment copy (amendState = Some(State.Paid))
 
           when(declarationsRepository.get(chargeReference))
@@ -780,15 +946,14 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe ACCEPTED
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).get(chargeReference)
-              verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.Paid)
-              verify(lockRepository, times(1)).release(1234567890)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(chargeReference)
+            verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.Paid)
+            verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -801,8 +966,18 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Failed")
 
-          val amendment = Declaration(chargeReference, State.Paid, amendState = Some(State.PendingPayment), sentToEtmp = false,
-            amendSentToEtmp = Some(false), correlationId, None, Json.obj(), Json.obj(), amendData = Some(Json.obj()))
+          val amendment        = Declaration(
+            chargeReference,
+            State.Paid,
+            amendState = Some(State.PendingPayment),
+            sentToEtmp = false,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            amendData = Some(Json.obj())
+          )
           val updatedAmendment = amendment copy (amendState = Some(State.PaymentFailed))
 
           when(declarationsRepository.get(chargeReference))
@@ -815,15 +990,14 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe ACCEPTED
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).get(chargeReference)
-              verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentFailed)
-              verify(lockRepository, times(1)).release(1234567890)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(chargeReference)
+            verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentFailed)
+            verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -836,8 +1010,18 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Cancelled")
 
-          val amendment = Declaration(chargeReference, State.Paid, amendState = Some(State.PendingPayment), sentToEtmp = false,
-            amendSentToEtmp = Some(false), correlationId, None, Json.obj(), Json.obj(), amendData = Some(Json.obj()))
+          val amendment        = Declaration(
+            chargeReference,
+            State.Paid,
+            amendState = Some(State.PendingPayment),
+            sentToEtmp = false,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            amendData = Some(Json.obj())
+          )
           val updatedAmendment = amendment copy (amendState = Some(State.PaymentCancelled))
 
           when(declarationsRepository.get(chargeReference))
@@ -850,15 +1034,14 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result = route(app, request).value
+          val result  = route(app, request).value
 
           status(result) mustBe ACCEPTED
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).get(chargeReference)
-              verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentCancelled)
-              verify(lockRepository, times(1)).release(1234567890)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(chargeReference)
+            verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentCancelled)
+            verify(lockRepository, times(1)).release(1234567890)
           }
         }
       }
@@ -875,21 +1058,34 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
           val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
-          val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()), amendmentCount = Some(0), Some(Json.obj("deltaCalculation" -> "somecalcultaion")), amendState = Some(""))
+          val declarationResponse = DeclarationResponse(
+            "greatBritain",
+            arrivingNI = false,
+            isOver17 = true,
+            isUKResident = Some(true),
+            isPrivateTravel = false,
+            Json.obj("userInformation"             -> "someUserInformation"),
+            Json.obj("calculation"                 -> "somecalcultaion"),
+            Json.obj("liabilityDetails"            -> "SomeLiability"),
+            Json.arr("oldPurchaseProductInstances" -> Json.obj()),
+            amendmentCount = Some(0),
+            Some(Json.obj("deltaCalculation" -> "somecalcultaion")),
+            amendState = Some("")
+          )
 
           when(declarationsRepository.get(input))
             .thenReturn(Future.successful(Some(declarationResponse)))
 
-          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
+          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
+            .withJsonBody(Json.toJsObject(input))
 
           val result = route(app, request).value
 
           status(result) mustBe OK
           contentAsJson(result) mustBe Json.toJsObject(declarationResponse)
 
-          whenReady(result) {
-            _ =>
-              verify(declarationsRepository, times(1)).get(input)
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(input)
           }
         }
       }
@@ -903,7 +1099,8 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
           when(declarationsRepository.get(input))
             .thenReturn(Future.failed(new Exception()))
 
-          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
+          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
+            .withJsonBody(Json.toJsObject(input))
 
           val result = route(app, request).value
 
@@ -922,7 +1119,20 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
 
         val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
-        val declarationResponse = DeclarationResponse("greatBritain", arrivingNI = false, isOver17 = true, isUKResident = Some(true), isPrivateTravel = false, Json.obj("userInformation" -> "someUserInformation"), Json.obj("calculation" -> "somecalcultaion"), Json.obj("liabilityDetails" -> "SomeLiability"), Json.arr("oldPurchaseProductInstances" -> Json.obj()), amendmentCount = Some(0), Some(Json.obj("deltaCalculation" -> "somecalcultaion")), amendState = Some(""))
+        val declarationResponse = DeclarationResponse(
+          "greatBritain",
+          arrivingNI = false,
+          isOver17 = true,
+          isUKResident = Some(true),
+          isPrivateTravel = false,
+          Json.obj("userInformation"             -> "someUserInformation"),
+          Json.obj("calculation"                 -> "somecalcultaion"),
+          Json.obj("liabilityDetails"            -> "SomeLiability"),
+          Json.arr("oldPurchaseProductInstances" -> Json.obj()),
+          amendmentCount = Some(0),
+          Some(Json.obj("deltaCalculation" -> "somecalcultaion")),
+          amendState = Some("")
+        )
 
         val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
           .withJsonBody(requestBody)
@@ -945,15 +1155,15 @@ class DeclarationControllerSpec extends AnyFreeSpec with Matchers with GuiceOneA
         when(declarationsRepository.get(input))
           .thenReturn(Future.successful(None))
 
-        val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
+        val request =
+          FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
 
         val result = route(app, request).value
 
         status(result) mustBe NOT_FOUND
 
-        whenReady(result) {
-          _ =>
-            verify(declarationsRepository, times(1)).get(input)
+        whenReady(result) { _ =>
+          verify(declarationsRepository, times(1)).get(input)
         }
       }
     }

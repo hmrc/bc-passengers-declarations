@@ -16,7 +16,6 @@
 
 package services
 
-
 import connectors.SendEmailConnector
 import helpers.BaseSpec
 import models._
@@ -32,18 +31,16 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import repositories.DeclarationsRepository
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, HttpClient}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-
 
 import scala.concurrent.Future
 
-
 class SendEmailServiceSpec extends BaseSpec {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier                        = HeaderCarrier()
   implicit val req: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/test-path")
-  lazy val app: Application = GuiceApplicationBuilder()
+  lazy val app: Application                             = GuiceApplicationBuilder()
     .overrides(bind[HttpClient].toInstance(mock[HttpClient]))
     .build()
 
@@ -52,31 +49,29 @@ class SendEmailServiceSpec extends BaseSpec {
   }
 
   private val mockSendEmailConnector: SendEmailConnector = new SendEmailConnector {
-    override val sendEmailURL = "testSendEmailURL"
+    override val sendEmailURL     = "testSendEmailURL"
     override val http: HttpClient = mockWSHttp
 
     when(mockWSHttp.POST[JsValue, HttpResponse](any(), any(), any())(any(), any(), any(), any()))
-      .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED,"")))
+      .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
 
   }
-  private val mockServicesConfig: ServicesConfig = mock[ServicesConfig]
-  private val declarationsRepository = mock[DeclarationsRepository]
+  private val mockServicesConfig: ServicesConfig         = mock[ServicesConfig]
+  private val declarationsRepository                     = mock[DeclarationsRepository]
 
-  def resetMocks(): Unit = {
+  def resetMocks(): Unit =
     reset(declarationsRepository)
-
-  }
 
   trait Setup {
 
-    val emailService = new SendEmailService {
+    val emailService           = new SendEmailService {
       val emailConnector: SendEmailConnector = mockSendEmailConnector
       val repository: DeclarationsRepository = declarationsRepository
-      val servicesConfig: ServicesConfig = mockServicesConfig
-      val testEmail = "testEmail@digital.hmrc.gov.uk"
-      val chargeReference:ChargeReference = ChargeReference(1234567890)
-      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
-      val journeyData: String =
+      val servicesConfig: ServicesConfig     = mockServicesConfig
+      val testEmail                          = "testEmail@digital.hmrc.gov.uk"
+      val chargeReference: ChargeReference   = ChargeReference(1234567890)
+      val correlationId                      = "fe28db96-d9db-4220-9e12-f2d267267c29"
+      val journeyData: String                =
         """{
           |"journeyData" : {
           |        "euCountryCheck" : "greatBritain",
@@ -319,9 +314,19 @@ class SendEmailServiceSpec extends BaseSpec {
           |    "lastUpdated" : "2020-12-07T01:37:30.832"
           |}""".stripMargin
 
-      val declaration:Declaration = Declaration(chargeReference, State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.parse(journeyData).as[JsObject], Json.parse(data).as[JsObject])
-      val bfEmail: String = "borderforce@digital.hmrc.gov.uk"
-      val isleOfManEmail: String = "isleofman@digital.hmrc.gov.uk"
+      val declaration: Declaration = Declaration(
+        chargeReference,
+        State.PendingPayment,
+        None,
+        sentToEtmp = false,
+        None,
+        correlationId,
+        None,
+        Json.parse(journeyData).as[JsObject],
+        Json.parse(data).as[JsObject]
+      )
+      val bfEmail: String          = "borderforce@digital.hmrc.gov.uk"
+      val isleOfManEmail: String   = "isleofman@digital.hmrc.gov.uk"
 
       when(declarationsRepository.get(chargeReference))
         .thenReturn(Future.successful(Some(declaration)))
@@ -331,20 +336,21 @@ class SendEmailServiceSpec extends BaseSpec {
       when(servicesConfig.getString("microservice.services.email.addressSecond"))
         .thenReturn(isleOfManEmail)
 
-      val testParams =  Map(
-        "subject" -> "Receipt for payment on goods brought into the UK - Reference number XAPR0000001074",
-        "NAME" -> "John Doe",
-        "DATE" -> "10 November 2020",
-        "PLACEOFARRIVAL" -> "Heathrow Airport",
-        "DATEOFARRIVAL" -> "10 November 2020",
-        "TIMEOFARRIVAL" -> "12:16 PM",
-        "REFERENCE" -> "XAPR0000001074",
-        "TOTAL" -> "£3,000.00",
-        "TOTALEXCISEGBP" -> "£1,000.00",
+      val testParams = Map(
+        "subject"         -> "Receipt for payment on goods brought into the UK - Reference number XAPR0000001074",
+        "NAME"            -> "John Doe",
+        "DATE"            -> "10 November 2020",
+        "PLACEOFARRIVAL"  -> "Heathrow Airport",
+        "DATEOFARRIVAL"   -> "10 November 2020",
+        "TIMEOFARRIVAL"   -> "12:16 PM",
+        "REFERENCE"       -> "XAPR0000001074",
+        "TOTAL"           -> "£3,000.00",
+        "TOTALEXCISEGBP"  -> "£1,000.00",
         "TOTALCUSTOMSGBP" -> "£1,000.00",
-        "TOTALVATGBP" -> "£1,000.00",
-        "TRAVELLINGFROM" -> "EU Only",
-        "AllITEMS" -> "")
+        "TOTALVATGBP"     -> "£1,000.00",
+        "TRAVELLINGFROM"  -> "EU Only",
+        "AllITEMS"        -> ""
+      )
 
     }
     val zeroPoundsData: String =
@@ -471,21 +477,22 @@ class SendEmailServiceSpec extends BaseSpec {
 
   "generateEmailRequest" should {
 
-    val testEmail = "testEmail@digital.hmrc.gov.uk"
-    val testParams =  Map(
-      "subject" -> "Receipt for payment on goods brought into the UK - Reference number XAPR0000001074",
-      "NAME" -> "John Doe",
-      "DATE" -> "10 November 2020",
-      "PLACEOFARRIVAL" -> "Heathrow Airport",
-      "DATEOFARRIVAL" -> "10 November 2020",
-      "TIMEOFARRIVAL" -> "12:16 PM",
-      "REFERENCE" -> "XAPR0000001074",
-      "TOTAL" -> "£3,000.00",
-      "TOTALEXCISEGBP" -> "£1,000.00",
+    val testEmail  = "testEmail@digital.hmrc.gov.uk"
+    val testParams = Map(
+      "subject"         -> "Receipt for payment on goods brought into the UK - Reference number XAPR0000001074",
+      "NAME"            -> "John Doe",
+      "DATE"            -> "10 November 2020",
+      "PLACEOFARRIVAL"  -> "Heathrow Airport",
+      "DATEOFARRIVAL"   -> "10 November 2020",
+      "TIMEOFARRIVAL"   -> "12:16 PM",
+      "REFERENCE"       -> "XAPR0000001074",
+      "TOTAL"           -> "£3,000.00",
+      "TOTALEXCISEGBP"  -> "£1,000.00",
       "TOTALCUSTOMSGBP" -> "£1,000.00",
-      "TOTALVATGBP" -> "£1,000.00",
-      "TRAVELLINGFROM" -> "EU Only",
-      "AllITEMS" -> "")
+      "TOTALVATGBP"     -> "£1,000.00",
+      "TRAVELLINGFROM"  -> "EU Only",
+      "AllITEMS"        -> ""
+    )
 
     val testRequest = SendEmailRequest(
       to = Seq(testEmail),
@@ -495,80 +502,88 @@ class SendEmailServiceSpec extends BaseSpec {
     )
 
     "return a EmailRequest with the correct email " in new Setup {
-      emailService.generateEmailRequest(Seq(testEmail),emailService.testParams) shouldBe testRequest
+      emailService.generateEmailRequest(Seq(testEmail), emailService.testParams) shouldBe testRequest
     }
   }
 
   "getDeclaration" should {
-    "return a valid Declaration on a valid Charge Reference" in new Setup{
-      val declarationResult:Declaration = emailService.getDeclaration(emailService.chargeReference).futureValue
+    "return a valid Declaration on a valid Charge Reference" in new Setup {
+      val declarationResult: Declaration = emailService.getDeclaration(emailService.chargeReference).futureValue
       declarationResult shouldBe emailService.declaration
     }
   }
 
   "sendEmail" should {
-    "Return true for a valid email and params" in new Setup{
-      emailService.sendEmail(emailService.testEmail,emailService.testParams).futureValue shouldBe true
+    "Return true for a valid email and params" in new Setup {
+      emailService.sendEmail(emailService.testEmail, emailService.testParams).futureValue shouldBe true
     }
-    "Return true for a blank email and valid params" in new Setup{
-      emailService.sendEmail("",emailService.testParams).futureValue shouldBe true
+    "Return true for a blank email and valid params" in new Setup {
+      emailService.sendEmail("", emailService.testParams).futureValue shouldBe true
     }
   }
 
   "sendPassengerEmail" should {
-    "Return true for a valid email and params" in new Setup{
-      emailService.sendPassengerEmail(emailService.testEmail,emailService.testParams).futureValue shouldBe true
+    "Return true for a valid email and params" in new Setup {
+      emailService.sendPassengerEmail(emailService.testEmail, emailService.testParams).futureValue shouldBe true
     }
   }
 
-  "getEmailParamsFromData" should{
-    "Return a map of emailId and parameters" in new Setup{
-      val localTestParams =  Map(
-        "subject" -> "Receipt for payment on goods brought into the UK - Reference number  XAPR0000001074",
-        "NAME" -> "John Doe",
-        "DATE" -> "10 November 2020",
-        "PLACEOFARRIVAL" -> "Heathrow Airport",
-        "DATEOFARRIVAL" -> "10 November 2020",
-        "TIMEOFARRIVAL" -> "12:16 PM",
-        "REFERENCE" -> "XAPR0000001074",
-        "TOTAL" -> "£3000.00",
-        "TOTALEXCISEGBP" -> "£1000.00",
+  "getEmailParamsFromData" should {
+    "Return a map of emailId and parameters" in new Setup {
+      val localTestParams = Map(
+        "subject"         -> "Receipt for payment on goods brought into the UK - Reference number  XAPR0000001074",
+        "NAME"            -> "John Doe",
+        "DATE"            -> "10 November 2020",
+        "PLACEOFARRIVAL"  -> "Heathrow Airport",
+        "DATEOFARRIVAL"   -> "10 November 2020",
+        "TIMEOFARRIVAL"   -> "12:16 PM",
+        "REFERENCE"       -> "XAPR0000001074",
+        "TOTAL"           -> "£3000.00",
+        "TOTALEXCISEGBP"  -> "£1000.00",
         "TOTALCUSTOMSGBP" -> "£1000.00",
-        "TOTALVATGBP" -> "£1000.00",
-        "TRAVELLINGFROM" -> "NON_EU Only",
-        "AllITEMS" -> "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false,\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\",\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\",\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false,\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
+        "TOTALVATGBP"     -> "£1000.00",
+        "TRAVELLINGFROM"  -> "NON_EU Only",
+        "AllITEMS"        -> "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false,\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\",\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\",\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false,\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
       )
-      val emailParams = Map(emailService.testEmail->localTestParams)
+      val emailParams     = Map(emailService.testEmail -> localTestParams)
       emailService.getEmailParamsFromData(Json.parse(emailService.data).as[JsObject]) shouldBe emailParams
     }
   }
 
-  "getEmailParamsFromAmendedData" should{
-    "Return a map of emailId and parameters" in new Setup{
-      val localTestParams =  Map(
-        "subject" -> "Receipt for payment on goods brought into the UK - Reference number  XAPR0000001074",
-        "NAME" -> "John Doe",
-        "DATE" -> "10 November 2020",
-        "PLACEOFARRIVAL" -> "Heathrow Airport",
-        "DATEOFARRIVAL" -> "10 November 2020",
-        "TIMEOFARRIVAL" -> "12:16 PM",
-        "REFERENCE" -> "XAPR0000001074",
-        "TOTAL" -> "£3000.00",
-        "TOTALEXCISEGBP" -> "£1000.00",
+  "getEmailParamsFromAmendedData" should {
+    "Return a map of emailId and parameters" in new Setup {
+      val localTestParams     = Map(
+        "subject"         -> "Receipt for payment on goods brought into the UK - Reference number  XAPR0000001074",
+        "NAME"            -> "John Doe",
+        "DATE"            -> "10 November 2020",
+        "PLACEOFARRIVAL"  -> "Heathrow Airport",
+        "DATEOFARRIVAL"   -> "10 November 2020",
+        "TIMEOFARRIVAL"   -> "12:16 PM",
+        "REFERENCE"       -> "XAPR0000001074",
+        "TOTAL"           -> "£3000.00",
+        "TOTALEXCISEGBP"  -> "£1000.00",
         "TOTALCUSTOMSGBP" -> "£1000.00",
-        "TOTALVATGBP" -> "£1000.00",
-        "TRAVELLINGFROM" -> "NON_EU Only",
-        "AllITEMS" -> "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false,\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\",\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\",\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false,\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
+        "TOTALVATGBP"     -> "£1000.00",
+        "TRAVELLINGFROM"  -> "NON_EU Only",
+        "AllITEMS"        -> "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false,\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\",\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\",\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false,\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
       )
-      val amendData:JsObject = Json.parse(emailService.data).as[JsObject] deepMerge Json.obj("amendmentLiabilityDetails" -> Json.obj("additionalExciseGBP" -> "100.00", "additionalCustomsGBP" -> "100.00", "additionalVATGBP" -> "100.00", "additionalTotalGBP" -> "300.00"))
-      val emailParams = Map(emailService.testEmail->localTestParams)
+      val amendData: JsObject = Json.parse(emailService.data).as[JsObject] deepMerge Json.obj(
+        "amendmentLiabilityDetails" -> Json.obj(
+          "additionalExciseGBP"  -> "100.00",
+          "additionalCustomsGBP" -> "100.00",
+          "additionalVATGBP"     -> "100.00",
+          "additionalTotalGBP"   -> "300.00"
+        )
+      )
+      val emailParams         = Map(emailService.testEmail -> localTestParams)
       emailService.getEmailParamsFromData(amendData) shouldBe emailParams
     }
   }
 
   "Generating an email request" should {
     "construct the correct JSON" in new Setup {
-      val result: SendEmailRequest = emailService.generateEmailRequest(Seq(emailService.testEmail),emailService.testParams)
+      val result: SendEmailRequest =
+        emailService.generateEmailRequest(Seq(emailService.testEmail), emailService.testParams)
 
       val resultAsJson: JsValue = Json.toJson(result)
 
@@ -600,38 +615,78 @@ class SendEmailServiceSpec extends BaseSpec {
   }
 
   "isZeroPound " should {
-    "return true if a Zero Pound Journey" in new Setup{
+    "return true if a Zero Pound Journey" in new Setup {
       emailService.isZeroPound(Json.parse(zeroPoundsData).as[JsObject]) shouldBe true
     }
-    "return false if not a Zero Pound Journey" in new Setup{
+    "return false if not a Zero Pound Journey" in new Setup {
       emailService.isZeroPound(Json.parse(emailService.data).as[JsObject]) shouldBe false
     }
   }
 
   "constructAndSendEmail" should {
-    "send an email for a zero pound journey when disable-zero-pound-email feature is false" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, None, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
+    "send an email for a zero pound journey when disable-zero-pound-email feature is false" in new Setup {
+      val declaration: Declaration = Declaration(
+        emailService.chargeReference,
+        State.PendingPayment,
+        None,
+        sentToEtmp = false,
+        None,
+        emailService.correlationId,
+        None,
+        Json.parse(emailService.journeyData).as[JsObject],
+        Json.parse(zeroPoundsData).as[JsObject]
+      )
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
     }
 
-    "not send an email for a zero pound journey when disable-zero-pound-email feature is true" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, None, Json.parse(emailService.journeyData).as[JsObject], Json.parse(zeroPoundsData).as[JsObject])
+    "not send an email for a zero pound journey when disable-zero-pound-email feature is true" in new Setup {
+      val declaration: Declaration = Declaration(
+        emailService.chargeReference,
+        State.PendingPayment,
+        None,
+        sentToEtmp = false,
+        None,
+        emailService.correlationId,
+        None,
+        Json.parse(emailService.journeyData).as[JsObject],
+        Json.parse(zeroPoundsData).as[JsObject]
+      )
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe false
     }
 
-    "send an email for a non zero pound journey when disable-zero-pound-email feature is true" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, None, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
+    "send an email for a non zero pound journey when disable-zero-pound-email feature is true" in new Setup {
+      val declaration: Declaration = Declaration(
+        emailService.chargeReference,
+        State.PendingPayment,
+        None,
+        sentToEtmp = false,
+        None,
+        emailService.correlationId,
+        None,
+        Json.parse(emailService.journeyData).as[JsObject],
+        Json.parse(emailService.data).as[JsObject]
+      )
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(true)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true
     }
 
-    "send an email for a non zero pound journey when disable-zero-pound-email feature is false" in new Setup{
-      val declaration: Declaration = Declaration(emailService.chargeReference, State.PendingPayment, None, sentToEtmp = false, None, emailService.correlationId, None, Json.parse(emailService.journeyData).as[JsObject], Json.parse(emailService.data).as[JsObject])
+    "send an email for a non zero pound journey when disable-zero-pound-email feature is false" in new Setup {
+      val declaration: Declaration = Declaration(
+        emailService.chargeReference,
+        State.PendingPayment,
+        None,
+        sentToEtmp = false,
+        None,
+        emailService.correlationId,
+        None,
+        Json.parse(emailService.journeyData).as[JsObject],
+        Json.parse(emailService.data).as[JsObject]
+      )
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
       when(declarationsRepository.get(emailService.chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(emailService.chargeReference).futureValue shouldBe true

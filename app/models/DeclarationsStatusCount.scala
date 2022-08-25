@@ -18,7 +18,7 @@ package models
 
 import play.api.libs.json.{Json, Reads}
 
-case class DeclarationsStatusCount (messageState: String, count: Int)
+case class DeclarationsStatusCount(messageState: String, count: Int)
 
 object DeclarationsStatusCount {
   implicit val reads: Reads[DeclarationsStatusCount] = Json.reads[DeclarationsStatusCount]

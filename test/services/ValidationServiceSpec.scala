@@ -25,7 +25,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 class ValidationServiceSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with Injecting {
 
   private lazy val validationService: ValidationService = inject[ValidationService]
-  private lazy val validator: Validator = validationService.get("test-schema.json")
+  private lazy val validator: Validator                 = validationService.get("test-schema.json")
 
   "a validator" - {
 
@@ -44,7 +44,7 @@ class ValidationServiceSpec extends AnyFreeSpec with Matchers with GuiceOneAppPe
 
       val json = Json.obj()
 
-      validator.validate(json) must contain (
+      validator.validate(json) must contain(
         """object has missing required properties (["simpleDeclarationRequest"])"""
       )
     }

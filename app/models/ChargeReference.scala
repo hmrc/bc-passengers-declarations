@@ -21,7 +21,6 @@ import play.api.mvc.PathBindable
 
 import scala.collection.Map
 
-
 final case class ChargeReference(value: Int) {
 
   override def toString: String = s"X${checkCharacter}PR$paddedValue"
@@ -34,9 +33,12 @@ final case class ChargeReference(value: Int) {
 
     val equivalentValues = Seq(48, 50) ++ paddedValue.map(_.asDigit)
 
-    val remainder = weights.zip(equivalentValues).map {
-      case (a, b) => a * b
-    }.sum % 23
+    val remainder = weights
+      .zip(equivalentValues)
+      .map { case (a, b) =>
+        a * b
+      }
+      .sum % 23
 
     ChargeReference.checkCharacterMap(remainder)
   }
@@ -48,14 +50,13 @@ object ChargeReference {
 
   def apply(input: String): Option[ChargeReference] = input match {
     case ChargeReferenceFormat(checkChar, digits) =>
-
       val chargeReference = ChargeReference(digits.toInt)
 
       if (chargeReference.checkCharacter.toString == checkChar)
         Some(chargeReference)
       else
         None
-    case _ =>
+    case _                                        =>
       None
   }
 
@@ -70,9 +71,8 @@ object ChargeReference {
   }
 
   implicit lazy val writes: Writes[ChargeReference] =
-    Writes {
-      chargeReference =>
-        JsString(chargeReference.toString)
+    Writes { chargeReference =>
+      JsString(chargeReference.toString)
     }
 
   implicit def pathBindable: PathBindable[ChargeReference] = new PathBindable[ChargeReference] {

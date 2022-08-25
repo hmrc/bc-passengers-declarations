@@ -819,8 +819,6 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
                await(repository.collection.insertMany(declarations).toFuture())
 
-               implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-
                val paidDeclaration = repository.get(input).futureValue
 
                paidDeclaration.get.isUKResident.get mustBe false

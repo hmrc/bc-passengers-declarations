@@ -26,7 +26,7 @@ class MetricsOperator @Inject() (val metrics: Metrics) {
 
   lazy val registry = metrics.defaultRegistry
 
-  def startTimer() = registry.timer("submission-timer").time()
+  def startTimer()                      = registry.timer("submission-timer").time()
   def stopTimer(context: Timer.Context) = context.stop()
 
   def setCounter(name: String)(newCount: Int): Unit = {

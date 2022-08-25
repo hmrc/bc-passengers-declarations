@@ -17,14 +17,13 @@
 package models
 
 import org.scalacheck.Gen
-import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.{EitherValues, OptionValues}
 import play.api.libs.json.{JsString, Json}
 import play.api.mvc.PathBindable
-import org.scalatest.matchers.must.Matchers
 
-class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues with OptionValues
-  {
+class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues with OptionValues {
 
   "a charge reference" - {
 
@@ -35,7 +34,7 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
       val result = implicitly[PathBindable[ChargeReference]]
         .bind("chargeReference", "XHPR1234567890")
 
-      result.right.value mustEqual chargeReference
+      result.value mustEqual chargeReference
     }
 
     "must deserialise" in {
@@ -82,7 +81,7 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
     }
 
     "must fail to build from an input that is not 14 characters" in {
-      ChargeReference("1234567890123") must not be defined
+      ChargeReference("1234567890123")   must not be defined
       ChargeReference("123456789012345") must not be defined
     }
 
@@ -117,28 +116,15 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
 
     "must treat .apply and .toString as dual" in {
 
-      val gen: Gen[ChargeReference] =
-        Gen.choose(0, Int.MaxValue).map(ChargeReference(_))
-/*
-      forAll(gen) {
-        chargeReference =>
-
-          ChargeReference(chargeReference.toString).value mustEqual chargeReference
-      }*/
+      Gen.choose(0, Int.MaxValue).map(ChargeReference(_))
     }
 
     "must fail to build from inputs with invalid check characters" in {
 
-      val gen: Gen[String] = for {
+      for {
         chargeReference       <- Gen.choose(0, Int.MaxValue).map(ChargeReference(_).toString)
-        invalidCheckCharacter <- Gen.alphaUpperChar suchThat(_ != chargeReference(1))
+        invalidCheckCharacter <- Gen.alphaUpperChar suchThat (_ != chargeReference(1))
       } yield chargeReference(0) + invalidCheckCharacter + chargeReference.takeRight(12)
-/*
-      forAll(gen) {
-        invalidChargeReferenceString =>
-
-          ChargeReference(invalidChargeReferenceString) must not be defined
-      }*/
     }
   }
 }

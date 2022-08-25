@@ -22,8 +22,8 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import java.time.Instant
 
 final case class ChargeRefJson(
-  _id : String,                             
-  chargeReference: Int,
+  _id: String,
+  chargeReference: Int
 )
 
 object ChargeRefJson {
@@ -33,9 +33,8 @@ object ChargeRefJson {
   implicit lazy val reads: Reads[ChargeRefJson] = {
 
     import play.api.libs.functional.syntax._
-    (
-      (__ \ "_id").read[String] and
-        (__ \ "chargeReference").read[Int] )(ChargeRefJson.apply _)
+    ((__ \ "_id").read[String] and
+      (__ \ "chargeReference").read[Int])(ChargeRefJson.apply _)
   }
 
   implicit lazy val writes: OWrites[ChargeRefJson] = {
@@ -45,7 +44,7 @@ object ChargeRefJson {
     (
       (__ \ "_id").write[String] and
         (__ \ "chargeReference").write[Int]
-      )(unlift(ChargeRefJson.unapply))
+    )(unlift(ChargeRefJson.unapply))
   }
 
   implicit val format: OFormat[ChargeRefJson] = OFormat(
@@ -53,6 +52,3 @@ object ChargeRefJson {
     writes
   )
 }
-
-
-

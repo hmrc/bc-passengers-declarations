@@ -28,8 +28,8 @@ class Validator(schema: JsonSchema) {
 
   def validate(jsValue: JsValue): List[String] = {
 
-    val json       = JsonLoader.fromString(Json.stringify(jsValue))
-    val result     = schema.validate(json)
+    val json   = JsonLoader.fromString(Json.stringify(jsValue))
+    val result = schema.validate(json)
 
     if (result.isSuccess) {
       List.empty
@@ -41,8 +41,7 @@ class Validator(schema: JsonSchema) {
   }
 }
 
-class ValidationService @Inject() (resourceService: ResourceService,
-                                   config: Configuration) {
+class ValidationService @Inject() (resourceService: ResourceService, config: Configuration) {
 
   private val factory = JsonSchemaFactory.byDefault()
 
