@@ -16,7 +16,6 @@
 
 package models
 
-
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.freespec.AnyFreeSpec
 import play.api.Configuration
@@ -36,8 +35,8 @@ class ServiceSpec extends AnyFreeSpec with Matchers {
       val service = config.get[Service]("service")
 
       service mustEqual Service(
-        host     = "localhost",
-        port     = "443",
+        host = "localhost",
+        port = "443",
         protocol = "https"
       )
     }
@@ -45,8 +44,8 @@ class ServiceSpec extends AnyFreeSpec with Matchers {
     "must return its base url" in {
 
       val service = Service(
-        host     = "localhost",
-        port     = "443",
+        host = "localhost",
+        port = "443",
         protocol = "https"
       )
 
@@ -56,8 +55,8 @@ class ServiceSpec extends AnyFreeSpec with Matchers {
     "must return its base url through implicit conversion to string" in {
 
       val service: String = Service(
-        host     = "localhost",
-        port     = "443",
+        host = "localhost",
+        port = "443",
         protocol = "https"
       )
 

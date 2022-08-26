@@ -16,7 +16,6 @@
 
 package models.declarations
 
-
 import play.api.libs.json.{JsError, JsString, Json}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers

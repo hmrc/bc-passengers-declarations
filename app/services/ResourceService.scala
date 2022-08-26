@@ -26,12 +26,13 @@ import scala.io.Source
 
 @Singleton
 class ResourceService @Inject() (
-                                  environment: Environment
-                                ) {
+  environment: Environment
+) {
 
   def getFile(resource: String): String = {
 
-    val stream = environment.resourceAsStream(resource)
+    val stream = environment
+      .resourceAsStream(resource)
       .getOrElse(throw new IOException(s"resource not found: $resource"))
 
     Source.fromInputStream(stream).mkString

@@ -23,6 +23,6 @@ object PreviousDeclarationRequest {
 }
 
 case class PreviousDeclarationRequest(
-                                lastName: String,
-                                referenceNumber: String
-                              )
+  lastName: String,
+  referenceNumber: String
+)

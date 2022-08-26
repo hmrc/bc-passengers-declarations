@@ -28,37 +28,44 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton
-class DefaultLockRepository @Inject()(
-                                        mongoComponent: MongoComponent,
-                                        config: Configuration
-                                      )(implicit ec: ExecutionContext) extends PlayMongoRepository[Lock](
-  collectionName = "locks",
-  mongoComponent = mongoComponent,
-  domainFormat   = Lock.formats,
-  indexes = Seq(
-    IndexModel(ascending("lastUpdated"), IndexOptions().name("locks-index")
-      .expireAfter(300, TimeUnit.SECONDS)),
-  )
- ) with LockRepository {
+class DefaultLockRepository @Inject() (
+  mongoComponent: MongoComponent,
+  config: Configuration
+)(implicit ec: ExecutionContext)
+    extends PlayMongoRepository[Lock](
+      collectionName = "locks",
+      mongoComponent = mongoComponent,
+      domainFormat = Lock.formats,
+      indexes = Seq(
+        IndexModel(
+          ascending("lastUpdated"),
+          IndexOptions()
+            .name("locks-index")
+            .expireAfter(300, TimeUnit.SECONDS)
+        )
+      )
+    )
+    with LockRepository {
 
-
-  val started: Future[Unit] = {
+  val started: Future[Unit] =
     null
-  }
 
-  override def lock(id: Int): Future[Boolean] = collection.insertOne(Lock(id)).toFuture().map(_ => true).fallbackTo(Future.successful(false))
+  override def lock(id: Int): Future[Boolean] =
+    collection.insertOne(Lock(id)).toFuture().map(_ => true).fallbackTo(Future.successful(false))
 
-  override def release(id: Int): Future[Unit] = collection.findOneAndDelete(equal("_id", Codecs.toBson(id))).map(_ => ()).head().fallbackTo(Future.successful(()))
+  override def release(id: Int): Future[Unit] =
+    collection.findOneAndDelete(equal("_id", Codecs.toBson(id))).map(_ => ()).head().fallbackTo(Future.successful(()))
 
-  override def isLocked(id: Int): Future[Boolean] = collection.find(equal("_id", Codecs.toBson(id)))
-    .first().toFuture().map {
-    case locks if locks != null => true
-    case _ =>  false
-  }
+  override def isLocked(id: Int): Future[Boolean] = collection
+    .find(equal("_id", Codecs.toBson(id)))
+    .first()
+    .toFuture()
+    .map {
+      case locks if locks != null => true
+      case _                      => false
+    }
 }
-
 
 trait LockRepository {
 

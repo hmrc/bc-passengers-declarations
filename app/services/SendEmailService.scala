@@ -18,7 +18,6 @@ package services
 
 import connectors.{EmailErrorResponse, SendEmailConnector, SendEmailConnectorImpl}
 
-
 import javax.inject.Inject
 import models.declarations.Declaration
 import models.{ChargeReference, SendEmailRequest}
@@ -32,11 +31,11 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class SendEmailServiceImpl @Inject()(
-                                      val emailConnector: SendEmailConnectorImpl,
-                                      val repository: DefaultDeclarationsRepository,
-                                      val servicesConfig: ServicesConfig,
-                                    ) extends SendEmailService
+class SendEmailServiceImpl @Inject() (
+  val emailConnector: SendEmailConnectorImpl,
+  val repository: DefaultDeclarationsRepository,
+  val servicesConfig: ServicesConfig
+) extends SendEmailService
 
 trait SendEmailService {
 
@@ -45,127 +44,142 @@ trait SendEmailService {
   val repository: DeclarationsRepository
   val servicesConfig: ServicesConfig
 
-  private[services] def generateEmailRequest(emailAddress: Seq[String], parameters: Map[String, String]): SendEmailRequest = {
+  private[services] def generateEmailRequest(
+    emailAddress: Seq[String],
+    parameters: Map[String, String]
+  ): SendEmailRequest =
     SendEmailRequest(
       to = emailAddress,
       templateId = passengerTemplate,
       parameters,
       force = true
     )
-  }
 
-  private[services] def sendEmail(emailAddress: String, parameters: Map[String, String])(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val configuredEmailFirst: String = servicesConfig.getConfString("email.addressFirst", "")
+  private[services] def sendEmail(emailAddress: String, parameters: Map[String, String])(implicit
+    hc: HeaderCarrier
+  ): Future[Boolean] = {
+    val configuredEmailFirst: String  = servicesConfig.getConfString("email.addressFirst", "")
     val configuredEmailSecond: String = servicesConfig.getConfString("email.addressSecond", "")
     if (emailAddress.nonEmpty) {
-      emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map {
-        _ =>
-          logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
+      emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map { _ =>
+        logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
       }
     }
-    emailConnector.requestEmail(generateEmailRequest(Seq(configuredEmailFirst, configuredEmailSecond), parameters)).map {
-      result =>
+    emailConnector
+      .requestEmail(generateEmailRequest(Seq(configuredEmailFirst, configuredEmailSecond), parameters))
+      .map { result =>
         logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
         result
-    }
+      }
   }
 
-  private[services] def isZeroPound(data: JsObject): Boolean = {
-    data.value.apply("simpleDeclarationRequest")
+  private[services] def isZeroPound(data: JsObject): Boolean =
+    data.value
+      .apply("simpleDeclarationRequest")
       .\("requestDetail")
       .\("liabilityDetails")
-      .\("grandTotalGBP").asOpt[String]
+      .\("grandTotalGBP")
+      .asOpt[String]
       .getOrElse("")
       .equalsIgnoreCase("0.00")
-  }
 
-  private[services] def getDataOrAmendmentData(declaration: Declaration): JsObject = if (declaration.amendState.isDefined) declaration.amendData.getOrElse(throw new Exception(s"No Amendment data found")) else declaration.data
+  private[services] def getDataOrAmendmentData(declaration: Declaration): JsObject = if (
+    declaration.amendState.isDefined
+  ) declaration.amendData.getOrElse(throw new Exception(s"No Amendment data found"))
+  else declaration.data
 
   private[services] def getEmailParamsFromData(data: JsObject): Map[String, Map[String, String]] = {
     val simpleDeclarationRequest: JsValue = data.value.apply("simpleDeclarationRequest")
-    val requestCommon: JsLookupResult = simpleDeclarationRequest.\("requestCommon")
-    val requestDetail: JsLookupResult = simpleDeclarationRequest.\("requestDetail")
-    val personalDetails: JsLookupResult = requestDetail.\("personalDetails")
+    val requestCommon: JsLookupResult     = simpleDeclarationRequest.\("requestCommon")
+    val requestDetail: JsLookupResult     = simpleDeclarationRequest.\("requestDetail")
+    val personalDetails: JsLookupResult   = requestDetail.\("personalDetails")
     val declarationHeader: JsLookupResult = requestDetail.\("declarationHeader")
-    val liabilityDetails: JsLookupResult = requestDetail.\("liabilityDetails")
-    val contactDetails: JsLookupResult = requestDetail.\("contactDetails")
+    val liabilityDetails: JsLookupResult  = requestDetail.\("liabilityDetails")
+    val contactDetails: JsLookupResult    = requestDetail.\("contactDetails")
 
-    val itemsAlcohol: JsArray = requestDetail.\("declarationAlcohol") match {
+    val itemsAlcohol: JsArray    = requestDetail.\("declarationAlcohol") match {
       case JsDefined(value) => value.\("declarationItemAlcohol").as[JsArray]
-      case _: JsUndefined => Json.arr()
+      case _: JsUndefined   => Json.arr()
     }
-    val itemsTobacco: JsArray = requestDetail.\("declarationTobacco") match {
+    val itemsTobacco: JsArray    = requestDetail.\("declarationTobacco") match {
       case JsDefined(value) => value.\("declarationItemTobacco").as[JsArray]
-      case _: JsUndefined => Json.arr()
+      case _: JsUndefined   => Json.arr()
     }
     val itemsOtherGoods: JsArray = requestDetail.\("declarationOther") match {
       case JsDefined(value) => value.\("declarationItemOther").as[JsArray]
-      case _: JsUndefined => Json.arr()
+      case _: JsUndefined   => Json.arr()
     }
-    val allItems: JsArray = itemsAlcohol ++ itemsTobacco ++ itemsOtherGoods
+    val allItems: JsArray        = itemsAlcohol ++ itemsTobacco ++ itemsOtherGoods
 
-    val emailId: String = contactDetails.\("emailAddress").asOpt[String].getOrElse("")
+    val emailId: String   = contactDetails.\("emailAddress").asOpt[String].getOrElse("")
     val firstName: String = personalDetails.\("firstName").asOpt[String].getOrElse("")
-    val lastName: String = personalDetails.\("lastName").asOpt[String].getOrElse("")
-    val fullName = s"$firstName $lastName"
+    val lastName: String  = personalDetails.\("lastName").asOpt[String].getOrElse("")
+    val fullName          = s"$firstName $lastName"
 
-    val receiptDate: String = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
-    val receiptDateForParsing = receiptDate.substring(0, 10)
-    val receiptDateFormatted: String = if (receiptDate.equals("")) receiptDate else LocalDate.parse(receiptDateForParsing).toString("dd MMMM YYYY")
+    val receiptDate: String          = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
+    val receiptDateForParsing        = receiptDate.substring(0, 10)
+    val receiptDateFormatted: String =
+      if (receiptDate.equals("")) receiptDate else LocalDate.parse(receiptDateForParsing).toString("dd MMMM YYYY")
 
-      val portOfEntry: String = declarationHeader.\("portOfEntryName").asOpt[String].getOrElse("")
+    val portOfEntry: String = declarationHeader.\("portOfEntryName").asOpt[String].getOrElse("")
 
     val expectedDateOfArrival: String = declarationHeader.\("expectedDateOfArrival").asOpt[String].getOrElse("")
-    val expectedDateArr: String = if (expectedDateOfArrival.equals("")) expectedDateOfArrival else LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
+    val expectedDateArr: String       =
+      if (expectedDateOfArrival.equals("")) expectedDateOfArrival
+      else LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
 
-    val timeOfEntry: String = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
-    val formattedTimeOfEntry = if (timeOfEntry.trim.equals("")) timeOfEntry else LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
+    val timeOfEntry: String  = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
+    val formattedTimeOfEntry =
+      if (timeOfEntry.trim.equals("")) timeOfEntry else LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
 
     val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
-    val travellingFrom: String = declarationHeader.\("travellingFrom").asOpt[String].getOrElse("")
+    val travellingFrom: String  = declarationHeader.\("travellingFrom").asOpt[String].getOrElse("")
 
-    val grandTotalGBP: String = s"£${liabilityDetails.\("grandTotalGBP").asOpt[String].getOrElse("")}"
-    val totalExciseGBP: String = s"£${liabilityDetails.\("totalExciseGBP").asOpt[String].getOrElse("")}"
+    val grandTotalGBP: String   = s"£${liabilityDetails.\("grandTotalGBP").asOpt[String].getOrElse("")}"
+    val totalExciseGBP: String  = s"£${liabilityDetails.\("totalExciseGBP").asOpt[String].getOrElse("")}"
     val totalCustomsGBP: String = s"£${liabilityDetails.\("totalCustomsGBP").asOpt[String].getOrElse("")}"
-    val totalVATGBP: String = s"£${liabilityDetails.\("totalVATGBP").asOpt[String].getOrElse("")}"
+    val totalVATGBP: String     = s"£${liabilityDetails.\("totalVATGBP").asOpt[String].getOrElse("")}"
 
     val staticSubjectNonZero = "Receipt for payment on goods brought into the UK - Reference number "
-    val staticSubjectZero = "Receipt for declaration of goods brought into Northern Ireland - Reference number "
-    val dynamicSubject = if (grandTotalGBP.equalsIgnoreCase("£0.00")) staticSubjectZero else staticSubjectNonZero
-    val subject = s"$dynamicSubject $chargeReference"
+    val staticSubjectZero    = "Receipt for declaration of goods brought into Northern Ireland - Reference number "
+    val dynamicSubject       = if (grandTotalGBP.equalsIgnoreCase("£0.00")) staticSubjectZero else staticSubjectNonZero
+    val subject              = s"$dynamicSubject $chargeReference"
 
     val parameters: Map[String, String] = Map(
-      "subject" -> subject,
-      "NAME" -> fullName,
-      "DATE" -> receiptDateFormatted,
-      "PLACEOFARRIVAL" -> portOfEntry,
-      "DATEOFARRIVAL" -> expectedDateArr,
-      "TIMEOFARRIVAL" -> formattedTimeOfEntry,
-      "REFERENCE" -> chargeReference,
-      "TOTAL" -> grandTotalGBP,
-      "TOTALEXCISEGBP" -> totalExciseGBP,
+      "subject"         -> subject,
+      "NAME"            -> fullName,
+      "DATE"            -> receiptDateFormatted,
+      "PLACEOFARRIVAL"  -> portOfEntry,
+      "DATEOFARRIVAL"   -> expectedDateArr,
+      "TIMEOFARRIVAL"   -> formattedTimeOfEntry,
+      "REFERENCE"       -> chargeReference,
+      "TOTAL"           -> grandTotalGBP,
+      "TOTALEXCISEGBP"  -> totalExciseGBP,
       "TOTALCUSTOMSGBP" -> totalCustomsGBP,
-      "TOTALVATGBP" -> totalVATGBP,
-      "TRAVELLINGFROM" -> travellingFrom,
-      "AllITEMS" -> allItems.toString())
+      "TOTALVATGBP"     -> totalVATGBP,
+      "TRAVELLINGFROM"  -> travellingFrom,
+      "AllITEMS"        -> allItems.toString()
+    )
 
     Map(emailId -> parameters)
   }
 
   def constructAndSendEmail(reference: ChargeReference)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val disableZeroPoundEmail = servicesConfig.getBoolean("features.disable-zero-pound-email")
-    getDeclaration(reference).flatMap(x => {
+    getDeclaration(reference).flatMap { x =>
       val data: JsObject = getDataOrAmendmentData(x)
-      val emailParams = getEmailParamsFromData(data)
-      val emailId = emailParams.keys.head
-      val params = emailParams.getOrElse(emailId, Map.empty)
+      val emailParams    = getEmailParamsFromData(data)
+      val emailId        = emailParams.keys.head
+      val params         = emailParams.getOrElse(emailId, Map.empty)
       if (disableZeroPoundEmail && isZeroPound(data)) {
-        logger.warn("[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled")
+        logger.warn(
+          "[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled"
+        )
         Future.successful(false)
       } else {
         sendPassengerEmail(emailId, params)
       }
-    })
+    }
   }
 
   private[services] def getDeclaration(reference: ChargeReference): Future[Declaration] = {
@@ -173,11 +187,12 @@ trait SendEmailService {
     fDec.map(_.getOrElse(throw new Exception(s"Option is empty")))
   }
 
-  private[services] def sendPassengerEmail(emailAddressAll: String, parameters: Map[String, String])(implicit hc: HeaderCarrier): Future[Boolean] =
-    sendEmail(emailAddressAll, parameters) recover {
-      case _: EmailErrorResponse =>
-        logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
-        true
+  private[services] def sendPassengerEmail(emailAddressAll: String, parameters: Map[String, String])(implicit
+    hc: HeaderCarrier
+  ): Future[Boolean] =
+    sendEmail(emailAddressAll, parameters) recover { case _: EmailErrorResponse =>
+      logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
+      true
     }
 
 }

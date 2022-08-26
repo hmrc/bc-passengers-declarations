@@ -24,13 +24,12 @@ object WireMockUtils {
 
   implicit class WireMockServerImprovements(val server: WireMockServer) {
 
-    def requestsWereSent(times: Int, request: RequestPatternBuilder): Boolean = {
+    def requestsWereSent(times: Int, request: RequestPatternBuilder): Boolean =
       try {
         server.verify(times, request)
         true
       } catch {
         case _: VerificationException => false
       }
-    }
   }
 }

@@ -21,7 +21,7 @@ import models.ChargeReference
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-final case class Declaration (
+final case class Declaration(
   chargeReference: ChargeReference,
   state: State,
   amendState: Option[State] = None,
@@ -45,16 +45,16 @@ object Declaration {
 
     (
       (__ \ "_id").read[ChargeReference] and
-      (__ \ "state").read[State] and
-      (__ \ "amendState").readNullable[State] and
-      (__ \ "sentToEtmp").read[Boolean] and
-      (__ \ "amendSentToEtmp").readNullable[Boolean] and
-      (__ \ "correlationId").read[String] and
-      (__ \ "amendCorrelationId").readNullable[String] and
-      (__ \ "journeyData").read[JsObject] and
-      (__ \ "data").read[JsObject] and
-      (__ \ "amendData").readNullable[JsObject] and
-      (__ \ "lastUpdated").read[LocalDateTime]
+        (__ \ "state").read[State] and
+        (__ \ "amendState").readNullable[State] and
+        (__ \ "sentToEtmp").read[Boolean] and
+        (__ \ "amendSentToEtmp").readNullable[Boolean] and
+        (__ \ "correlationId").read[String] and
+        (__ \ "amendCorrelationId").readNullable[String] and
+        (__ \ "journeyData").read[JsObject] and
+        (__ \ "data").read[JsObject] and
+        (__ \ "amendData").readNullable[JsObject] and
+        (__ \ "lastUpdated").read[LocalDateTime]
     )(Declaration.apply _)
   }
 
@@ -64,16 +64,16 @@ object Declaration {
 
     (
       (__ \ "_id").write[ChargeReference] and
-      (__ \ "state").write[State] and
-      (__ \ "amendState").writeNullable[State] and
-      (__ \ "sentToEtmp").write[Boolean] and
-      (__ \ "amendSentToEtmp").writeNullable[Boolean] and
-      (__ \ "correlationId").write[String] and
-      (__ \ "amendCorrelationId").writeNullable[String] and
-      (__ \ "journeyData").write[JsObject] and
-      (__ \ "data").write[JsObject] and
-      (__ \ "amendData").writeNullable[JsObject] and
-      (__ \ "lastUpdated").write[LocalDateTime]
+        (__ \ "state").write[State] and
+        (__ \ "amendState").writeNullable[State] and
+        (__ \ "sentToEtmp").write[Boolean] and
+        (__ \ "amendSentToEtmp").writeNullable[Boolean] and
+        (__ \ "correlationId").write[String] and
+        (__ \ "amendCorrelationId").writeNullable[String] and
+        (__ \ "journeyData").write[JsObject] and
+        (__ \ "data").write[JsObject] and
+        (__ \ "amendData").writeNullable[JsObject] and
+        (__ \ "lastUpdated").write[LocalDateTime]
     )(unlift(Declaration.unapply))
   }
 

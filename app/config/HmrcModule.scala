@@ -24,8 +24,7 @@ import services.{ChargeReferenceService, SequentialChargeReferenceService}
 import workers._
 
 class HmrcModule extends Module {
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
-
+  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] =
     Seq(
       bind[DeclarationsRepository].to[DefaultDeclarationsRepository].eagerly,
       bind[ChargeReferenceService].to[SequentialChargeReferenceService].eagerly,
@@ -40,5 +39,4 @@ class HmrcModule extends Module {
       bind[AmendmentFailedSubmissionWorker].toSelf.eagerly,
       bind[MetricsWorker].toSelf.eagerly
     )
-  }
 }

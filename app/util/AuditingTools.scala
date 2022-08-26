@@ -26,12 +26,11 @@ class AuditingTools @Inject() (
   @Named("appName") val appName: String
 ) {
 
-  def buildDeclarationSubmittedDataEvent(data: JsObject) = {
+  def buildDeclarationSubmittedDataEvent(data: JsObject) =
     ExtendedDataEvent(
       auditSource = appName,
-      auditType =  "passengerdeclaration",
+      auditType = "passengerdeclaration",
       tags = Map("transactionName" -> "passengerdeclarationsubmitted"),
       detail = Json.toJsObject(data.as[Etmp])
     )
-  }
 }

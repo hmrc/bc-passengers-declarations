@@ -19,19 +19,19 @@ package models
 import play.api.libs.json._
 
 case class DeclarationResponse(
-                                euCountryCheck: String,
-                                arrivingNI: Boolean,
-                                isOver17: Boolean,
-                                isUKResident: Option[Boolean],
-                                isPrivateTravel: Boolean,
-                                userInformation: JsObject,
-                                calculation: JsObject,
-                                liabilityDetails: JsObject,
-                                oldPurchaseProductInstances: JsArray,
-                                amendmentCount: Option[Int],
-                                deltaCalculation: Option[JsObject],
-                                amendState: Option[String]
-                              )
+  euCountryCheck: String,
+  arrivingNI: Boolean,
+  isOver17: Boolean,
+  isUKResident: Option[Boolean],
+  isPrivateTravel: Boolean,
+  userInformation: JsObject,
+  calculation: JsObject,
+  liabilityDetails: JsObject,
+  oldPurchaseProductInstances: JsArray,
+  amendmentCount: Option[Int],
+  deltaCalculation: Option[JsObject],
+  amendState: Option[String]
+)
 
 object DeclarationResponse {
 
@@ -52,7 +52,7 @@ object DeclarationResponse {
         (__ \ "journeyData" \ "amendmentCount").readNullable[Int] and
         (__ \ "journeyData" \ "deltaCalculation").readNullable[JsObject] and
         (__ \ "amendState").readNullable[String]
-      )(DeclarationResponse.apply _)
+    )(DeclarationResponse.apply _)
   }
 
   implicit lazy val writes: OWrites[DeclarationResponse] = Json.writes[DeclarationResponse]

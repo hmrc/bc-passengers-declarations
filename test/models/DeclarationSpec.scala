@@ -64,7 +64,6 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
-
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
         "state"         -> State.PendingPayment.toString(),
@@ -75,7 +74,21 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
         "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj(), None, lastUpdated)) mustEqual json
+      Json.toJson(
+        Declaration(
+          ChargeReference(1234567890),
+          State.PendingPayment,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj(),
+          None,
+          lastUpdated
+        )
+      ) mustEqual json
     }
 
     "must deserialise with amendState and amendSentToEtmp" in {
@@ -85,15 +98,15 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
       val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
       val json = Json.obj(
-        "_id"         -> "XHPR1234567890",
-        "state"              -> State.PendingPayment.toString,
-        "amendState"         -> State.PendingPayment.toString,
-        "sentToEtmp"         -> false,
-        "amendSentToEtmp"    -> false,
-        "correlationId"      -> correlationId,
-        "journeyData"        -> Json.obj(),
-        "data"               -> Json.obj(),
-        "lastUpdated"        -> Json.toJson(lastUpdated)
+        "_id"             -> "XHPR1234567890",
+        "state"           -> State.PendingPayment.toString,
+        "amendState"      -> State.PendingPayment.toString,
+        "sentToEtmp"      -> false,
+        "amendSentToEtmp" -> false,
+        "correlationId"   -> correlationId,
+        "journeyData"     -> Json.obj(),
+        "data"            -> Json.obj(),
+        "lastUpdated"     -> Json.toJson(lastUpdated)
       )
 
       json.as[Declaration] mustEqual
@@ -117,23 +130,36 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
       val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
 
       val amendCorrelationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
-      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
-
+      val correlationId      = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
       val json = Json.obj(
-        "_id"           -> "XHPR1234567890",
-        "state"                -> State.PendingPayment.toString,
-        "amendState"           -> State.PendingPayment.toString,
-        "sentToEtmp"           -> false,
-        "amendSentToEtmp"      -> false,
-        "correlationId"        -> correlationId,
-        "amendCorrelationId"   -> amendCorrelationId,
-        "journeyData"          -> Json.obj(),
-        "data"                 -> Json.obj(),
-        "lastUpdated"          -> Json.toJson(lastUpdated)
+        "_id"                -> "XHPR1234567890",
+        "state"              -> State.PendingPayment.toString,
+        "amendState"         -> State.PendingPayment.toString,
+        "sentToEtmp"         -> false,
+        "amendSentToEtmp"    -> false,
+        "correlationId"      -> correlationId,
+        "amendCorrelationId" -> amendCorrelationId,
+        "journeyData"        -> Json.obj(),
+        "data"               -> Json.obj(),
+        "lastUpdated"        -> Json.toJson(lastUpdated)
       )
 
-      Json.toJson(Declaration(ChargeReference(1234567890), State.PendingPayment, Some(State.PendingPayment), sentToEtmp = false, amendSentToEtmp = Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), None, lastUpdated)) mustEqual json
+      Json.toJson(
+        Declaration(
+          ChargeReference(1234567890),
+          State.PendingPayment,
+          Some(State.PendingPayment),
+          sentToEtmp = false,
+          amendSentToEtmp = Some(false),
+          correlationId,
+          Some(amendCorrelationId),
+          Json.obj(),
+          Json.obj(),
+          None,
+          lastUpdated
+        )
+      ) mustEqual json
     }
   }
 }
