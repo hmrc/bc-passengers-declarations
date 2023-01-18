@@ -9,15 +9,16 @@ import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus, PreviousDeclarationRequest}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
-
 import play.api.Configuration
-import services.{ChargeReferenceService,ValidationService}
+import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
 import akka.stream.Materializer
 import org.mongodb.scala.Document
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.Indexes.ascending
 import org.scalatest.Inside.inside
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 
@@ -26,11 +27,12 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
   val validationService: ValidationService = app.injector.instanceOf[ValidationService]
   implicit val mat: Materializer = app.injector.instanceOf[Materializer]
   val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
+  val configuration: Configuration = app.injector.instanceOf[Configuration]
 
   override def repository = new DefaultDeclarationsRepository(mongoComponent,
     chargeReferenceService,
     validationService,
-    Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+    configuration
     )
 
 
@@ -40,16 +42,18 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
   override def beforeEach(): Unit = {
     super.beforeEach()
+    await(repository.collection.drop().toFuture())
+    await(repository.ensureIndexes)
   }
 
   override def afterEach(): Unit = {
     super.afterEach()
     await(repository.collection.drop().toFuture())
+    await(repository.ensureIndexes)
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
-    await(repository.collection.drop().toFuture())
   }
 
 
@@ -545,11 +549,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
     val amendCorrelationId = "fe28db96-d9db-4220-9e12-f2d267267c30"
 
-    await(repository.collection.drop().toFuture())
-
     "must insert and remove declarations" in {
-
-      await(repository.collection.drop().toFuture())
 
       val app = builder.build()
 
@@ -574,8 +574,6 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
     }
 
     "must update a declaration record with amendments and remove record" in {
-
-      await(repository.collection.drop().toFuture())
 
       val app = builder.build()
 
@@ -605,21 +603,20 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
         "must ensure indices" in {
 
-          await(repository.collection.drop().toFuture())
-
           val app = builder.build()
 
           running(app) {
 
             val indices : Seq[Document] = await(repository.collection.listIndexes().toFuture())
 
-
             indices.map(
-              doc =>
-                doc.toJson.contains("lastUpdated") match {
-                  case true => doc.toJson.contains("declarations-last-updated-index") mustEqual true
-                  case false if doc.toJson.contains("state")  => doc.toJson.contains("declarations-state-index") mustEqual true
-                  case _ => doc.toJson.contains("test-DeclarationsRepositorySpec.declarations") mustEqual true
+              doc => {
+                doc.toJson match {
+                  case json if json.contains("lastUpdated")  => json.contains("declarations-last-updated-index") mustEqual true
+                  case json if json.contains("state")  => json.contains("declarations-state-index") mustEqual true
+                  case json if json.contains("amendState") => json.contains("declarations-amendState-index") mustEqual true
+                  case _ => doc.toJson.contains("_id") mustEqual true
+                }
                 }
             )
 
@@ -631,7 +628,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
             "must provide a stream of unpaid declarations" in {
 
-              await(repository.collection.drop().toFuture())
+
 
               val app = builder.configure("declarations.payment-no-response-timeout" -> "1 minute").build()
 
@@ -662,7 +659,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
              "must provide a stream of unpaid amendments" in {
 
-             await(repository.collection.drop().toFuture())
+
 
             val app = builder.configure("declarations.payment-no-response-timeout" -> "1 minute").build()
 
@@ -692,7 +689,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
           "must set the state of a declaration" in {
 
-               await(repository.collection.drop().toFuture())
+
 
                val app = builder.build()
 
@@ -710,7 +707,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
           "must set the state of an amendment" in {
 
-               await(repository.collection.drop().toFuture())
+
 
                val app = builder.build()
 
@@ -730,7 +727,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
                "must provide a stream of paid declarations" in {
 
-                 await(repository.collection.drop().toFuture())
+
 
                  val app = builder.build()
 
@@ -762,7 +759,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
         "must provide a stream of paid amendments" in {
 
-          await(repository.collection.drop().toFuture())
+
 
               val app = builder.build()
 
@@ -795,7 +792,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
                "must provide a declaration when a paid declaration or amendment is present for given chargeReference, lastName, identification number" in {
 
-                 await(repository.collection.drop().toFuture())
+
 
              val app = builder.build()
 
@@ -831,7 +828,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
              "must not provide a declaration when payment failed for declaration or amendment is present for given chargeReference, lastName, identification number" in {
 
-               await(repository.collection.drop().toFuture())
+
 
                val app = builder.build()
 
@@ -854,7 +851,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
              "must provide a declaration when paid declaration & pending payment amendment is present for given chargeReference, lastName" in {
 
-               await(repository.collection.drop().toFuture())
+
 
                val deltaCalculation = Some(Json.obj("excise" -> "10.00", "customs" -> "10.50", "vat" -> "10.50", "allTax" -> "31.00"))
 
@@ -882,7 +879,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
              "must provide a stream of submission-failed declarations" in {
 
-               await(repository.collection.drop().toFuture())
+
 
                val app = builder.build()
 
@@ -909,7 +906,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
               "must fail to insert invalid declarations" in {
 
-                await(repository.collection.drop().toFuture())
+
 
                   val app = builder.build()
 
@@ -924,7 +921,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
                     "reads the correct number of declaration states" in {
 
-                    await(repository.collection.drop().toFuture())
+
 
                     val app = builder.build()
 

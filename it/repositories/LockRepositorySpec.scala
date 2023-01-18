@@ -1,12 +1,10 @@
 package repositories
 
-import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import models.Lock
 import org.mongodb.scala.Document
 import play.api.inject.guice.GuiceApplicationBuilder
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
-import play.api.Configuration
 import play.api.test.Helpers.{await, running}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
@@ -16,22 +14,25 @@ import play.api.test.Helpers._
 
 class LockRepositorySpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[Lock] {
 
-  override def repository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+  override def repository = new DefaultLockRepository(mongoComponent)
   override def beforeAll(): Unit = {
     super.beforeAll()
   }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
+    await(repository.collection.drop().toFuture())
+    await(repository.ensureIndexes)
   }
 
   override def afterEach(): Unit = {
     super.afterEach()
+    await(repository.collection.drop().toFuture())
+    await(repository.ensureIndexes)
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
-    await(repository.collection.drop().toFuture())
   }
 
   private lazy val builder: GuiceApplicationBuilder =
@@ -40,8 +41,6 @@ class LockRepositorySpec extends IntegrationSpecCommonBase with DefaultPlayMongo
   "a lock repository" should  {
 
     "must provide a lock for an id when that id is not already locked" in {
-
-      await(repository.collection.drop().toFuture())
 
       val app = builder.build()
 
@@ -54,8 +53,6 @@ class LockRepositorySpec extends IntegrationSpecCommonBase with DefaultPlayMongo
     }
 
     "must not provide a lock for an id when that id is already locked" in {
-
-      await(repository.collection.drop().toFuture())
 
       val app = builder.build()
 
@@ -71,8 +68,6 @@ class LockRepositorySpec extends IntegrationSpecCommonBase with DefaultPlayMongo
 
     "must ensure indices" in {
 
-      await(repository.collection.drop().toFuture())
-
       val ttl = 123
       val app =
         builder
@@ -84,18 +79,17 @@ class LockRepositorySpec extends IntegrationSpecCommonBase with DefaultPlayMongo
         val indices : Seq[Document] = await(repository.collection.listIndexes().toFuture())
 
         indices.map(
-          doc =>
-          doc.toJson.contains("lastUpdated") match {
-            case true => doc.toJson.contains("locks-index") mustEqual true
-            case _ => doc.toJson.contains("test-LockRepositorySpec.locks") mustEqual true
+          doc => {
+            doc.toJson match {
+              case json if json.contains("lastUpdated")  => json.contains("locks-index") mustEqual true
+              case _ => doc.toJson.contains("_id") mustEqual true
+            }
           }
         )
       }
     }
 
     "must return the lock status for an id" in {
-
-      await(repository.collection.drop().toFuture())
 
       val app = builder.build()
 

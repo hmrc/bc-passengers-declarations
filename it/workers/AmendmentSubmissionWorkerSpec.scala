@@ -39,7 +39,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
 
-  def lockRepository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+  def lockRepository = new DefaultLockRepository(mongoComponent)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
