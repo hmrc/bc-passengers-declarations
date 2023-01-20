@@ -1,9 +1,23 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package repositories
 
 import java.time.{LocalDateTime, ZoneOffset}
 import akka.stream.scaladsl.Sink
-import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus, PreviousDeclarationRequest}
@@ -17,8 +31,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
 import akka.stream.Materializer
 import org.mongodb.scala.Document
-import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import org.mongodb.scala.model.Indexes.ascending
 import org.scalatest.Inside.inside
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 
@@ -556,7 +568,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
       running(app) {
 
 
-        val document = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.right.get
+        val document = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.toOption.get
 
         inside(document) {
           case Declaration(id, _, None, false, None, cid, None, jd, data, None, _) =>
@@ -580,7 +592,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
       running(app) {
 
 
-        val declarationDocument = repository.insert(inputData, correlationId, sentToEtmp = false).futureValue.right.get
+        val declarationDocument = repository.insert(inputData, correlationId, sentToEtmp = false).futureValue.toOption.get
         val amendmentDocument = repository.insertAmendment(inputAmendmentData, amendCorrelationId, declarationDocument.chargeReference).futureValue
         journeyData.deepMerge(Json.obj("amendmentCount" -> 1))
 
@@ -611,11 +623,11 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
             indices.map(
               doc => {
-                doc.toJson match {
+                doc.toJson() match {
                   case json if json.contains("lastUpdated")  => json.contains("declarations-last-updated-index") mustEqual true
                   case json if json.contains("state")  => json.contains("declarations-state-index") mustEqual true
                   case json if json.contains("amendState") => json.contains("declarations-amendState-index") mustEqual true
-                  case _ => doc.toJson.contains("_id") mustEqual true
+                  case _ => doc.toJson().contains("_id") mustEqual true
                 }
                 }
             )
@@ -653,7 +665,9 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
                 val staleDeclarations = repository.unpaidDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
                 staleDeclarations.size mustEqual 5
-                staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2), ChargeReference(5), ChargeReference(6))
+                staleDeclarations.map(_.chargeReference) must contain.allOf(
+                  ChargeReference(0), ChargeReference(1), ChargeReference(2), ChargeReference(5), ChargeReference(6)
+                )
               }
             }
 
@@ -683,7 +697,9 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
               val staleDeclarations = await(repository.unpaidAmendments.runWith(Sink.collection[Declaration, List[Declaration]]))
 
               staleDeclarations.size mustEqual 5
-              staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2), ChargeReference(5), ChargeReference(6))
+              staleDeclarations.map(_.chargeReference) must contain.allOf(
+                ChargeReference(0), ChargeReference(1), ChargeReference(2), ChargeReference(5), ChargeReference(6)
+              )
             }
           }
 
@@ -695,7 +711,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
                running(app) {
 
-                 val declaration = await(repository.insert(inputData, "testId",sentToEtmp = false)).right.get
+                 val declaration = await(repository.insert(inputData, "testId",sentToEtmp = false)).toOption.get
 
                  await(repository.setState(declaration.chargeReference, State.Paid))
 
@@ -714,7 +730,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
                running(app) {
 
 
-                 val declaration = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.right.get
+                 val declaration = repository.insert(inputData, correlationId,sentToEtmp = false).futureValue.toOption.get
                  val amendment = repository.insertAmendment(inputAmendmentData, correlationId, declaration.chargeReference).futureValue
 
                  await(repository.setAmendState(amendment.chargeReference, State.Paid))
@@ -751,7 +767,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
                    val paidDeclarations = repository.paidDeclarationsForEtmp.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
-                   paidDeclarations.map(_.chargeReference) must contain only (
+                   paidDeclarations.map(_.chargeReference) must contain.only(
                      ChargeReference(1), ChargeReference(3), ChargeReference(4), ChargeReference(5), ChargeReference(6)
                    )
                  }
@@ -784,7 +800,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
 
                 val paidDeclarations = repository.paidAmendmentsForEtmp.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
-                paidDeclarations.map(_.chargeReference) must contain only (
+                paidDeclarations.map(_.chargeReference) must contain.only(
                   ChargeReference(1), ChargeReference(3), ChargeReference(5)
                 )
               }
@@ -900,7 +916,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
                  val failedDeclarations = repository.failedDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
 
                  failedDeclarations.size mustEqual 2
-                 failedDeclarations.map(_.chargeReference) must contain only (ChargeReference(0), ChargeReference(2))
+                 failedDeclarations.map(_.chargeReference) must contain.only(ChargeReference(0), ChargeReference(2))
                }
              }
 
@@ -913,7 +929,7 @@ class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultP
                   running(app) {
 
 
-                    val errors = repository.insert(Json.obj(), correlationId,sentToEtmp=false).futureValue.left.get
+                    val errors = repository.insert(Json.obj(), correlationId,sentToEtmp=false).futureValue.swap.toOption.get
 
                     errors must contain ("""object has missing required properties (["receiptDate","requestParameters"])""")
                   }

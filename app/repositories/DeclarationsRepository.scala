@@ -37,7 +37,6 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.postfixOps
 import uk.gov.hmrc.mongo.play.json.Codecs
 
 @Singleton

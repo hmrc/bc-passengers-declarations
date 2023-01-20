@@ -18,8 +18,7 @@ package connectors
 
 import helpers.BaseSpec
 import models.SendEmailRequest
-import org.mockito.Matchers
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers._
 import play.api.libs.json.JsValue
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
@@ -29,17 +28,19 @@ import scala.concurrent.Future
 
 class SendEmailConnectorSpec extends BaseSpec {
 
-  trait Setup {
+  private trait Setup {
+    val mockHttpClient: HttpClient = mock[HttpClient]
+
     val connector: SendEmailConnector = new SendEmailConnector {
       override val sendEmailURL     = "testSendEmailURL"
-      override val http: HttpClient = mockWSHttp
+      override val http: HttpClient = mockHttpClient
 
     }
   }
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val verifiedEmail: Array[String]   = Array("verified@email.com")
+  val verifiedEmail: Seq[String]     = Seq("verified@email.com")
   val returnLinkURL                  = "testReturnLinkUrl"
   val emailRequest: SendEmailRequest = SendEmailRequest(
     to = verifiedEmail,
@@ -66,17 +67,24 @@ class SendEmailConnectorSpec extends BaseSpec {
   "send Email" should {
 
     "Return a true when a request to send a new email is successful" in new Setup {
-      mockHttpPOST(connector.sendEmailURL, HttpResponse.apply(ACCEPTED, ""))
+      when(
+        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
+          any(),
+          any(),
+          any(),
+          any()
+        )
+      ).thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
       await(connector.requestEmail(emailRequest)) shouldBe true
     }
 
     "Fail the future when the service cannot be found" in new Setup {
       when(
-        mockWSHttp.POST[JsValue, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any()
+        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
+          any(),
+          any(),
+          any(),
+          any()
         )
       )
         .thenReturn(Future.failed(new NotFoundException("error")))
@@ -86,11 +94,11 @@ class SendEmailConnectorSpec extends BaseSpec {
 
     "Fail the future when we send a bad request" in new Setup {
       when(
-        mockWSHttp.POST[JsValue, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any()
+        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
+          any(),
+          any(),
+          any(),
+          any()
         )
       )
         .thenReturn(Future.failed(new BadRequestException("error")))
@@ -100,11 +108,11 @@ class SendEmailConnectorSpec extends BaseSpec {
 
     "Fail the future when EVS returns an internal server error" in new Setup {
       when(
-        mockWSHttp.POST[JsValue, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any()
+        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
+          any(),
+          any(),
+          any(),
+          any()
         )
       )
         .thenReturn(Future.failed(new InternalServerException("error")))
@@ -114,11 +122,11 @@ class SendEmailConnectorSpec extends BaseSpec {
 
     "Fail the future when EVS returns an upstream error" in new Setup {
       when(
-        mockWSHttp.POST[JsValue, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any()
+        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
+          any(),
+          any(),
+          any(),
+          any()
         )
       )
         .thenReturn(Future.failed(new BadGatewayException("error")))
@@ -128,11 +136,11 @@ class SendEmailConnectorSpec extends BaseSpec {
 
     "Fail the future when EVS returns another HTTP exception e.g 501" in new Setup {
       when(
-        mockWSHttp.POST[JsValue, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any(),
-          Matchers.any()
+        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
+          any(),
+          any(),
+          any(),
+          any()
         )
       )
         .thenReturn(Future.failed(new NotImplementedException("error")))

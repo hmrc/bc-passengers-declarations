@@ -21,6 +21,7 @@ import models.SendEmailRequest
 import play.api.i18n.Lang.logger.logger
 import play.api.http.Status._
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.http.HttpClient
 

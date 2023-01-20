@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package workers
 
 
@@ -114,7 +130,7 @@ class DeclarationDeletionWorkerSpec extends IntegrationSpecCommonBase with Defau
 
         val worker = new DeclarationDeletionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-        val declaration = worker.tap.pull.futureValue.get
+        val declaration = worker.tap.pull().futureValue.get
         declaration.chargeReference.value mustEqual 1
       }
     }
@@ -140,8 +156,8 @@ class DeclarationDeletionWorkerSpec extends IntegrationSpecCommonBase with Defau
 
         val worker = new DeclarationDeletionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
+        worker.tap.pull().futureValue
+        worker.tap.pull().futureValue
 
 
 
@@ -174,9 +190,9 @@ class DeclarationDeletionWorkerSpec extends IntegrationSpecCommonBase with Defau
 
           val worker = new DeclarationDeletionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-          worker.tap.pull.futureValue
-          worker.tap.pull.futureValue
-          worker.tap.pull.futureValue
+          worker.tap.pull().futureValue
+          worker.tap.pull().futureValue
+          worker.tap.pull().futureValue
         }
       }
   }

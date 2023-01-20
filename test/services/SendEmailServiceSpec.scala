@@ -20,8 +20,7 @@ import connectors.SendEmailConnector
 import helpers.BaseSpec
 import models._
 import models.declarations.{Declaration, State}
-import org.mockito.Matchers._
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.any
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import play.api.Application
 import play.api.http.Status.ACCEPTED
@@ -49,9 +48,9 @@ class SendEmailServiceSpec extends BaseSpec {
 
   private val mockSendEmailConnector: SendEmailConnector = new SendEmailConnector {
     override val sendEmailURL     = "testSendEmailURL"
-    override val http: HttpClient = mockWSHttp
+    override val http: HttpClient = mock[HttpClient]
 
-    when(mockWSHttp.POST[JsValue, HttpResponse](any(), any(), any())(any(), any(), any(), any()))
+    when(http.POST[JsValue, HttpResponse](any(), any(), any())(any(), any(), any(), any()))
       .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
 
   }
@@ -472,6 +471,19 @@ class SendEmailServiceSpec extends BaseSpec {
         |    },
         |    "lastUpdated" : "2020-12-07T01:37:30.832"
         |}""".stripMargin
+
+    val allItems: String = "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\"," +
+      "\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\"," +
+      "\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\"," +
+      "\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false," +
+      "\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\"," +
+      "\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\"," +
+      "\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\"," +
+      "\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\"," +
+      "\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\"," +
+      "\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\"," +
+      "\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\"," +
+      "\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false," + "\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
   }
 
   "generateEmailRequest" should {
@@ -542,7 +554,7 @@ class SendEmailServiceSpec extends BaseSpec {
         "TOTALCUSTOMSGBP" -> "£1000.00",
         "TOTALVATGBP"     -> "£1000.00",
         "TRAVELLINGFROM"  -> "NON_EU Only",
-        "AllITEMS"        -> "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false,\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\",\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\",\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false,\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
+        "AllITEMS"        -> allItems
       )
       val emailParams     = Map(emailService.testEmail -> localTestParams)
       emailService.getEmailParamsFromData(Json.parse(emailService.data).as[JsObject]) shouldBe emailParams
@@ -564,7 +576,7 @@ class SendEmailServiceSpec extends BaseSpec {
         "TOTALCUSTOMSGBP" -> "£1000.00",
         "TOTALVATGBP"     -> "£1000.00",
         "TRAVELLINGFROM"  -> "NON_EU Only",
-        "AllITEMS"        -> "[{\"commodityDescription\":\"Beer\",\"volume\":\"35\",\"goodsValue\":\"3254.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"2446.06\",\"VATRESClaimed\":false,\"exciseGBP\":\"28.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"494.81\"},{\"commodityDescription\":\"Cigarettes\",\"quantity\":\"357\",\"goodsValue\":\"753.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"566.03\",\"VATRESClaimed\":false,\"exciseGBP\":\"108.96\",\"customsGBP\":\"283.01\",\"vatGBP\":\"191.60\"},{\"commodityDescription\":\"Adult clothing\",\"quantity\":\"1\",\"goodsValue\":\"258.00\",\"valueCurrency\":\"USD\",\"valueCurrencyName\":\"USA dollars (USD)\",\"originCountry\":\"BQ\",\"originCountryName\":\"Bonaire, Sint Eustatius and Saba\",\"exchangeRate\":\"1.3303\",\"exchangeRateDate\":\"2020-12-07\",\"goodsValueGBP\":\"193.94\",\"VATRESClaimed\":false,\"exciseGBP\":\"0.00\",\"customsGBP\":\"0.00\",\"vatGBP\":\"0.00\"}]"
+        "AllITEMS"        -> allItems
       )
       val amendData: JsObject = Json.parse(emailService.data).as[JsObject] deepMerge Json.obj(
         "amendmentLiabilityDetails" -> Json.obj(

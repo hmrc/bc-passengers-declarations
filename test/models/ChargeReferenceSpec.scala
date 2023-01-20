@@ -124,7 +124,7 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
       for {
         chargeReference       <- Gen.choose(0, Int.MaxValue).map(ChargeReference(_).toString)
         invalidCheckCharacter <- Gen.alphaUpperChar suchThat (_ != chargeReference(1))
-      } yield chargeReference(0) + invalidCheckCharacter + chargeReference.takeRight(12)
+      } yield s"${chargeReference(0)}$invalidCheckCharacter${chargeReference.takeRight(12)}"
     }
   }
 }
