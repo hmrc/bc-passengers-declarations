@@ -24,6 +24,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.{HttpClient, HttpResponse}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class SendEmailConnectorSpec extends BaseSpec {

@@ -28,8 +28,7 @@ import repositories.{DeclarationsRepository, DefaultDeclarationsRepository}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SendEmailServiceImpl @Inject() (
   val emailConnector: SendEmailConnectorImpl,
@@ -56,7 +55,8 @@ trait SendEmailService {
     )
 
   private[services] def sendEmail(emailAddress: String, parameters: Map[String, String])(implicit
-    hc: HeaderCarrier
+    hc: HeaderCarrier,
+    ec: ExecutionContext
   ): Future[Boolean] = {
     val configuredEmailFirst: String  = servicesConfig.getConfString("email.addressFirst", "")
     val configuredEmailSecond: String = servicesConfig.getConfString("email.addressSecond", "")
@@ -164,7 +164,9 @@ trait SendEmailService {
     Map(emailId -> parameters)
   }
 
-  def constructAndSendEmail(reference: ChargeReference)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def constructAndSendEmail(
+    reference: ChargeReference
+  )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Boolean] = {
     val disableZeroPoundEmail = servicesConfig.getBoolean("features.disable-zero-pound-email")
     getDeclaration(reference).flatMap { x =>
       val data: JsObject = getDataOrAmendmentData(x)
@@ -182,13 +184,16 @@ trait SendEmailService {
     }
   }
 
-  private[services] def getDeclaration(reference: ChargeReference): Future[Declaration] = {
+  private[services] def getDeclaration(
+    reference: ChargeReference
+  )(implicit ec: ExecutionContext): Future[Declaration] = {
     val fDec: Future[Option[Declaration]] = repository.get(reference)
     fDec.map(_.getOrElse(throw new Exception(s"Option is empty")))
   }
 
   private[services] def sendPassengerEmail(emailAddressAll: String, parameters: Map[String, String])(implicit
-    hc: HeaderCarrier
+    hc: HeaderCarrier,
+    ec: ExecutionContext
   ): Future[Boolean] =
     sendEmail(emailAddressAll, parameters) recover { case _: EmailErrorResponse =>
       logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")

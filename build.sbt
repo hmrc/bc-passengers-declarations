@@ -28,7 +28,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(publishingSettings: _*)
   .settings(
     coverageExcludedPackages := "<empty>;Reverse.*;..*Routes.*;",
-    coverageMinimumStmtTotal := 94,
+    coverageMinimumStmtTotal := 95,
     coverageFailOnMinimum := true
   )
 

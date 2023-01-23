@@ -25,8 +25,7 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.http.HttpClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
 class EmailErrorResponse() extends NoStackTrace
@@ -43,7 +42,9 @@ trait SendEmailConnector extends HttpErrorFunctions {
   val http: HttpClient
   val sendEmailURL: String
 
-  def requestEmail(EmailRequest: SendEmailRequest)(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def requestEmail(
+    EmailRequest: SendEmailRequest
+  )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Boolean] = {
     def errorMsg(status: String, ex: HttpException) = {
       logger.error(
         s"PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to send email returned a $status - email not sent - reason = ${ex.getMessage}"
