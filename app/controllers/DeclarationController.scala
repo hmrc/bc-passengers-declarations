@@ -92,7 +92,7 @@ class DeclarationController @Inject() (
                 case State.SubmissionFailed =>
                   Future.successful(Conflict)
                 case _                      =>
-                  paymentNotification.status match {
+                  (paymentNotification.status: String @unchecked) match {
                     case PaymentNotification.Successful =>
                       sendEmailService.constructAndSendEmail(paymentNotification.reference)
                       repository.setState(paymentNotification.reference, State.Paid).map(_ => Accepted)
@@ -137,7 +137,7 @@ class DeclarationController @Inject() (
         case State.SubmissionFailed =>
           Future.successful(Conflict)
         case _                      =>
-          paymentNotification.status match {
+          (paymentNotification.status: String @unchecked) match {
             case PaymentNotification.Successful =>
               sendEmailService.constructAndSendEmail(paymentNotification.reference)
               repository.setAmendState(paymentNotification.reference, State.Paid).map(_ => Accepted)
