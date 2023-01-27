@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ class DeclarationController @Inject() (
                 case State.SubmissionFailed =>
                   Future.successful(Conflict)
                 case _                      =>
-                  paymentNotification.status match {
+                  (paymentNotification.status: String @unchecked) match {
                     case PaymentNotification.Successful =>
                       sendEmailService.constructAndSendEmail(paymentNotification.reference)
                       repository.setState(paymentNotification.reference, State.Paid).map(_ => Accepted)
@@ -137,7 +137,7 @@ class DeclarationController @Inject() (
         case State.SubmissionFailed =>
           Future.successful(Conflict)
         case _                      =>
-          paymentNotification.status match {
+          (paymentNotification.status: String @unchecked) match {
             case PaymentNotification.Successful =>
               sendEmailService.constructAndSendEmail(paymentNotification.reference)
               repository.setAmendState(paymentNotification.reference, State.Paid).map(_ => Accepted)

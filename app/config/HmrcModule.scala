@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,17 @@ import workers._
 class HmrcModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] =
     Seq(
-      bind[DeclarationsRepository].to[DefaultDeclarationsRepository].eagerly,
-      bind[ChargeReferenceService].to[SequentialChargeReferenceService].eagerly,
-      bind[LockRepository].to[DefaultLockRepository].eagerly,
+      bind[DeclarationsRepository].to[DefaultDeclarationsRepository].eagerly(),
+      bind[ChargeReferenceService].to[SequentialChargeReferenceService].eagerly(),
+      bind[LockRepository].to[DefaultLockRepository].eagerly(),
       bind[CircuitBreaker].qualifiedWith("des").toProvider[DesCircuitBreakerProvider],
-      bind[DeclarationSubmissionWorker].toSelf.eagerly,
-      bind[AmendmentSubmissionWorker].toSelf.eagerly,
-      bind[PaymentTimeoutWorker].toSelf.eagerly,
-      bind[AmendmentPaymentTimeoutWorker].toSelf.eagerly,
-      bind[DeclarationDeletionWorker].toSelf.eagerly,
-      bind[FailedSubmissionWorker].toSelf.eagerly,
-      bind[AmendmentFailedSubmissionWorker].toSelf.eagerly,
-      bind[MetricsWorker].toSelf.eagerly
+      bind[DeclarationSubmissionWorker].toSelf.eagerly(),
+      bind[AmendmentSubmissionWorker].toSelf.eagerly(),
+      bind[PaymentTimeoutWorker].toSelf.eagerly(),
+      bind[AmendmentPaymentTimeoutWorker].toSelf.eagerly(),
+      bind[DeclarationDeletionWorker].toSelf.eagerly(),
+      bind[FailedSubmissionWorker].toSelf.eagerly(),
+      bind[AmendmentFailedSubmissionWorker].toSelf.eagerly(),
+      bind[MetricsWorker].toSelf.eagerly()
     )
 }

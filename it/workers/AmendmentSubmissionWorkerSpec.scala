@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package workers
 
 import akka.stream.Materializer
@@ -39,7 +55,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
 
-  def lockRepository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+  def lockRepository = new DefaultLockRepository(mongoComponent)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -306,7 +322,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
 
         val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
-        val (declaration, response) = worker.tap.pull.futureValue.get
+        val (declaration, response) = worker.tap.pull().futureValue.get
         declaration.chargeReference mustEqual ChargeReference(3)
         declaration.amendCorrelationId.get mustBe amendmentCorrelationId
         response mustEqual SubmissionResponse.Submitted
@@ -346,13 +362,13 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
 
         val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
-        worker.tap.pull.futureValue
+        worker.tap.pull().futureValue
 
         val startTime = LocalDateTime.now(ZoneOffset.UTC)
 
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
+        worker.tap.pull().futureValue
+        worker.tap.pull().futureValue
+        worker.tap.pull().futureValue
 
         val endTime = LocalDateTime.now(ZoneOffset.UTC)
 
@@ -390,7 +406,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
           val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
 
-          val (declaration, _) = worker.tap.pull.futureValue.get
+          val (declaration, _) = worker.tap.pull().futureValue.get
           declaration.chargeReference mustEqual ChargeReference(2)
         }
       }
@@ -421,7 +437,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
 
           val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
-          val (declaration, _) = worker.tap.pull.futureValue.get
+          val (declaration, _) = worker.tap.pull().futureValue.get
           declaration.chargeReference mustEqual ChargeReference(1)
         }
       }
@@ -457,7 +473,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
               val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
 
-              val (declaration, result) = worker.tap.pull.futureValue.get
+              val (declaration, result) = worker.tap.pull().futureValue.get
               result mustEqual SubmissionResponse.ParsingException
 
               repository.get(declaration.chargeReference).futureValue must be(defined)
@@ -496,7 +512,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
                 val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
 
-                val (declaration, result) = worker.tap.pull.futureValue.get
+                val (declaration, result) = worker.tap.pull().futureValue.get
                 result mustEqual SubmissionResponse.Failed
 
                 repository.get(declaration.chargeReference).futureValue.get.amendState.get mustBe State.SubmissionFailed
@@ -529,8 +545,8 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
 
                  val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
-                 worker.tap.pull.futureValue
-                 worker.tap.pull.futureValue
+                 worker.tap.pull().futureValue
+                 worker.tap.pull().futureValue
                }
              }
 
@@ -570,7 +586,7 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
 
                 val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
-                val (declaration, result) = worker.tap.pull.futureValue.get
+                val (declaration, result) = worker.tap.pull().futureValue.get
 
                 val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
                 val desRequest = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))

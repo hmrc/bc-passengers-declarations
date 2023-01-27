@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package helpers
 
-import mocks.WSHttpMock
 import org.scalatest.BeforeAndAfterEach
-import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.MockitoSugar
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 
-trait BaseSpec extends AnyWordSpec with Matchers with MockitoSugar with BeforeAndAfterEach with WSHttpMock
+trait BaseSpec extends AnyWordSpec with Matchers with MockitoSugar with BeforeAndAfterEach

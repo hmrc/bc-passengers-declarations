@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.{implicitConversions, postfixOps}
 import uk.gov.hmrc.mongo.play.json.Codecs
 
 @Singleton
@@ -64,7 +63,7 @@ class DefaultDeclarationsRepository @Inject() (
     validationService.get(schema)
   }
 
-  val started: Future[Unit] = null
+  val started: Future[Unit] = Future.unit
 
   override def insert(
     data: JsObject,

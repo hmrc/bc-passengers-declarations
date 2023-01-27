@@ -1,3 +1,18 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package workers
 
@@ -209,7 +224,7 @@ class DeclarationSubmissionWorkerSpec extends IntegrationSpecCommonBase with Wir
 
         val worker = new DeclarationSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
-        val (declaration, response) = worker.tap.pull.futureValue.get
+        val (declaration, response) = worker.tap.pull().futureValue.get
          declaration.chargeReference mustEqual ChargeReference(2)
          response mustEqual SubmissionResponse.Submitted
       }
@@ -307,7 +322,7 @@ class DeclarationSubmissionWorkerSpec extends IntegrationSpecCommonBase with Wir
         val worker = new DeclarationSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
 
-        val (declaration, _) = worker.tap.pull.futureValue.get
+        val (declaration, _) = worker.tap.pull().futureValue.get
         declaration.chargeReference mustEqual ChargeReference(2)
       }
     }
@@ -393,7 +408,7 @@ class DeclarationSubmissionWorkerSpec extends IntegrationSpecCommonBase with Wir
 
 
 
-        val (declaration, _) = worker.tap.pull.futureValue.get
+        val (declaration, _) = worker.tap.pull().futureValue.get
 
         val expectedJsonBody: String = Json.obj(
           "auditSource" -> "bc-passengers-declarations",
@@ -457,7 +472,7 @@ class DeclarationSubmissionWorkerSpec extends IntegrationSpecCommonBase with Wir
         val worker = new DeclarationSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
 
-        val (declaration, result) = worker.tap.pull.futureValue.get
+        val (declaration, result) = worker.tap.pull().futureValue.get
         result mustEqual SubmissionResponse.ParsingException
 
         repository.get(declaration.chargeReference).futureValue must be(defined)
@@ -500,7 +515,7 @@ class DeclarationSubmissionWorkerSpec extends IntegrationSpecCommonBase with Wir
         val worker = new DeclarationSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
 
-        val (declaration, result) = worker.tap.pull.futureValue.get
+        val (declaration, result) = worker.tap.pull().futureValue.get
         result mustEqual SubmissionResponse.Failed
 
         repository.get(declaration.chargeReference).futureValue.get.state mustEqual State.SubmissionFailed
@@ -550,7 +565,7 @@ class DeclarationSubmissionWorkerSpec extends IntegrationSpecCommonBase with Wir
         val worker = new DeclarationSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
 
 
-        val (declaration, result) = worker.tap.pull.futureValue.get
+        val (declaration, result) = worker.tap.pull().futureValue.get
 
         val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
         val desRequest = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))

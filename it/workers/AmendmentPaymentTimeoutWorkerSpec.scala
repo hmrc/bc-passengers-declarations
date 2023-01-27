@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package workers
 
 import com.typesafe.config.ConfigFactory
@@ -33,7 +49,7 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
 
-  def lockRepository = new DefaultLockRepository(mongoComponent, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+  def lockRepository = new DefaultLockRepository(mongoComponent)
 
 
   override def beforeAll(): Unit = {
@@ -92,13 +108,13 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
         TestLoggerAppender.queue.dequeueAll(_ => true)
 
         val staleDeclarations = List(
-          worker.tap.pull.futureValue.get,
-          worker.tap.pull.futureValue.get,
-          worker.tap.pull.futureValue.get
+          worker.tap.pull().futureValue.get,
+          worker.tap.pull().futureValue.get,
+          worker.tap.pull().futureValue.get
         )
 
-        staleDeclarations.map(_.chargeReference) must contain allOf (ChargeReference(0), ChargeReference(1), ChargeReference(2))
-        staleDeclarations.map(_.amendState) must contain allOf (Some(State.PendingPayment), Some(State.PaymentFailed), Some(State.PaymentCancelled))
+        staleDeclarations.map(_.chargeReference) must contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
+        staleDeclarations.map(_.amendState) must contain.allOf(Some(State.PendingPayment), Some(State.PaymentFailed), Some(State.PaymentCancelled))
 
         val logEvents = List(
           TestLoggerAppender.queue.dequeue(),
@@ -106,7 +122,9 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
           TestLoggerAppender.queue.dequeue()
         )
 
-        logEvents.map(_.getMessage) must contain allOf ("Declaration 2 is stale, deleting", "Declaration 1 is stale, deleting" , "Declaration 0 is stale, deleting")
+        logEvents.map(_.getMessage) must contain.allOf(
+          "Declaration 2 is stale, deleting", "Declaration 1 is stale, deleting" , "Declaration 0 is stale, deleting"
+        )
 
         val remaining = repository.collection.find().toFuture().map(_.toList).futureValue
 
@@ -138,7 +156,7 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
         val worker = new AmendmentPaymentTimeoutWorker(repository, lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-        val declaration = worker.tap.pull.futureValue.get
+        val declaration = worker.tap.pull().futureValue.get
         declaration.chargeReference.value mustEqual 1
 
       }
@@ -165,8 +183,8 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
         val worker = new AmendmentPaymentTimeoutWorker(repository, lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
 
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
+        worker.tap.pull().futureValue
+        worker.tap.pull().futureValue
 
         lockRepository.isLocked(0).futureValue mustEqual true
         lockRepository.isLocked(1).futureValue mustEqual true

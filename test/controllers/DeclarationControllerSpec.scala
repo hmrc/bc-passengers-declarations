@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package controllers
 
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationResponse, PreviousDeclarationRequest}
-import org.mockito.Mockito
-import org.mockito.Mockito._
-import org.mockito.Matchers.{eq => eqTo, _}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.MockitoSugar
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
@@ -50,8 +48,8 @@ class DeclarationControllerSpec
   private val lockRepository = mock[LockRepository]
 
   override def beforeEach(): Unit = {
-    Mockito.reset(declarationsRepository)
-    Mockito.reset(lockRepository)
+    reset(declarationsRepository)
+    reset(lockRepository)
   }
 
   override lazy val app: Application = {
@@ -585,7 +583,7 @@ class DeclarationControllerSpec
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
-          verify(declarationsRepository, never()).setState(eqTo(chargeReference), any())
+          verify(declarationsRepository, never).setState(eqTo(chargeReference), any())
           verify(lockRepository, times(1)).release(1234567890)
         }
       }
@@ -869,7 +867,7 @@ class DeclarationControllerSpec
           val result = route(app, request).value
 
           status(result) mustBe ACCEPTED
-          verify(declarationsRepository, never()).setAmendState(eqTo(chargeReference), any())
+          verify(declarationsRepository, never).setAmendState(eqTo(chargeReference), any())
           verify(lockRepository, times(1)).release(1234567890)
         }
       }
