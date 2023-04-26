@@ -1,10 +1,10 @@
 import uk.gov.hmrc.DefaultBuildSettings._
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
 val appName = "bc-passengers-declarations"
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
+  .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
   .settings(inConfig(IntegrationTest)(itSettings): _*)
@@ -25,7 +25,6 @@ lazy val microservice = Project(appName, file("."))
     ),
     routesImport += "models.ChargeReference"
   )
-  .settings(publishingSettings: _*)
   .settings(
     coverageExcludedPackages := "<empty>;Reverse.*;..*Routes.*;",
     coverageMinimumStmtTotal := 95,
