@@ -64,6 +64,8 @@ class DeclarationControllerSpec
       .build()
   }
 
+  private val chargeReferenceNumber = 1234567890
+
   "submit" - {
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
@@ -74,7 +76,7 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED and a Declaration" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
           val message = Json.obj("simpleDeclarationRequest" -> Json.obj("foo" -> "bar"))
 
@@ -139,7 +141,7 @@ class DeclarationControllerSpec
 
         val requestBody = Json.obj()
 
-        val chargeReference = ChargeReference(1234567890)
+        val chargeReference = ChargeReference(chargeReferenceNumber)
 
         val declaration = Declaration(
           chargeReference,
@@ -193,7 +195,7 @@ class DeclarationControllerSpec
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
-    val chargeReference = ChargeReference(1234567890)
+    val chargeReference = ChargeReference(chargeReferenceNumber)
 
     val userInformation = Json.obj(
       "firstName"            -> "Harry",
@@ -401,9 +403,9 @@ class DeclarationControllerSpec
             .withJsonBody(inputAmendmentData)
             .withHeaders("X-Correlation-ID" -> correlationId)
 
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
           when(declarationsRepository.insertAmendment(inputAmendmentData, correlationId, chargeReference))
             .thenReturn(Future.successful(declaration))
@@ -416,7 +418,7 @@ class DeclarationControllerSpec
 
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).insertAmendment(inputAmendmentData, correlationId, chargeReference)
-            verify(lockRepository, times(1)).release(1234567890)
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }
@@ -444,6 +446,53 @@ class DeclarationControllerSpec
     }
 
     "when given an invalid request" - {
+
+      "must throw an exception when there is an invalid chargeReference id in amendment data" in {
+
+        val invalidAmendmentData: JsObject = Json.obj(
+          "journeyData"              -> journeyData,
+          "simpleDeclarationRequest" -> Json.obj(
+            "requestCommon" -> Json.obj(
+              "receiptDate"              -> "2020-12-29T14:00:08Z",
+              "requestParameters"        -> Json.arr(
+                Json.obj(
+                  "paramName"  -> "REGIME",
+                  "paramValue" -> "PNGR"
+                )
+              ),
+              "acknowledgementReference" -> (chargeReference.toString + "0")
+            ),
+            "requestDetail" -> Json.obj(
+              "liabilityDetails"  -> Json.obj(
+                "grandTotalGBP" -> "1362.46"
+              ),
+              "customerReference" -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+              "declarationHeader" -> Json.obj(
+                "travellingFrom"   -> "NON_EU Only",
+                "ukVATPaid"        -> false,
+                "uccRelief"        -> false,
+                "ukExcisePaid"     -> false,
+                "chargeReference"  -> "AAAAAAAAAAAAAA",
+                "onwardTravelGBNI" -> "GB",
+                "messageTypes"     -> Json.obj("messageType" -> "DeclarationAmend")
+              ),
+              "contactDetails"    -> Json.obj("emailAddress" -> "abc@gmail.com")
+            )
+          )
+        )
+
+        val request   = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
+          .withJsonBody(invalidAmendmentData)
+          .withHeaders("X-Correlation-ID" -> correlationId)
+
+        val exception = route(app, request).value
+
+        val result = intercept[Exception] {
+          status(exception)
+        }
+
+        result.getMessage mustBe "unable to extract charge reference:AAAAAAAAAAAAAA"
+      }
 
       "must return BAD_REQUEST when not supplied with a correlation id in the headers" in {
 
@@ -499,7 +548,7 @@ class DeclarationControllerSpec
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
-    val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
+    val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Successful")
 
     "when a matching declaration is found" - {
 
@@ -507,7 +556,7 @@ class DeclarationControllerSpec
 
         "must return LOCKED" in {
 
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(false))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -515,7 +564,7 @@ class DeclarationControllerSpec
           val result = route(app, request).value
 
           status(result) mustBe LOCKED
-          verify(lockRepository, never).release(1234567890)
+          verify(lockRepository, never).release(chargeReferenceNumber)
         }
       }
 
@@ -523,7 +572,7 @@ class DeclarationControllerSpec
 
         "must return CONFLICT" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
           val declaration = Declaration(
             chargeReference,
@@ -537,9 +586,9 @@ class DeclarationControllerSpec
             Json.obj()
           )
 
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
@@ -549,7 +598,7 @@ class DeclarationControllerSpec
           val result = route(app, request).value
 
           status(result) mustBe CONFLICT
-          verify(lockRepository, times(1)).release(1234567890)
+          verify(lockRepository, times(1)).release(chargeReferenceNumber)
         }
       }
 
@@ -557,7 +606,7 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED without modifying the declaration" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
           val declaration = Declaration(
             chargeReference,
@@ -571,9 +620,9 @@ class DeclarationControllerSpec
             Json.obj()
           )
 
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(declaration)))
@@ -584,7 +633,7 @@ class DeclarationControllerSpec
 
           status(result) mustBe ACCEPTED
           verify(declarationsRepository, never).setState(eqTo(chargeReference), any())
-          verify(lockRepository, times(1)).release(1234567890)
+          verify(lockRepository, times(1)).release(chargeReferenceNumber)
         }
       }
 
@@ -592,7 +641,7 @@ class DeclarationControllerSpec
 
         "must throw an exception" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
           val declaration = Declaration(
             chargeReference,
@@ -610,9 +659,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(declaration)))
           when(declarationsRepository.setState(chargeReference, State.Paid))
             .thenReturn(Future.failed(new Exception))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -623,7 +672,7 @@ class DeclarationControllerSpec
             status(result)
           }
 
-          verify(lockRepository, times(1)).release(1234567890)
+          verify(lockRepository, times(1)).release(chargeReferenceNumber)
         }
       }
 
@@ -631,9 +680,9 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED and update the state to Paid" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
-          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
+          val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Successful")
 
           val declaration        = Declaration(
             chargeReference,
@@ -652,9 +701,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(declaration)))
           when(declarationsRepository.setState(chargeReference, State.Paid))
             .thenReturn(Future.successful(updatedDeclaration))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -665,7 +714,7 @@ class DeclarationControllerSpec
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
             verify(declarationsRepository, times(1)).setState(chargeReference, State.Paid)
-            verify(lockRepository, times(1)).release(1234567890)
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }
@@ -674,9 +723,9 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED and update the state to PaymentFailed" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
-          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Failed")
+          val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Failed")
 
           val declaration        = Declaration(
             chargeReference,
@@ -695,9 +744,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(declaration)))
           when(declarationsRepository.setState(chargeReference, State.PaymentFailed))
             .thenReturn(Future.successful(updatedDeclaration))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -708,7 +757,7 @@ class DeclarationControllerSpec
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
             verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentFailed)
-            verify(lockRepository, times(1)).release(1234567890)
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }
@@ -717,9 +766,9 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED and update the state to PaymentCancelled" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
-          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Cancelled")
+          val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Cancelled")
 
           val declaration        = Declaration(
             chargeReference,
@@ -738,9 +787,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(declaration)))
           when(declarationsRepository.setState(chargeReference, State.PaymentCancelled))
             .thenReturn(Future.successful(updatedDeclaration))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -751,7 +800,7 @@ class DeclarationControllerSpec
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
             verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentCancelled)
-            verify(lockRepository, times(1)).release(1234567890)
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }
@@ -761,13 +810,13 @@ class DeclarationControllerSpec
 
       "must return NOT_FOUND" in {
 
-        val chargeReference = ChargeReference(1234567890)
+        val chargeReference = ChargeReference(chargeReferenceNumber)
 
         when(declarationsRepository.get(chargeReference))
           .thenReturn(Future.successful(None))
-        when(lockRepository.lock(1234567890))
+        when(lockRepository.lock(chargeReferenceNumber))
           .thenReturn(Future.successful(true))
-        when(lockRepository.release(1234567890))
+        when(lockRepository.release(chargeReferenceNumber))
           .thenReturn(Future.successful(()))
 
         val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -797,7 +846,7 @@ class DeclarationControllerSpec
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
-    val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
+    val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Successful")
 
     "when a matching amendment is found" - {
 
@@ -805,7 +854,7 @@ class DeclarationControllerSpec
 
         "must return CONFLICT" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
           val amendment = Declaration(
             chargeReference,
@@ -820,9 +869,9 @@ class DeclarationControllerSpec
             amendData = Some(Json.obj())
           )
 
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(amendment)))
@@ -832,7 +881,7 @@ class DeclarationControllerSpec
           val result = route(app, request).value
 
           status(result) mustBe CONFLICT
-          verify(lockRepository, times(1)).release(1234567890)
+          verify(lockRepository, times(1)).release(chargeReferenceNumber)
         }
       }
 
@@ -840,7 +889,7 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED without modifying the amendment" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
           val amendment = Declaration(
             chargeReference,
@@ -855,9 +904,9 @@ class DeclarationControllerSpec
             amendData = Some(Json.obj())
           )
 
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
           when(declarationsRepository.get(chargeReference))
             .thenReturn(Future.successful(Some(amendment)))
@@ -868,7 +917,7 @@ class DeclarationControllerSpec
 
           status(result) mustBe ACCEPTED
           verify(declarationsRepository, never).setAmendState(eqTo(chargeReference), any())
-          verify(lockRepository, times(1)).release(1234567890)
+          verify(lockRepository, times(1)).release(chargeReferenceNumber)
         }
       }
 
@@ -876,7 +925,7 @@ class DeclarationControllerSpec
 
         "must throw an exception" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
           val amendment = Declaration(
             chargeReference,
@@ -895,9 +944,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(amendment)))
           when(declarationsRepository.setAmendState(chargeReference, State.Paid))
             .thenReturn(Future.failed(new Exception))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -908,7 +957,7 @@ class DeclarationControllerSpec
             status(result)
           }
 
-          verify(lockRepository, times(1)).release(1234567890)
+          verify(lockRepository, times(1)).release(chargeReferenceNumber)
         }
       }
 
@@ -916,9 +965,9 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED and update the amendState to Paid" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
-          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Successful")
+          val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Successful")
 
           val amendment        = Declaration(
             chargeReference,
@@ -938,9 +987,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(amendment)))
           when(declarationsRepository.setAmendState(chargeReference, State.Paid))
             .thenReturn(Future.successful(updatedAmendment))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -951,7 +1000,7 @@ class DeclarationControllerSpec
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
             verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.Paid)
-            verify(lockRepository, times(1)).release(1234567890)
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }
@@ -960,9 +1009,9 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED and update the amendState to PaymentFailed" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
-          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Failed")
+          val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Failed")
 
           val amendment        = Declaration(
             chargeReference,
@@ -982,9 +1031,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(amendment)))
           when(declarationsRepository.setAmendState(chargeReference, State.PaymentFailed))
             .thenReturn(Future.successful(updatedAmendment))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -995,7 +1044,7 @@ class DeclarationControllerSpec
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
             verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentFailed)
-            verify(lockRepository, times(1)).release(1234567890)
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }
@@ -1004,9 +1053,9 @@ class DeclarationControllerSpec
 
         "must return ACCEPTED and update the amendState to PaymentCancelled" in {
 
-          val chargeReference = ChargeReference(1234567890)
+          val chargeReference = ChargeReference(chargeReferenceNumber)
 
-          val jsonPayload = Json.obj("reference" -> ChargeReference(1234567890), "status" -> "Cancelled")
+          val jsonPayload = Json.obj("reference" -> ChargeReference(chargeReferenceNumber), "status" -> "Cancelled")
 
           val amendment        = Declaration(
             chargeReference,
@@ -1026,9 +1075,9 @@ class DeclarationControllerSpec
             .thenReturn(Future.successful(Some(amendment)))
           when(declarationsRepository.setAmendState(chargeReference, State.PaymentCancelled))
             .thenReturn(Future.successful(updatedAmendment))
-          when(lockRepository.lock(1234567890))
+          when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
-          when(lockRepository.release(1234567890))
+          when(lockRepository.release(chargeReferenceNumber))
             .thenReturn(Future.successful(()))
 
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
@@ -1039,7 +1088,7 @@ class DeclarationControllerSpec
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
             verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentCancelled)
-            verify(lockRepository, times(1)).release(1234567890)
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }

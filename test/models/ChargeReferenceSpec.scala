@@ -25,11 +25,13 @@ import play.api.mvc.PathBindable
 
 class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues with OptionValues {
 
+  val chargeReferenceNumber = 1234567890
+
   "a charge reference" - {
 
     "must be bound from a url path" in {
 
-      val chargeReference = ChargeReference(1234567890)
+      val chargeReference = ChargeReference(chargeReferenceNumber)
 
       val result = implicitly[PathBindable[ChargeReference]]
         .bind("chargeReference", "XHPR1234567890")
@@ -37,16 +39,24 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
       result.value mustEqual chargeReference
     }
 
+    "must unbind" in {
+
+      val result = implicitly[PathBindable[ChargeReference]]
+        .unbind("chargeReference", ChargeReference(chargeReferenceNumber))
+
+      result mustEqual "XHPR1234567890"
+    }
+
     "must deserialise" in {
 
-      val chargeReference = ChargeReference(123)
+      val chargeReference = ChargeReference(chargeReferenceNumber)
 
       JsString(chargeReference.toString).as[ChargeReference] mustEqual chargeReference
     }
 
     "must serialise" in {
 
-      val chargeReference = ChargeReference(123)
+      val chargeReference = ChargeReference(chargeReferenceNumber)
 
       Json.toJson(chargeReference) mustEqual JsString(chargeReference.toString)
     }
@@ -120,11 +130,12 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
     }
 
     "must fail to build from inputs with invalid check characters" in {
+      val remainingCharactersLength = 12
 
       for {
         chargeReference       <- Gen.choose(0, Int.MaxValue).map(ChargeReference(_).toString)
         invalidCheckCharacter <- Gen.alphaUpperChar suchThat (_ != chargeReference(1))
-      } yield s"${chargeReference(0)}$invalidCheckCharacter${chargeReference.takeRight(12)}"
+      } yield s"${chargeReference(0)}$invalidCheckCharacter${chargeReference.takeRight(remainingCharactersLength)}"
     }
   }
 }
