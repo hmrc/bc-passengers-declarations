@@ -26,9 +26,9 @@ import connectors.HODConnector
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, SubmissionResponse}
+import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
-
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
@@ -43,137 +43,135 @@ import utils.WireMockUtils.WireMockServerImprovements
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
+class AmendmentSubmissionWorkerSpec
+    extends IntegrationSpecCommonBase
+    with WireMockHelper
+    with DefaultPlayMongoRepositorySupport[Declaration] {
 
-  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val validationService: ValidationService           = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer                     = app.injector.instanceOf[Materializer]
   val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
 
-  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+  override val repository = new DefaultDeclarationsRepository(
+    mongoComponent,
     chargeReferenceService,
     validationService,
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
 
-  def lockRepository = new DefaultLockRepository(mongoComponent)
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-  }
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-  }
-
-  override def afterEach(): Unit = {
-    super.afterEach()
-    await(repository.collection.drop().toFuture())
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    await(repository.collection.drop().toFuture())
-  }
+  val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
       "workers.amendment-submission-worker.interval" -> "1 second",
-      "microservice.services.des.port" -> server.port(),
-      "auditing.consumer.baseUri.port" -> server.port(),
-      "auditing.enabled" -> "true"
+      "microservice.services.des.port"               -> server.port(),
+      "auditing.consumer.baseUri.port"               -> server.port(),
+      "auditing.enabled"                             -> "true"
     )
 
   val data: JsObject = Json.obj(
     "simpleDeclarationRequest" -> Json.obj(
       "requestCommon" -> Json.obj(
-        "receiptDate" -> "2020-12-29T12:14:08Z",
+        "receiptDate"              -> "2020-12-29T12:14:08Z",
         "acknowledgementReference" -> "XJPR57685246250",
-        "requestParameters" -> Json.arr(
+        "requestParameters"        -> Json.arr(
           Json.obj(
-            "paramName" -> "REGIME",
+            "paramName"  -> "REGIME",
             "paramValue" -> "PNGR"
           )
         )
       ),
       "requestDetail" -> Json.obj(
-        "customerReference" -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
-        "personalDetails" -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
-        "contactDetails" -> Json.obj("emailAddress" -> "abc@gmail.com"),
-        "declarationHeader" -> Json.obj("chargeReference" -> "XJPR5768524625", "portOfEntry" -> "LHR", "portOfEntryName" -> "Heathrow Airport", "expectedDateOfArrival" -> "2018-05-31", "timeOfEntry" -> "13:20", "messageTypes" -> Json.obj("messageType" -> "DeclarationCreate"), "travellingFrom" -> "NON_EU Only", "onwardTravelGBNI" -> "GB", "uccRelief" -> false, "ukVATPaid" -> false, "ukExcisePaid" -> false),
+        "customerReference"  -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+        "personalDetails"    -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
+        "contactDetails"     -> Json.obj("emailAddress" -> "abc@gmail.com"),
+        "declarationHeader"  -> Json.obj(
+          "chargeReference"       -> "XJPR5768524625",
+          "portOfEntry"           -> "LHR",
+          "portOfEntryName"       -> "Heathrow Airport",
+          "expectedDateOfArrival" -> "2018-05-31",
+          "timeOfEntry"           -> "13:20",
+          "messageTypes"          -> Json.obj("messageType" -> "DeclarationCreate"),
+          "travellingFrom"        -> "NON_EU Only",
+          "onwardTravelGBNI"      -> "GB",
+          "uccRelief"             -> false,
+          "ukVATPaid"             -> false,
+          "ukExcisePaid"          -> false
+        ),
         "declarationTobacco" -> Json.obj(
-          "totalExciseTobacco" -> "100.54",
-          "totalCustomsTobacco" -> "192.94",
-          "totalVATTobacco" -> "149.92",
+          "totalExciseTobacco"     -> "100.54",
+          "totalCustomsTobacco"    -> "192.94",
+          "totalVATTobacco"        -> "149.92",
           "declarationItemTobacco" -> Json.arr(
             Json.obj(
               "commodityDescription" -> "Cigarettes",
-              "quantity" -> "250",
-              "goodsValue" -> "400.00",
-              "valueCurrency" -> "USD",
-              "valueCurrencyName" -> "USA dollars (USD)",
-              "originCountry" -> "US",
-              "originCountryName" -> "United States of America",
-              "exchangeRate" -> "1.20",
-              "exchangeRateDate" -> "2018-10-29",
-              "goodsValueGBP" -> "304.11",
-              "VATRESClaimed" -> false,
-              "exciseGBP" -> "74.00",
-              "customsGBP" -> "79.06",
-              "vatGBP" -> "91.43"
+              "quantity"             -> "250",
+              "goodsValue"           -> "400.00",
+              "valueCurrency"        -> "USD",
+              "valueCurrencyName"    -> "USA dollars (USD)",
+              "originCountry"        -> "US",
+              "originCountryName"    -> "United States of America",
+              "exchangeRate"         -> "1.20",
+              "exchangeRateDate"     -> "2018-10-29",
+              "goodsValueGBP"        -> "304.11",
+              "VATRESClaimed"        -> false,
+              "exciseGBP"            -> "74.00",
+              "customsGBP"           -> "79.06",
+              "vatGBP"               -> "91.43"
             )
           )
         ),
         "declarationAlcohol" -> Json.obj(
-          "totalExciseAlcohol" -> "2.00",
-          "totalCustomsAlcohol" -> "0.30",
-          "totalVATAlcohol" -> "18.70",
+          "totalExciseAlcohol"     -> "2.00",
+          "totalCustomsAlcohol"    -> "0.30",
+          "totalVATAlcohol"        -> "18.70",
           "declarationItemAlcohol" -> Json.arr(
             Json.obj(
               "commodityDescription" -> "Cider",
-              "volume" -> "5",
-              "goodsValue" -> "120.00",
-              "valueCurrency" -> "USD",
-              "valueCurrencyName" -> "USA dollars (USD)",
-              "originCountry" -> "US",
-              "originCountryName" -> "United States of America",
-              "exchangeRate" -> "1.20",
-              "exchangeRateDate" -> "2018-10-29",
-              "goodsValueGBP" -> "91.23",
-              "VATRESClaimed" -> false,
-              "exciseGBP" -> "2.00",
-              "customsGBP" -> "0.30",
-              "vatGBP" -> "18.70"
+              "volume"               -> "5",
+              "goodsValue"           -> "120.00",
+              "valueCurrency"        -> "USD",
+              "valueCurrencyName"    -> "USA dollars (USD)",
+              "originCountry"        -> "US",
+              "originCountryName"    -> "United States of America",
+              "exchangeRate"         -> "1.20",
+              "exchangeRateDate"     -> "2018-10-29",
+              "goodsValueGBP"        -> "91.23",
+              "VATRESClaimed"        -> false,
+              "exciseGBP"            -> "2.00",
+              "customsGBP"           -> "0.30",
+              "vatGBP"               -> "18.70"
             )
           )
         ),
-        "declarationOther" -> Json.obj(
-          "totalExciseOther" -> "0.00",
-          "totalCustomsOther" -> "341.65",
-          "totalVATOther" -> "556.41",
+        "declarationOther"   -> Json.obj(
+          "totalExciseOther"     -> "0.00",
+          "totalCustomsOther"    -> "341.65",
+          "totalVATOther"        -> "556.41",
           "declarationItemOther" -> Json.arr(
             Json.obj(
               "commodityDescription" -> "Television",
-              "quantity" -> "1",
-              "goodsValue" -> "1500.00",
-              "valueCurrency" -> "USD",
-              "valueCurrencyName" -> "USA dollars (USD)",
-              "originCountry" -> "US",
-              "originCountryName" -> "United States of America",
-              "exchangeRate" -> "1.20",
-              "exchangeRateDate" -> "2018-10-29",
-              "goodsValueGBP" -> "1140.42",
-              "VATRESClaimed" -> false,
-              "exciseGBP" -> "0.00",
-              "customsGBP" -> "159.65",
-              "vatGBP" -> "260.01"
+              "quantity"             -> "1",
+              "goodsValue"           -> "1500.00",
+              "valueCurrency"        -> "USD",
+              "valueCurrencyName"    -> "USA dollars (USD)",
+              "originCountry"        -> "US",
+              "originCountryName"    -> "United States of America",
+              "exchangeRate"         -> "1.20",
+              "exchangeRateDate"     -> "2018-10-29",
+              "goodsValueGBP"        -> "1140.42",
+              "VATRESClaimed"        -> false,
+              "exciseGBP"            -> "0.00",
+              "customsGBP"           -> "159.65",
+              "vatGBP"               -> "260.01"
             )
           )
         ),
-        "liabilityDetails" -> Json.obj(
-          "totalExciseGBP" -> "102.54",
+        "liabilityDetails"   -> Json.obj(
+          "totalExciseGBP"  -> "102.54",
           "totalCustomsGBP" -> "534.89",
-          "totalVATGBP" -> "725.03",
-          "grandTotalGBP" -> "1362.46"
+          "totalVATGBP"     -> "725.03",
+          "grandTotalGBP"   -> "1362.46"
         )
       )
     )
@@ -182,135 +180,196 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
   val amendData: JsObject = Json.obj(
     "simpleDeclarationRequest" -> Json.obj(
       "requestCommon" -> Json.obj(
-        "receiptDate" -> "2020-12-29T12:14:08Z",
+        "receiptDate"              -> "2020-12-29T12:14:08Z",
         "acknowledgementReference" -> "XJPR57685246250",
-        "requestParameters" -> Json.arr(
+        "requestParameters"        -> Json.arr(
           Json.obj(
-            "paramName" -> "REGIME",
+            "paramName"  -> "REGIME",
             "paramValue" -> "PNGR"
           )
         )
       ),
       "requestDetail" -> Json.obj(
-        "customerReference" -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
-        "personalDetails" -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
-        "contactDetails" -> Json.obj("emailAddress" -> "abc@gmail.com"),
-        "declarationHeader" -> Json.obj("chargeReference" -> "XJPR5768524625", "portOfEntry" -> "LHR", "portOfEntryName" -> "Heathrow Airport", "expectedDateOfArrival" -> "2018-05-31", "timeOfEntry" -> "13:20", "messageTypes" -> Json.obj("messageType" -> "DeclarationCreate"), "travellingFrom" -> "NON_EU Only", "onwardTravelGBNI" -> "GB", "uccRelief" -> false, "ukVATPaid" -> false, "ukExcisePaid" -> false),
-        "declarationTobacco" -> Json.obj(
-          "totalExciseTobacco" -> "100.54",
-          "totalCustomsTobacco" -> "192.94",
-          "totalVATTobacco" -> "149.92",
+        "customerReference"         -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+        "personalDetails"           -> Json.obj("firstName" -> "Harry", "lastName" -> "Potter"),
+        "contactDetails"            -> Json.obj("emailAddress" -> "abc@gmail.com"),
+        "declarationHeader"         -> Json.obj(
+          "chargeReference"       -> "XJPR5768524625",
+          "portOfEntry"           -> "LHR",
+          "portOfEntryName"       -> "Heathrow Airport",
+          "expectedDateOfArrival" -> "2018-05-31",
+          "timeOfEntry"           -> "13:20",
+          "messageTypes"          -> Json.obj("messageType" -> "DeclarationCreate"),
+          "travellingFrom"        -> "NON_EU Only",
+          "onwardTravelGBNI"      -> "GB",
+          "uccRelief"             -> false,
+          "ukVATPaid"             -> false,
+          "ukExcisePaid"          -> false
+        ),
+        "declarationTobacco"        -> Json.obj(
+          "totalExciseTobacco"     -> "100.54",
+          "totalCustomsTobacco"    -> "192.94",
+          "totalVATTobacco"        -> "149.92",
           "declarationItemTobacco" -> Json.arr(
             Json.obj(
               "commodityDescription" -> "Cigarettes",
-              "quantity" -> "250",
-              "goodsValue" -> "400.00",
-              "valueCurrency" -> "USD",
-              "valueCurrencyName" -> "USA dollars (USD)",
-              "originCountry" -> "US",
-              "originCountryName" -> "United States of America",
-              "exchangeRate" -> "1.20",
-              "exchangeRateDate" -> "2018-10-29",
-              "goodsValueGBP" -> "304.11",
-              "VATRESClaimed" -> false,
-              "exciseGBP" -> "74.00",
-              "customsGBP" -> "79.06",
-              "vatGBP" -> "91.43"
+              "quantity"             -> "250",
+              "goodsValue"           -> "400.00",
+              "valueCurrency"        -> "USD",
+              "valueCurrencyName"    -> "USA dollars (USD)",
+              "originCountry"        -> "US",
+              "originCountryName"    -> "United States of America",
+              "exchangeRate"         -> "1.20",
+              "exchangeRateDate"     -> "2018-10-29",
+              "goodsValueGBP"        -> "304.11",
+              "VATRESClaimed"        -> false,
+              "exciseGBP"            -> "74.00",
+              "customsGBP"           -> "79.06",
+              "vatGBP"               -> "91.43"
             )
           )
         ),
-        "declarationAlcohol" -> Json.obj(
-          "totalExciseAlcohol" -> "2.00",
-          "totalCustomsAlcohol" -> "0.30",
-          "totalVATAlcohol" -> "18.70",
+        "declarationAlcohol"        -> Json.obj(
+          "totalExciseAlcohol"     -> "2.00",
+          "totalCustomsAlcohol"    -> "0.30",
+          "totalVATAlcohol"        -> "18.70",
           "declarationItemAlcohol" -> Json.arr(
             Json.obj(
               "commodityDescription" -> "Cider",
-              "volume" -> "5",
-              "goodsValue" -> "120.00",
-              "valueCurrency" -> "USD",
-              "valueCurrencyName" -> "USA dollars (USD)",
-              "originCountry" -> "US",
-              "originCountryName" -> "United States of America",
-              "exchangeRate" -> "1.20",
-              "exchangeRateDate" -> "2018-10-29",
-              "goodsValueGBP" -> "91.23",
-              "VATRESClaimed" -> false,
-              "exciseGBP" -> "2.00",
-              "customsGBP" -> "0.30",
-              "vatGBP" -> "18.70"
+              "volume"               -> "5",
+              "goodsValue"           -> "120.00",
+              "valueCurrency"        -> "USD",
+              "valueCurrencyName"    -> "USA dollars (USD)",
+              "originCountry"        -> "US",
+              "originCountryName"    -> "United States of America",
+              "exchangeRate"         -> "1.20",
+              "exchangeRateDate"     -> "2018-10-29",
+              "goodsValueGBP"        -> "91.23",
+              "VATRESClaimed"        -> false,
+              "exciseGBP"            -> "2.00",
+              "customsGBP"           -> "0.30",
+              "vatGBP"               -> "18.70"
             )
           )
         ),
-        "declarationOther" -> Json.obj(
-          "totalExciseOther" -> "0.00",
-          "totalCustomsOther" -> "341.65",
-          "totalVATOther" -> "556.41",
+        "declarationOther"          -> Json.obj(
+          "totalExciseOther"     -> "0.00",
+          "totalCustomsOther"    -> "341.65",
+          "totalVATOther"        -> "556.41",
           "declarationItemOther" -> Json.arr(
             Json.obj(
               "commodityDescription" -> "Television",
-              "quantity" -> "1",
-              "goodsValue" -> "1500.00",
-              "valueCurrency" -> "USD",
-              "valueCurrencyName" -> "USA dollars (USD)",
-              "originCountry" -> "US",
-              "originCountryName" -> "United States of America",
-              "exchangeRate" -> "1.20",
-              "exchangeRateDate" -> "2018-10-29",
-              "goodsValueGBP" -> "1140.42",
-              "VATRESClaimed" -> false,
-              "exciseGBP" -> "0.00",
-              "customsGBP" -> "159.65",
-              "vatGBP" -> "260.01"
+              "quantity"             -> "1",
+              "goodsValue"           -> "1500.00",
+              "valueCurrency"        -> "USD",
+              "valueCurrencyName"    -> "USA dollars (USD)",
+              "originCountry"        -> "US",
+              "originCountryName"    -> "United States of America",
+              "exchangeRate"         -> "1.20",
+              "exchangeRateDate"     -> "2018-10-29",
+              "goodsValueGBP"        -> "1140.42",
+              "VATRESClaimed"        -> false,
+              "exciseGBP"            -> "0.00",
+              "customsGBP"           -> "159.65",
+              "vatGBP"               -> "260.01"
             )
           )
         ),
-        "liabilityDetails" -> Json.obj(
-          "totalExciseGBP" -> "102.54",
+        "liabilityDetails"          -> Json.obj(
+          "totalExciseGBP"  -> "102.54",
           "totalCustomsGBP" -> "534.89",
-          "totalVATGBP" -> "725.03",
-          "grandTotalGBP" -> "1362.46"
+          "totalVATGBP"     -> "725.03",
+          "grandTotalGBP"   -> "1362.46"
         ),
         "AmendmentLiabilityDetails" -> Json.obj(
-        "additionalExciseGBP" -> "102.54",
-        "additionalCustomsGBP" -> "534.89",
-        "additionalVATGBP" -> "725.03",
-        "additionalTotalGBP" -> "1362.46"
+          "additionalExciseGBP"  -> "102.54",
+          "additionalCustomsGBP" -> "534.89",
+          "additionalVATGBP"     -> "725.03",
+          "additionalTotalGBP"   -> "1362.46"
         )
       )
     )
   )
 
   val journeyData: JsObject = Json.obj(
-    "euCountryCheck" -> "greatBritain",
-    "arrivingNICheck" -> true,
-    "isUKResident" -> false,
-    "bringingOverAllowance" -> true)
+    "euCountryCheck"        -> "greatBritain",
+    "arrivingNICheck"       -> true,
+    "isUKResident"          -> false,
+    "bringingOverAllowance" -> true
+  )
 
-  "an amendment submission worker" should  {
+  "an amendment submission worker" should {
 
-    val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
+    val correlationId          = "fe28db96-d9db-4220-9e12-f2d267267c29"
     val amendmentCorrelationId = "ge28db96-d9db-4220-9e12-f2d267267c30"
 
     "must submit paid amendments" in {
 
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(NO_CONTENT))
+      server.stubFor(
+        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      await(repository.collection.drop().toFuture())
-      await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-
         val declarations = List(
-          Declaration(ChargeReference(0), State.SubmissionFailed, None,sentToEtmp = false, None, correlationId, Some(amendmentCorrelationId), journeyData, data, None,  LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None,correlationId, Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = true, None, correlationId, Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
+          Declaration(
+            ChargeReference(0),
+            State.SubmissionFailed,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            None,
+            sentToEtmp = true,
+            None,
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(3),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            Some(amendData),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
@@ -318,9 +377,16 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
         val hODConnector = app.injector.instanceOf[HODConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
-        val auditingTools =  app.injector.instanceOf[AuditingTools]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-        val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
+        )
 
         val (declaration, response) = worker.tap.pull().futureValue.get
         declaration.chargeReference mustEqual ChargeReference(3)
@@ -329,38 +395,89 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
       }
     }
 
-
     "must throttle submissions" in {
-
-      server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-        .willReturn(aResponse().withStatus(NO_CONTENT))
+      server.stubFor(
+        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      await(repository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
-      val app = builder.configure(
-        "workers.amendment-submission-worker.throttle.elements" -> "1",
-        "workers.amendment-submission-worker.throttle.per" -> "1 second"
-      ).build()
+      val app = builder
+        .configure(
+          "workers.amendment-submission-worker.throttle.elements" -> "1",
+          "workers.amendment-submission-worker.throttle.per"      -> "1 second"
+        )
+        .build()
 
       running(app) {
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj())),
-          Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj())),
-          Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj())),
-          Declaration(ChargeReference(3), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()))
+          Declaration(
+            ChargeReference(0),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj())
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj())
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj())
+          ),
+          Declaration(
+            ChargeReference(3),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj())
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-
         val hODConnector = app.injector.instanceOf[HODConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
-        val auditingTools =  app.injector.instanceOf[AuditingTools]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-        val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
+        )
 
         worker.tap.pull().futureValue
 
@@ -376,230 +493,443 @@ class AmendmentSubmissionWorkerSpec extends IntegrationSpecCommonBase with WireM
       }
     }
 
-     "must not process locked records" in {
+    "must not process locked records" in {
 
-        server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+      server.stubFor(
+        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
+
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
+
+      val app = builder.build()
+
+      running(app) {
+
+        val declarations = List(
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
         )
 
-       await(repository.collection.drop().toFuture())
-       await(lockRepository.collection.drop().toFuture())
+        await(repository.collection.insertMany(declarations).toFuture())
 
-        val app = builder.build()
+        val hODConnector   = app.injector.instanceOf[HODConnector]
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-        running(app) {
+        lockRepository.lock(1)
 
-          val declarations = List(
-            Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-            Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-          )
-
-          await(repository.collection.insertMany(declarations).toFuture())
-
-
-          val hODConnector = app.injector.instanceOf[HODConnector]
-          val auditConnector = app.injector.instanceOf[AuditConnector]
-          val auditingTools =  app.injector.instanceOf[AuditingTools]
-
-          lockRepository.lock(1)
-
-          val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
-
-
-          val (declaration, _) = worker.tap.pull().futureValue.get
-          declaration.chargeReference mustEqual ChargeReference(2)
-        }
-      }
-
-       "must lock records when processing them" in {
-
-        server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-          .willReturn(aResponse().withStatus(NO_CONTENT))
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
         )
 
-         await(repository.collection.drop().toFuture())
-         await(lockRepository.collection.drop().toFuture())
-
-        val app = builder.build()
-
-        running(app) {
-
-          val declarations = List(
-            Declaration(ChargeReference(1), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false), correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-          )
-
-          await(repository.collection.insertMany(declarations).toFuture())
-
-          val hODConnector = app.injector.instanceOf[HODConnector]
-
-          val auditConnector = app.injector.instanceOf[AuditConnector]
-          val auditingTools =  app.injector.instanceOf[AuditingTools]
-
-          val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
-
-          val (declaration, _) = worker.tap.pull().futureValue.get
-          declaration.chargeReference mustEqual ChargeReference(1)
-        }
+        val (declaration, _) = worker.tap.pull().futureValue.get
+        declaration.chargeReference mustEqual ChargeReference(2)
       }
+    }
 
-         "must not remove errored declarations from mongo" in {
+    "must lock records when processing them" in {
 
-            server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-              .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
-            )
+      server.stubFor(
+        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
 
-           await(repository.collection.drop().toFuture())
-           await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
-            val app = builder.build()
+      val app = builder.build()
 
-            running(app) {
+      running(app) {
 
+        val declarations = List(
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
+        )
 
-              val declarations = List(
-                Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-                Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-                Declaration(ChargeReference(2), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-              )
+        await(repository.collection.insertMany(declarations).toFuture())
 
-              await(repository.collection.insertMany(declarations).toFuture())
+        val hODConnector = app.injector.instanceOf[HODConnector]
 
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-              val hODConnector = app.injector.instanceOf[HODConnector]
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
+        )
 
-              val auditConnector = app.injector.instanceOf[AuditConnector]
-              val auditingTools =  app.injector.instanceOf[AuditingTools]
+        val (declaration, _) = worker.tap.pull().futureValue.get
+        declaration.chargeReference mustEqual ChargeReference(1)
+      }
+    }
 
-              val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+    "must not remove errored declarations from mongo" in {
 
+      server.stubFor(
+        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
+      )
 
-              val (declaration, result) = worker.tap.pull().futureValue.get
-              result mustEqual SubmissionResponse.ParsingException
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
-              repository.get(declaration.chargeReference).futureValue must be(defined)
+      val app = builder.build()
 
-            }
-          }
+      running(app) {
 
-             "must set the state of failed amended declarations to failed" in {
+        val declarations = List(
+          Declaration(
+            ChargeReference(0),
+            State.Paid,
+            Some(State.SubmissionFailed),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.PendingPayment),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
+        )
 
-              server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-                .willReturn(aResponse().withStatus(BAD_REQUEST))
-              )
+        await(repository.collection.insertMany(declarations).toFuture())
 
-               await(repository.collection.drop().toFuture())
-               await(lockRepository.collection.drop().toFuture())
+        val hODConnector = app.injector.instanceOf[HODConnector]
 
-              val app = builder.build()
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-              running(app) {
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
+        )
 
+        val (declaration, result) = worker.tap.pull().futureValue.get
+        result mustEqual SubmissionResponse.ParsingException
 
-                val declarations = List(
-                  Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-                  Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-                  Declaration(ChargeReference(2), State.Paid, Some(State.Paid), sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-                )
+        repository.get(declaration.chargeReference).futureValue must be(defined)
 
-                await(repository.collection.insertMany(declarations).toFuture())
+      }
+    }
 
+    "must set the state of failed amended declarations to failed" in {
 
-                val hODConnector = app.injector.instanceOf[HODConnector]
+      server.stubFor(
+        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(BAD_REQUEST))
+      )
 
-                val auditConnector = app.injector.instanceOf[AuditConnector]
-                val auditingTools =  app.injector.instanceOf[AuditingTools]
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
-                val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+      val app = builder.build()
 
+      running(app) {
 
-                val (declaration, result) = worker.tap.pull().futureValue.get
-                result mustEqual SubmissionResponse.Failed
+        val declarations = List(
+          Declaration(
+            ChargeReference(0),
+            State.Paid,
+            Some(State.SubmissionFailed),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            Some(amendData),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.PendingPayment),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            Some(amendData),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            Some(amendData),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
+        )
 
-                repository.get(declaration.chargeReference).futureValue.get.amendState.get mustBe State.SubmissionFailed
+        await(repository.collection.insertMany(declarations).toFuture())
 
+        val hODConnector = app.injector.instanceOf[HODConnector]
 
-              }
-            }
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-         "must continue to process amendments" in {
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
+        )
 
-            await(repository.collection.drop().toFuture())
-            await(lockRepository.collection.drop().toFuture())
+        val (declaration, result) = worker.tap.pull().futureValue.get
+        result mustEqual SubmissionResponse.Failed
 
-               val app = builder.build()
+        repository.get(declaration.chargeReference).futureValue.get.amendState.get mustBe State.SubmissionFailed
 
-               running(app) {
+      }
+    }
 
-                 val hODConnector = app.injector.instanceOf[HODConnector]
+    "must continue to process amendments" in {
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
-                 val auditConnector = app.injector.instanceOf[AuditConnector]
-                 val auditingTools =  app.injector.instanceOf[AuditingTools]
+      val app = builder.build()
 
+      running(app) {
 
-                 val declarations = List(
-                   Declaration(ChargeReference(0), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-                   Declaration(ChargeReference(1), State.Paid, Some(State.Paid),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
-                 )
+        val hODConnector = app.injector.instanceOf[HODConnector]
 
-                 await(repository.collection.insertMany(declarations).toFuture())
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-                 val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+        val declarations = List(
+          Declaration(
+            ChargeReference(0),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
+        )
 
-                 worker.tap.pull().futureValue
-                 worker.tap.pull().futureValue
-               }
-             }
+        await(repository.collection.insertMany(declarations).toFuture())
 
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
+        )
 
-            "must only make one request to the HOD" in {
+        worker.tap.pull().futureValue
+        worker.tap.pull().futureValue
+      }
+    }
 
-              server.stubFor(post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
-                .willReturn(aResponse().withStatus(NO_CONTENT))
-              )
+    "must only make one request to the HOD" in {
 
-              server.stubFor(post(urlPathEqualTo("/write/audit"))
-                .willReturn(aResponse().withStatus(OK)
-              ))
+      server.stubFor(
+        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+          .willReturn(aResponse().withStatus(NO_CONTENT))
+      )
 
+      server.stubFor(
+        post(urlPathEqualTo("/write/audit"))
+          .willReturn(aResponse().withStatus(OK))
+      )
 
-              await(repository.collection.drop().toFuture())
-              await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
-              val app = builder.build()
+      val app = builder.build()
 
-              running(app) {
+      running(app) {
 
+        val declarations = List(
+          Declaration(
+            ChargeReference(0),
+            State.Paid,
+            Some(State.SubmissionFailed),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            Some(amendData),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.PendingPayment),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            Some(amendData),
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(3),
+            State.Paid,
+            Some(State.Paid),
+            sentToEtmp = true,
+            amendSentToEtmp = Some(false),
+            correlationId,
+            Some(amendmentCorrelationId),
+            journeyData,
+            data,
+            Some(amendData),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
+        )
 
-                val declarations = List(
-                  Declaration(ChargeReference(0), State.Paid, Some(State.SubmissionFailed),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-                  Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment),sentToEtmp = true, Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC)),
-                  Declaration(ChargeReference(2), State.Paid, None,sentToEtmp = false, None,correlationId,  Some(amendmentCorrelationId), journeyData, data, None, LocalDateTime.now(ZoneOffset.UTC)),
-                  Declaration(ChargeReference(3), State.Paid, Some(State.Paid),sentToEtmp = true, amendSentToEtmp = Some(false),correlationId, Some(amendmentCorrelationId), journeyData, data, Some(amendData), LocalDateTime.now(ZoneOffset.UTC))
-                )
+        await(repository.collection.insertMany(declarations).toFuture())
 
-                await(repository.collection.insertMany(declarations).toFuture())
+        val hODConnector = app.injector.instanceOf[HODConnector]
 
-                val hODConnector = app.injector.instanceOf[HODConnector]
+        val auditConnector = app.injector.instanceOf[AuditConnector]
+        val auditingTools  = app.injector.instanceOf[AuditingTools]
 
-                val auditConnector = app.injector.instanceOf[AuditConnector]
-                val auditingTools =  app.injector.instanceOf[AuditingTools]
+        val worker = new AmendmentSubmissionWorker(
+          repository,
+          lockRepository,
+          hODConnector,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          auditConnector,
+          auditingTools
+        )
 
-                val worker = new AmendmentSubmissionWorker(repository, lockRepository, hODConnector, Configuration(ConfigFactory.load(System.getProperty("config.resource"))), auditConnector, auditingTools)
+        val (declaration, result) = worker.tap.pull().futureValue.get
 
-                val (declaration, result) = worker.tap.pull().futureValue.get
+        val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
+        val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
 
-                val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
-                val desRequest = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        eventually {
+          server.requestsWereSent(times = 1, auditRequest) mustEqual true
+          server.requestsWereSent(times = 1, desRequest) mustEqual true
+        }
 
-                eventually{
-                  server.requestsWereSent(times = 1, auditRequest) mustEqual true
-                  server.requestsWereSent(times = 1, desRequest) mustEqual true
-                }
-
-                result mustEqual SubmissionResponse.Submitted
-                repository.get(declaration.chargeReference).futureValue must be(defined)
-              }
-            }
-
+        result mustEqual SubmissionResponse.Submitted
+        repository.get(declaration.chargeReference).futureValue must be(defined)
+      }
+    }
   }
 }

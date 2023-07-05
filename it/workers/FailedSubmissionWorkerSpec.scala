@@ -17,12 +17,12 @@
 package workers
 
 import akka.stream.Materializer
-
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, Lock}
+import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -35,54 +35,67 @@ import utils.WireMockHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
+class FailedSubmissionWorkerSpec
+    extends IntegrationSpecCommonBase
+    with WireMockHelper
+    with DefaultPlayMongoRepositorySupport[Declaration] {
 
-  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val validationService: ValidationService           = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer                     = app.injector.instanceOf[Materializer]
   val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
 
-  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+  override val repository = new DefaultDeclarationsRepository(
+    mongoComponent,
     chargeReferenceService,
     validationService,
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
 
-  def lockRepository = new DefaultLockRepository(mongoComponent)
-
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-  }
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-  }
-
-  override def afterEach(): Unit = {
-    super.afterEach()
-    await(repository.collection.drop().toFuture())
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    await(repository.collection.drop().toFuture())
-  }
+  val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
 
-  "a failed submission worker" should  {
-
+  "a failed submission worker" should {
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
     "must lock failed records when it processes them" in {
-
-      await(repository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
-        Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
+        Declaration(
+          ChargeReference(0),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        ),
+        Declaration(
+          ChargeReference(1),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        ),
+        Declaration(
+          ChargeReference(2),
+          State.PendingPayment,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        )
       )
 
       await(repository.collection.insertMany(declarations).toFuture())
@@ -91,11 +104,14 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
 
       running(app) {
 
-        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new FailedSubmissionWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
-
 
         lockRepository.isLocked(0).futureValue mustEqual true
         lockRepository.isLocked(1).futureValue mustEqual true
@@ -104,12 +120,31 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
     }
 
     "must not process locked records" in {
-
-      await(repository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
+        Declaration(
+          ChargeReference(0),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        ),
+        Declaration(
+          ChargeReference(1),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        )
       )
 
       await(repository.collection.insertMany(declarations).toFuture())
@@ -120,8 +155,11 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
 
       running(app) {
 
-
-        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new FailedSubmissionWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         val declaration = worker.tap.pull().futureValue.get
         declaration.chargeReference.value mustEqual 1
@@ -129,12 +167,31 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
     }
 
     "must set failed records to have a status of Paid" in {
-
-      await(repository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj())
+        Declaration(
+          ChargeReference(0),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        ),
+        Declaration(
+          ChargeReference(1),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        )
       )
 
       await(repository.collection.insertMany(declarations).toFuture())
@@ -143,7 +200,11 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
 
       running(app) {
 
-        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new FailedSubmissionWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         val declaration = worker.tap.pull().futureValue.get
         declaration.chargeReference.value mustEqual 0
@@ -151,14 +212,32 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
       }
     }
 
-
     "must complete when all failed declarations have been processed" in {
-
-      await(repository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
       val declarations = List(
-        Declaration(ChargeReference(0), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj()),
-        Declaration(ChargeReference(1), State.SubmissionFailed, None, sentToEtmp = false, None, correlationId, None, Json.obj(), Json.obj())
+        Declaration(
+          ChargeReference(0),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        ),
+        Declaration(
+          ChargeReference(1),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
+          correlationId,
+          None,
+          Json.obj(),
+          Json.obj()
+        )
       )
 
       await(repository.collection.insertMany(declarations).toFuture())
@@ -167,8 +246,11 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
 
       running(app) {
 
-
-        val worker = new FailedSubmissionWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new FailedSubmissionWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
@@ -178,4 +260,3 @@ class FailedSubmissionWorkerSpec  extends IntegrationSpecCommonBase with WireMoc
     }
   }
 }
-

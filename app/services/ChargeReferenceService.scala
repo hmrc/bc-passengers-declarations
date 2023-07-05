@@ -36,6 +36,8 @@ class SequentialChargeReferenceService @Inject() (mongoComponent: MongoComponent
     )
     with ChargeReferenceService {
 
+  override lazy val requiresTtlIndex: Boolean = false
+
   private val id: String = "counter"
 
   val started: Future[Unit] =
