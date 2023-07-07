@@ -236,8 +236,7 @@ class PaymentTimeoutWorkerSpec
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
-
-        lockRepository.lock(0)
+        await(lockRepository.lock(0))
 
         val worker = new PaymentTimeoutWorker(
           repository,

@@ -147,7 +147,7 @@ class DeclarationDeletionWorkerSpec
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        lockRepository.lock(0)
+        await(lockRepository.lock(0))
 
         val worker = new DeclarationDeletionWorker(
           repository,

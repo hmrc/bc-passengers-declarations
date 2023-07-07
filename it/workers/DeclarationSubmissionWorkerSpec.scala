@@ -32,7 +32,7 @@ import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
-import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, LockRepository}
+import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository, LockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -58,6 +58,8 @@ class DeclarationSubmissionWorkerSpec
     validationService,
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
+
+  val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
@@ -244,7 +246,6 @@ class DeclarationSubmissionWorkerSpec
 
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
-        val lockRepository         = app.injector.instanceOf[LockRepository]
         val hODConnector           = app.injector.instanceOf[HODConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
@@ -311,10 +312,7 @@ class DeclarationSubmissionWorkerSpec
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
-
-        val lockRepository = app.injector.instanceOf[LockRepository]
-
-        lockRepository.lock(1)
+        await(lockRepository.lock(1))
 
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
@@ -405,7 +403,6 @@ class DeclarationSubmissionWorkerSpec
 
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
-        val lockRepository         = app.injector.instanceOf[LockRepository]
         val hODConnector           = app.injector.instanceOf[HODConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
@@ -514,7 +511,6 @@ class DeclarationSubmissionWorkerSpec
 
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
-        val lockRepository         = app.injector.instanceOf[LockRepository]
         val hODConnector           = app.injector.instanceOf[HODConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
@@ -598,7 +594,6 @@ class DeclarationSubmissionWorkerSpec
 
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
-        val lockRepository         = app.injector.instanceOf[LockRepository]
         val hODConnector           = app.injector.instanceOf[HODConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
@@ -687,7 +682,6 @@ class DeclarationSubmissionWorkerSpec
 
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
-        val lockRepository         = app.injector.instanceOf[LockRepository]
         val hODConnector           = app.injector.instanceOf[HODConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
