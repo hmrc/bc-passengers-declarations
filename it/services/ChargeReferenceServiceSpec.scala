@@ -25,19 +25,19 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ChargeReferenceServiceSpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[ChargeRefJson] {
+class ChargeReferenceServiceSpec
+    extends IntegrationSpecCommonBase
+    with DefaultPlayMongoRepositorySupport[ChargeRefJson] {
 
-  override def repository = new SequentialChargeReferenceService(mongoComponent)
+  override val repository = new SequentialChargeReferenceService(mongoComponent)
 
   private lazy val builder = new GuiceApplicationBuilder()
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     super.beforeAll()
-  }
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     super.beforeEach()
-  }
 
   override def afterEach(): Unit = {
     super.afterEach()
@@ -58,7 +58,6 @@ class ChargeReferenceServiceSpec extends IntegrationSpecCommonBase with DefaultP
       val app = builder.build()
 
       running(app) {
-
 
         val first  = repository.nextChargeReference().futureValue
         val second = repository.nextChargeReference().futureValue
@@ -81,4 +80,3 @@ class ChargeReferenceServiceSpec extends IntegrationSpecCommonBase with DefaultP
     }
   }
 }
-

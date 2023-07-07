@@ -34,108 +34,155 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
 import akka.stream.Materializer
+import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 
+class AmendmentPaymentTimeoutWorkerSpec
+    extends IntegrationSpecCommonBase
+    with DefaultPlayMongoRepositorySupport[Declaration] {
 
-class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[Declaration] {
-
-  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val validationService: ValidationService           = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer                     = app.injector.instanceOf[Materializer]
   val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
 
-  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+  override val repository = new DefaultDeclarationsRepository(
+    mongoComponent,
     chargeReferenceService,
     validationService,
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
 
-  def lockRepository = new DefaultLockRepository(mongoComponent)
-
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-  }
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-  }
-
-  override def afterEach(): Unit = {
-    super.afterEach()
-    await(repository.collection.drop().toFuture())
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    await(repository.collection.drop().toFuture())
-  }
-
+  val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
 
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
-          .configure(
-            "declarations.payment-no-response-timeout" -> "1 minute",
-            "workers.amendment-payment-timeout-worker.interval" -> "1 second"
-          )
+      .configure(
+        "declarations.payment-no-response-timeout"          -> "1 minute",
+        "workers.amendment-payment-timeout-worker.interval" -> "1 second"
+      )
 
-  "An amendment payment timeout worker" should  {
-
+  "An amendment payment timeout worker" should {
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
     val amendCorrelationId = "ge28db96-d9db-4220-9e12-f2d267267c30"
 
     "log stale declarations" in {
-
-      await(repository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
       TestLoggerAppender.queue.dequeueAll(_ => true)
 
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentCancelled), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(3), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(4), State.Paid, Some(State.PaymentFailed), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+      val declarations = List(
+        Declaration(
+          ChargeReference(0),
+          State.Paid,
+          Some(State.PendingPayment),
+          sentToEtmp = true,
+          Some(false),
+          correlationId,
+          Some(amendCorrelationId),
+          Json.obj(),
+          Json.obj(),
+          Some(Json.obj()),
+          LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+        ),
+        Declaration(
+          ChargeReference(1),
+          State.Paid,
+          Some(State.PaymentFailed),
+          sentToEtmp = true,
+          Some(false),
+          correlationId,
+          Some(amendCorrelationId),
+          Json.obj(),
+          Json.obj(),
+          Some(Json.obj()),
+          LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+        ),
+        Declaration(
+          ChargeReference(2),
+          State.Paid,
+          Some(State.PaymentCancelled),
+          sentToEtmp = false,
+          Some(false),
+          correlationId,
+          Some(amendCorrelationId),
+          Json.obj(),
+          Json.obj(),
+          Some(Json.obj()),
+          LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+        ),
+        Declaration(
+          ChargeReference(3),
+          State.Paid,
+          Some(State.PendingPayment),
+          sentToEtmp = true,
+          Some(false),
+          correlationId,
+          Some(amendCorrelationId),
+          Json.obj(),
+          Json.obj(),
+          Some(Json.obj()),
+          LocalDateTime.now(ZoneOffset.UTC)
+        ),
+        Declaration(
+          ChargeReference(4),
+          State.Paid,
+          Some(State.PaymentFailed),
+          sentToEtmp = false,
+          Some(false),
+          correlationId,
+          Some(amendCorrelationId),
+          Json.obj(),
+          Json.obj(),
+          Some(Json.obj()),
+          LocalDateTime.now(ZoneOffset.UTC)
         )
+      )
 
+      await(repository.collection.insertMany(declarations).toFuture())
 
-        await(repository.collection.insertMany(declarations).toFuture())
+      val worker = new AmendmentPaymentTimeoutWorker(
+        repository,
+        lockRepository,
+        Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+      )
 
-        val worker = new AmendmentPaymentTimeoutWorker(repository, lockRepository,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+      TestLoggerAppender.queue.dequeueAll(_ => true)
 
-        TestLoggerAppender.queue.dequeueAll(_ => true)
+      val staleDeclarations = List(
+        worker.tap.pull().futureValue.get,
+        worker.tap.pull().futureValue.get,
+        worker.tap.pull().futureValue.get
+      )
 
-        val staleDeclarations = List(
-          worker.tap.pull().futureValue.get,
-          worker.tap.pull().futureValue.get,
-          worker.tap.pull().futureValue.get
-        )
+      staleDeclarations
+        .map(_.chargeReference)           must contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
+      staleDeclarations.map(_.amendState) must contain.allOf(
+        Some(State.PendingPayment),
+        Some(State.PaymentFailed),
+        Some(State.PaymentCancelled)
+      )
 
-        staleDeclarations.map(_.chargeReference) must contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
-        staleDeclarations.map(_.amendState) must contain.allOf(Some(State.PendingPayment), Some(State.PaymentFailed), Some(State.PaymentCancelled))
+      val logEvents = List(
+        TestLoggerAppender.queue.dequeue(),
+        TestLoggerAppender.queue.dequeue(),
+        TestLoggerAppender.queue.dequeue()
+      )
 
-        val logEvents = List(
-          TestLoggerAppender.queue.dequeue(),
-          TestLoggerAppender.queue.dequeue(),
-          TestLoggerAppender.queue.dequeue()
-        )
+      logEvents.map(_.getMessage) must contain.allOf(
+        "Declaration 2 is stale, deleting",
+        "Declaration 1 is stale, deleting",
+        "Declaration 0 is stale, deleting"
+      )
 
-        logEvents.map(_.getMessage) must contain.allOf(
-          "Declaration 2 is stale, deleting", "Declaration 1 is stale, deleting" , "Declaration 0 is stale, deleting"
-        )
+      val remaining = repository.collection.find().toFuture().map(_.toList).futureValue
 
-        val remaining = repository.collection.find().toFuture().map(_.toList).futureValue
-
-        remaining mustEqual declarations.filter(_.chargeReference.value > 2)
-
+      remaining mustEqual declarations.filter(_.chargeReference.value > 2)
     }
 
     "not log locked stale records" in {
-
-      await(repository.collection.drop().toFuture())
-      await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       TestLoggerAppender.queue.dequeueAll(_ => true)
 
@@ -143,18 +190,56 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
 
       running(app) {
 
-
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+          Declaration(
+            ChargeReference(0),
+            State.Paid,
+            Some(State.PendingPayment),
+            sentToEtmp = true,
+            Some(false),
+            correlationId,
+            Some(amendCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.PendingPayment),
+            sentToEtmp = false,
+            Some(false),
+            correlationId,
+            Some(amendCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            Some(State.PendingPayment),
+            sentToEtmp = false,
+            Some(false),
+            correlationId,
+            Some(amendCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
         await(lockRepository.lock(0))
 
-        val worker = new AmendmentPaymentTimeoutWorker(repository, lockRepository,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new AmendmentPaymentTimeoutWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         val declaration = worker.tap.pull().futureValue.get
         declaration.chargeReference.value mustEqual 1
@@ -163,25 +248,62 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
     }
 
     "must lock stale records when it processes them" in {
-
-      await(repository.collection.drop().toFuture())
-      await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-
         val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentFailed), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentCancelled), sentToEtmp = false, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC))
+          Declaration(
+            ChargeReference(0),
+            State.Paid,
+            Some(State.PendingPayment),
+            sentToEtmp = false,
+            Some(false),
+            correlationId,
+            Some(amendCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.Paid,
+            Some(State.PaymentFailed),
+            sentToEtmp = false,
+            Some(false),
+            correlationId,
+            Some(amendCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.Paid,
+            Some(State.PaymentCancelled),
+            sentToEtmp = false,
+            Some(false),
+            correlationId,
+            Some(amendCorrelationId),
+            Json.obj(),
+            Json.obj(),
+            Some(Json.obj()),
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        val worker = new AmendmentPaymentTimeoutWorker(repository, lockRepository,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new AmendmentPaymentTimeoutWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
@@ -191,32 +313,5 @@ class AmendmentPaymentTimeoutWorkerSpec extends IntegrationSpecCommonBase with D
         lockRepository.isLocked(2).futureValue mustEqual false
       }
     }
-
-/*    "continue to process data" in {
-
-      await(repository.collection.drop().toFuture())
-      await(lockRepository.collection.drop().toFuture())
-
-      val app = builder.build()
-
-      running(app) {
-
-        val worker = new AmendmentPaymentTimeoutWorker(repository, lockRepository,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
-
-
-        val declarations = List(
-          Declaration(ChargeReference(0), State.Paid, Some(State.PendingPayment), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.Paid, Some(State.PaymentCancelled), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.Paid, Some(State.PaymentFailed), sentToEtmp = true, Some(false), correlationId, Some(amendCorrelationId), Json.obj(), Json.obj(), Some(Json.obj()), LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
-        )
-
-        await(repository.collection.insertMany(declarations).toFuture())
-
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
-        worker.tap.pull.futureValue
-      }
-    }*/
   }
 }

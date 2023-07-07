@@ -58,6 +58,8 @@ class DefaultDeclarationsRepository @Inject() (
     )
     with DeclarationsRepository {
 
+  override lazy val requiresTtlIndex: Boolean = false
+
   private def validator(schemaVersion: String): Validator = {
     val schema = config.get[String](s"declarations.schemas.$schemaVersion")
     validationService.get(schema)

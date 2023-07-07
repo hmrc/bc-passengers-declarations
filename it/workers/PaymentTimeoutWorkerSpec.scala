@@ -25,6 +25,7 @@ import helpers.IntegrationSpecCommonBase
 import logger.TestLoggerAppender
 import models.declarations.{Declaration, State}
 import models.ChargeReference
+import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -37,50 +38,37 @@ import utils.WireMockHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockHelper with DefaultPlayMongoRepositorySupport[Declaration] {
+class PaymentTimeoutWorkerSpec
+    extends IntegrationSpecCommonBase
+    with WireMockHelper
+    with DefaultPlayMongoRepositorySupport[Declaration] {
 
-  val validationService: ValidationService = app.injector.instanceOf[ValidationService]
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
+  val validationService: ValidationService           = app.injector.instanceOf[ValidationService]
+  implicit val mat: Materializer                     = app.injector.instanceOf[Materializer]
   val chargeReferenceService: ChargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
 
-  override def repository = new DefaultDeclarationsRepository(mongoComponent,
+  override val repository = new DefaultDeclarationsRepository(
+    mongoComponent,
     chargeReferenceService,
     validationService,
     Configuration(ConfigFactory.load(System.getProperty("config.resource")))
   )
 
-  def lockRepository = new DefaultLockRepository(mongoComponent)
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-  }
+  val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-  }
-
-  override def afterEach(): Unit = {
-    super.afterEach()
-    await(repository.collection.drop().toFuture())
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    await(repository.collection.drop().toFuture())
-  }
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
-          .configure(
-            "declarations.payment-no-response-timeout" -> "1 minute",
-            "workers.payment-timeout-worker.interval" -> "1 second"
-          )
+      .configure(
+        "declarations.payment-no-response-timeout" -> "1 minute",
+        "workers.payment-timeout-worker.interval"  -> "1 second"
+      )
 
   "A payment timeout worker" should {
 
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
     "must log stale declarations" in {
-
-      await(repository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
       TestLoggerAppender.queue.dequeueAll(_ => true)
 
@@ -89,16 +77,80 @@ class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockH
       running(app) {
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PaymentCancelled, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(3), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC)),
-          Declaration(ChargeReference(4), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
+          Declaration(
+            ChargeReference(0),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.PaymentFailed,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.PaymentCancelled,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(3),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          ),
+          Declaration(
+            ChargeReference(4),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        val worker = new PaymentTimeoutWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new PaymentTimeoutWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         TestLoggerAppender.queue.dequeueAll(_ => true)
 
@@ -108,8 +160,10 @@ class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockH
           worker.tap.pull().futureValue.get
         )
 
-        staleDeclarations.map(_.chargeReference) must contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
-        staleDeclarations.map(_.state) must contain.allOf(State.PendingPayment, State.PaymentFailed, State.PaymentCancelled)
+        staleDeclarations
+          .map(_.chargeReference) must contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
+        staleDeclarations
+          .map(_.state)           must contain.allOf(State.PendingPayment, State.PaymentFailed, State.PaymentCancelled)
 
         val logEvents = List(
           TestLoggerAppender.queue.dequeue(),
@@ -118,21 +172,20 @@ class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockH
         )
 
         logEvents.map(_.getMessage) must contain.allOf(
-          "Declaration 2 is stale, deleting", "Declaration 1 is stale, deleting" , "Declaration 0 is stale, deleting"
+          "Declaration 2 is stale, deleting",
+          "Declaration 1 is stale, deleting",
+          "Declaration 0 is stale, deleting"
         )
-
 
         val remaining = repository.collection.find()
 
-        await(remaining.collect().toFuture().map(_.toList)).size mustBe  2
-
+        await(remaining.collect().toFuture().map(_.toList)).size mustBe 2
       }
     }
 
     "must not log locked stale records" in {
-
-      await(repository.collection.drop().toFuture())
-      await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       TestLoggerAppender.queue.dequeueAll(_ => true)
 
@@ -140,18 +193,56 @@ class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockH
 
       running(app) {
 
-
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
+          Declaration(
+            ChargeReference(0),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
+        await(lockRepository.lock(0))
 
-        lockRepository.lock(0)
-
-        val worker = new PaymentTimeoutWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new PaymentTimeoutWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         val declaration = worker.tap.pull().futureValue.get
         declaration.chargeReference.value mustEqual 1
@@ -159,28 +250,65 @@ class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockH
     }
 
     "must lock stale records when it processes them" in {
-
-      await(repository.collection.drop().toFuture())
-      await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PaymentFailed, None, sentToEtmp = false,  None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(2), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC))
+          Declaration(
+            ChargeReference(0),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.PaymentFailed,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(2),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC)
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        val worker = new PaymentTimeoutWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new PaymentTimeoutWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
-
 
         lockRepository.isLocked(0).futureValue mustEqual true
         lockRepository.isLocked(1).futureValue mustEqual true
@@ -189,22 +317,49 @@ class PaymentTimeoutWorkerSpec  extends IntegrationSpecCommonBase with WireMockH
     }
 
     "must continue to process data" in {
-
-      await(repository.collection.drop().toFuture())
-      await(lockRepository.collection.drop().toFuture())
+      await(repository.collection.deleteMany(Filters.empty()).toFuture())
+      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
         val declarations = List(
-          Declaration(ChargeReference(0), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)),
-          Declaration(ChargeReference(1), State.PendingPayment, None, sentToEtmp = false, None, correlationId, None,Json.obj(), Json.obj(), None, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5))
+          Declaration(
+            ChargeReference(0),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          ),
+          Declaration(
+            ChargeReference(1),
+            State.PendingPayment,
+            None,
+            sentToEtmp = false,
+            None,
+            correlationId,
+            None,
+            Json.obj(),
+            Json.obj(),
+            None,
+            LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5)
+          )
         )
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        val worker = new PaymentTimeoutWorker(repository, lockRepository, Configuration(ConfigFactory.load(System.getProperty("config.resource"))))
+        val worker = new PaymentTimeoutWorker(
+          repository,
+          lockRepository,
+          Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+        )
 
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
