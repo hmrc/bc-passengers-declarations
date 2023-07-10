@@ -16,21 +16,17 @@
 
 package models
 
-import java.time.{LocalDateTime, ZoneOffset}
 import models.declarations.{Declaration, State}
-import play.api.libs.json.Json
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import play.api.libs.json.Json
+import util.Constants
 
-class DeclarationSpec extends AnyFreeSpec with Matchers {
+class DeclarationSpec extends AnyFreeSpec with Matchers with Constants {
 
   "a Declaration" - {
 
     "must deserialise" in {
-
-      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
-
-      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
 
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
@@ -44,7 +40,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
       json.as[Declaration] mustEqual
         Declaration(
-          ChargeReference(1234567890),
+          chargeReference,
           State.PendingPayment,
           None,
           sentToEtmp = false,
@@ -60,10 +56,6 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
     "must serialise" in {
 
-      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
-
-      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
-
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
         "state"         -> State.PendingPayment.toString(),
@@ -76,7 +68,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
       Json.toJson(
         Declaration(
-          ChargeReference(1234567890),
+          chargeReference,
           State.PendingPayment,
           None,
           sentToEtmp = false,
@@ -93,10 +85,6 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
     "must deserialise with amendState and amendSentToEtmp" in {
 
-      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
-
-      val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
-
       val json = Json.obj(
         "_id"             -> "XHPR1234567890",
         "state"           -> State.PendingPayment.toString,
@@ -111,7 +99,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
       json.as[Declaration] mustEqual
         Declaration(
-          ChargeReference(1234567890),
+          chargeReference,
           State.PendingPayment,
           Some(State.PendingPayment),
           sentToEtmp = false,
@@ -127,10 +115,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
     "must serialise with amendState, amendCorrelationId and amendSentToEtmp" in {
 
-      val lastUpdated = LocalDateTime.now(ZoneOffset.UTC)
-
-      val amendCorrelationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
-      val correlationId      = "fe28db96-d9db-4220-9e12-f2d267267c29"
+      val amendCorrelationId = correlationId
 
       val json = Json.obj(
         "_id"                -> "XHPR1234567890",
@@ -147,7 +132,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers {
 
       Json.toJson(
         Declaration(
-          ChargeReference(1234567890),
+          chargeReference,
           State.PendingPayment,
           Some(State.PendingPayment),
           sentToEtmp = false,

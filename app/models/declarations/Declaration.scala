@@ -16,10 +16,11 @@
 
 package models.declarations
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import models.ChargeReference
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 final case class Declaration(
   chargeReference: ChargeReference,

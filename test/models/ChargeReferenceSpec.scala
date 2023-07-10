@@ -22,10 +22,9 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.{EitherValues, OptionValues}
 import play.api.libs.json.{JsString, Json}
 import play.api.mvc.PathBindable
+import util.Constants
 
-class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues with OptionValues {
-
-  val chargeReferenceNumber = 1234567890
+class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues with OptionValues with Constants {
 
   "a charge reference" - {
 
