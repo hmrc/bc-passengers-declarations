@@ -18,26 +18,24 @@ package repositories
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-
-import java.time.{LocalDateTime, ZoneOffset}
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.client.model.Accumulators.{first, sum}
-import org.mongodb.scala.model.Filters._
 import models.declarations.{Declaration, State}
-import models.{ChargeReference, DeclarationResponse, DeclarationsStatus, DeclarationsStatusCount, PreviousDeclarationRequest}
+import models._
 import org.bson.BsonValue
 import org.mongodb.scala.model.Aggregates.group
+import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.{Filters, FindOneAndReplaceOptions, FindOneAndUpdateOptions, IndexModel, IndexOptions, ReturnDocument, Updates}
+import org.mongodb.scala.model._
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsObject, Json}
 import services.{ChargeReferenceService, ValidationService, Validator}
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
+import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
-import uk.gov.hmrc.mongo.play.json.Codecs
 
 @Singleton
 class DefaultDeclarationsRepository @Inject() (
@@ -148,7 +146,7 @@ class DefaultDeclarationsRepository @Inject() (
           equal("state", "paid"),
           and(
             or(
-              exists("amendState", false),
+              exists("amendState", exists = false),
               equal("amendState", "paid"),
               equal("amendState", "pending-payment")
             )
@@ -204,20 +202,29 @@ class DefaultDeclarationsRepository @Inject() (
       .findOneAndUpdate(
         equal("_id", Codecs.toBson(id)),
         Updates.combine(
-          Updates.set("amendState", Codecs.toBson(state)),
+          Updates.set("amendState", Codecs.toBson(Some(state))),
           Updates.set("lastUpdated", Codecs.toBson(LocalDateTime.now(ZoneOffset.UTC)))
-        )
+        ),
+        options = FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
       )
       .toFuture()
 
   override def setSentToEtmp(id: ChargeReference, sentToEtmp: Boolean): Future[Declaration] =
     collection
-      .findOneAndUpdate(equal("_id", Codecs.toBson(id)), Updates.set("sentToEtmp", Codecs.toBson(sentToEtmp)))
+      .findOneAndUpdate(
+        equal("_id", Codecs.toBson(id)),
+        Updates.set("sentToEtmp", Codecs.toBson(sentToEtmp)),
+        options = FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
+      )
       .toFuture()
 
   override def setAmendSentToEtmp(id: ChargeReference, amendSentToEtmp: Boolean): Future[Declaration] =
     collection
-      .findOneAndUpdate(equal("_id", Codecs.toBson(id)), Updates.set("amendSentToEtmp", Codecs.toBson(amendSentToEtmp)))
+      .findOneAndUpdate(
+        equal("_id", Codecs.toBson(id)),
+        Updates.set("amendSentToEtmp", Codecs.toBson(amendSentToEtmp)),
+        options = FindOneAndUpdateOptions().upsert(false).returnDocument(ReturnDocument.AFTER)
+      )
       .toFuture()
 
   override def unpaidDeclarations: Source[Declaration, NotUsed] =
@@ -269,8 +276,8 @@ class DefaultDeclarationsRepository @Inject() (
       Filters.equal("sentToEtmp", true),
       Filters.or(
         Filters.and(
-          Filters.exists("amendState", false),
-          Filters.exists("amendSentToEtmp", false)
+          Filters.exists("amendState", exists = false),
+          Filters.exists("amendSentToEtmp", exists = false)
         ),
         Filters.and(
           Filters.equal("amendState", "paid"),

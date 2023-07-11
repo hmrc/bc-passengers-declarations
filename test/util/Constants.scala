@@ -22,12 +22,14 @@ import play.api.libs.json.{JsObject, Json}
 
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import scala.util.Random.nextInt
 
 trait Constants {
-  val chargeReferenceNumber: Int       = 1234567890
-  val chargeReference: ChargeReference = ChargeReference(chargeReferenceNumber)
-  val correlationId: String            = "fe28db96-d9db-4220-9e12-f2d267267c29"
-  val lastUpdated: LocalDateTime       = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+  val chargeReferenceNumber: Int               = 1234567890
+  val chargeReference: ChargeReference         = ChargeReference(chargeReferenceNumber)
+  def randomChargeReference(): ChargeReference = ChargeReference(nextInt(chargeReferenceNumber))
+  val correlationId: String                    = "fe28db96-d9db-4220-9e12-f2d267267c29"
+  val lastUpdated: LocalDateTime               = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
 
   val emailAddress = "testEmail@digital.hmrc.gov.uk"
 
