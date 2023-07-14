@@ -16,6 +16,7 @@
 
 package services
 
+import util.Constants
 import connectors.SendEmailConnector
 import helpers.BaseSpec
 import models._
@@ -26,13 +27,12 @@ import play.api.Application
 import play.api.http.Status.ACCEPTED
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import repositories.DeclarationsRepository
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import util.Constants
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -143,6 +143,27 @@ class SendEmailServiceSpec extends BaseSpec {
       val emailParams: Map[String, Map[String, String]] = Map(emailAddress -> testParams)
       emailService.getEmailParamsFromData(declarationData) shouldBe emailParams
     }
+    "Return a map of emailId and parameters where some data can be unavailable" in new Setup {
+
+      val alteredParams: Map[String, String]      =
+        testParams ++ Map("AllITEMS" -> "[]", "DATE" -> "", "DATEOFARRIVAL" -> "", "TIMEOFARRIVAL" -> "")
+
+      val missingDateRequestCommon: JsObject      = requestCommon + ("receiptDate" -> JsString(""))
+      val missingDatesDeclarationHeader: JsObject =
+        declarationHeader + ("expectedDateOfArrival" -> JsString("")) + ("timeOfEntry" -> JsString(""))
+      val missingItemsInRequestDetail: JsObject =
+        requestDetail - "declarationAlcohol" - "declarationTobacco" - "declarationOther" + ("declarationHeader" -> missingDatesDeclarationHeader)
+
+      val changedDeclarationData: JsObject =
+        declarationData + ("simpleDeclarationRequest" -> Json.obj(
+          "requestCommon" -> missingDateRequestCommon,
+          "requestDetail" -> missingItemsInRequestDetail
+        ))
+
+      val emailParams: Map[String, Map[String, String]] = Map(emailAddress -> alteredParams)
+
+      emailService.getEmailParamsFromData(changedDeclarationData) shouldBe emailParams
+    }
   }
 
   "getEmailParamsFromAmendedData" should {
@@ -223,6 +244,19 @@ class SendEmailServiceSpec extends BaseSpec {
       when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
       when(declarationsRepository.get(chargeReference)).thenReturn(Future.successful(Some(declaration)))
       emailService.constructAndSendEmail(chargeReference).futureValue shouldBe true
+    }
+
+    "throw an exception when an amendment email is to be sent with no provided amendment data" in new Setup {
+      val amendmentWithNoData: Declaration = amendment.copy(amendData = None)
+
+      when(mockServicesConfig.getBoolean("features.disable-zero-pound-email")).thenReturn(false)
+      when(declarationsRepository.get(chargeReference)).thenReturn(Future.successful(Some(amendmentWithNoData)))
+
+      val exception: Exception = intercept[Exception] {
+        emailService.constructAndSendEmail(chargeReference).futureValue
+      }
+
+      exception.getCause.getMessage shouldBe "No Amendment data found"
     }
   }
 

@@ -25,19 +25,19 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 class MetricsOperatorSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite {
 
-  val metrics: MetricsImpl = app.injector.instanceOf[MetricsImpl]
+  val metrics: MetricsImpl             = app.injector.instanceOf[MetricsImpl]
   val metricsOperator: MetricsOperator = new MetricsOperator(metrics)
 
   "MetricsOperator" - {
     ".startTimer" in {
-        metricsOperator.startTimer() mustBe a[Timer.Context]
-        metricsOperator.registry.getTimers.get("submission-timer") mustBe a[Timer]
-      }
+      metricsOperator.startTimer() mustBe a[Timer.Context]
+      metricsOperator.registry.getTimers.get("submission-timer") mustBe a[Timer]
+    }
     ".stopTimer" in {
-        val context: Context = metricsOperator.registry.timer("test").time()
-        val elapsedTime: Long = metricsOperator.stopTimer(context)
+      val context: Context  = metricsOperator.registry.timer("test").time()
+      val elapsedTime: Long = metricsOperator.stopTimer(context)
 
-        elapsedTime.toInt must be > 0
+      elapsedTime.toInt must be > 0
     }
 
     ".setCounter" - {

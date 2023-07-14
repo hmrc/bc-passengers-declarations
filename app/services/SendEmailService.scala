@@ -83,10 +83,12 @@ trait SendEmailService {
       .getOrElse("")
       .equalsIgnoreCase("0.00")
 
-  private[services] def getDataOrAmendmentData(declaration: Declaration): JsObject = if (
-    declaration.amendState.isDefined
-  ) declaration.amendData.getOrElse(throw new Exception(s"No Amendment data found"))
-  else declaration.data
+  private[services] def getDataOrAmendmentData(declaration: Declaration): JsObject =
+    if (declaration.amendState.isDefined) {
+      declaration.amendData.getOrElse(throw new Exception(s"No Amendment data found"))
+    } else {
+      declaration.data
+    }
 
   private[services] def getEmailParamsFromData(data: JsObject): Map[String, Map[String, String]] = {
     val simpleDeclarationRequest: JsValue = data.value.apply("simpleDeclarationRequest")
@@ -117,20 +119,27 @@ trait SendEmailService {
     val fullName          = s"$firstName $lastName"
 
     val receiptDate: String          = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
-    val receiptDateForParsing        = receiptDate.substring(0, 10)
-    val receiptDateFormatted: String =
-      if (receiptDate.equals("")) receiptDate else LocalDate.parse(receiptDateForParsing).toString("dd MMMM YYYY")
+    val receiptDateFormatted: String = if (receiptDate.equals("")) {
+      receiptDate
+    } else {
+      LocalDate.parse(receiptDate.substring(0, 10)).toString("dd MMMM YYYY")
+    }
 
     val portOfEntry: String = declarationHeader.\("portOfEntryName").asOpt[String].getOrElse("")
 
     val expectedDateOfArrival: String = declarationHeader.\("expectedDateOfArrival").asOpt[String].getOrElse("")
-    val expectedDateArr: String       =
-      if (expectedDateOfArrival.equals("")) expectedDateOfArrival
-      else LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
+    val expectedDateArr: String       = if (expectedDateOfArrival.equals("")) {
+      expectedDateOfArrival
+    } else {
+      LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
+    }
 
     val timeOfEntry: String  = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
-    val formattedTimeOfEntry =
-      if (timeOfEntry.trim.equals("")) timeOfEntry else LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
+    val formattedTimeOfEntry = if (timeOfEntry.trim.equals("")) {
+      timeOfEntry
+    } else {
+      LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
+    }
 
     val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
     val travellingFrom: String  = declarationHeader.\("travellingFrom").asOpt[String].getOrElse("")
@@ -142,7 +151,11 @@ trait SendEmailService {
 
     val staticSubjectNonZero = "Receipt for payment on goods brought into the UK - Reference number "
     val staticSubjectZero    = "Receipt for declaration of goods brought into Northern Ireland - Reference number "
-    val dynamicSubject       = if (grandTotalGBP.equalsIgnoreCase("£0.00")) staticSubjectZero else staticSubjectNonZero
+    val dynamicSubject       = if (grandTotalGBP.equalsIgnoreCase("£0.00")) {
+      staticSubjectZero
+    } else {
+      staticSubjectNonZero
+    }
     val subject              = s"$dynamicSubject $chargeReference"
 
     val parameters: Map[String, String] = Map(

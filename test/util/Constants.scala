@@ -140,41 +140,47 @@ trait Constants {
     "grandTotalGBP"   -> "1362.46"
   )
 
+  val declarationHeader: JsObject = Json.obj(
+    "travellingFrom"        -> "NON_EU Only",
+    "expectedDateOfArrival" -> "2018-05-31",
+    "ukVATPaid"             -> false,
+    "uccRelief"             -> false,
+    "portOfEntryName"       -> userInformation("enterPlaceOfArrival"),
+    "ukExcisePaid"          -> false,
+    "chargeReference"       -> chargeReference.toString,
+    "portOfEntry"           -> "LHR",
+    "timeOfEntry"           -> "13:20",
+    "onwardTravelGBNI"      -> "GB",
+    "messageTypes"          -> Json.obj("messageType" -> "DeclarationCreate")
+  )
+
+  val requestCommon: JsObject = Json.obj(
+    "receiptDate"              -> "2020-12-29T14:00:08Z",
+    "requestParameters"        -> Json.arr(
+      Json.obj(
+        "paramName"  -> "REGIME",
+        "paramValue" -> "PNGR"
+      )
+    ),
+    "acknowledgementReference" -> (chargeReference.toString + "0")
+  )
+
+  val requestDetail: JsObject = Json.obj(
+    "declarationAlcohol" -> declarationAlcohol,
+    "liabilityDetails"   -> liabilityDetails,
+    "customerReference"  -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+    "personalDetails"    -> Json
+      .obj("firstName" -> userInformation("firstName"), "lastName" -> userInformation("lastName")),
+    "declarationTobacco" -> declarationTobacco,
+    "declarationHeader"  -> declarationHeader,
+    "contactDetails"     -> Json.obj("emailAddress" -> emailAddress),
+    "declarationOther"   -> declarationOther
+  )
+
   val declarationData: JsObject = Json.obj(
     "simpleDeclarationRequest" -> Json.obj(
-      "requestCommon" -> Json.obj(
-        "receiptDate"              -> "2020-12-29T14:00:08Z",
-        "requestParameters"        -> Json.arr(
-          Json.obj(
-            "paramName"  -> "REGIME",
-            "paramValue" -> "PNGR"
-          )
-        ),
-        "acknowledgementReference" -> (chargeReference.toString + "0")
-      ),
-      "requestDetail" -> Json.obj(
-        "declarationAlcohol" -> declarationAlcohol,
-        "liabilityDetails"   -> liabilityDetails,
-        "customerReference"  -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
-        "personalDetails"    -> Json
-          .obj("firstName" -> userInformation("firstName"), "lastName" -> userInformation("lastName")),
-        "declarationTobacco" -> declarationTobacco,
-        "declarationHeader"  -> Json.obj(
-          "travellingFrom"        -> "NON_EU Only",
-          "expectedDateOfArrival" -> "2018-05-31",
-          "ukVATPaid"             -> false,
-          "uccRelief"             -> false,
-          "portOfEntryName"       -> userInformation("enterPlaceOfArrival"),
-          "ukExcisePaid"          -> false,
-          "chargeReference"       -> chargeReference.toString,
-          "portOfEntry"           -> "LHR",
-          "timeOfEntry"           -> "13:20",
-          "onwardTravelGBNI"      -> "GB",
-          "messageTypes"          -> Json.obj("messageType" -> "DeclarationCreate")
-        ),
-        "contactDetails"     -> Json.obj("emailAddress" -> emailAddress),
-        "declarationOther"   -> declarationOther
-      )
+      "requestCommon" -> requestCommon,
+      "requestDetail" -> requestDetail
     )
   )
 
