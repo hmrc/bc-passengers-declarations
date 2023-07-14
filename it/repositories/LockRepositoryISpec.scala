@@ -19,15 +19,13 @@ package repositories
 import helpers.IntegrationSpecCommonBase
 import models.Lock
 import org.mongodb.scala.Document
-import play.api.inject.guice.GuiceApplicationBuilder
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
-import play.api.test.Helpers.{await, running}
+import play.api.test.Helpers._
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.Helpers._
 
-class LockRepositorySpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[Lock] {
+class LockRepositoryISpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[Lock] {
 
   override val repository = new DefaultLockRepository(mongoComponent)
 

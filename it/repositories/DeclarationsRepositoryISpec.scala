@@ -16,25 +16,27 @@
 
 package repositories
 
-import java.time.{LocalDateTime, ZoneOffset}
+import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus, PreviousDeclarationRequest}
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
-import play.api.Configuration
-import services.{ChargeReferenceService, ValidationService}
-import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.Helpers._
-import akka.stream.Materializer
 import org.mongodb.scala.Document
 import org.scalatest.Inside.inside
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import play.api.Configuration
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsObject, Json}
+import play.api.test.Helpers._
+import services.{ChargeReferenceService, ValidationService}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-class DeclarationsRepositorySpec extends IntegrationSpecCommonBase with DefaultPlayMongoRepositorySupport[Declaration] {
+import java.time.{LocalDateTime, ZoneOffset}
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class DeclarationsRepositoryISpec
+    extends IntegrationSpecCommonBase
+    with DefaultPlayMongoRepositorySupport[Declaration] {
 
   val validationService: ValidationService           = app.injector.instanceOf[ValidationService]
   implicit val mat: Materializer                     = app.injector.instanceOf[Materializer]
