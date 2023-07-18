@@ -16,19 +16,17 @@
 
 package workers
 
-import java.time.{LocalDateTime, ZoneOffset}
-import java.time.temporal.ChronoUnit
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
-import akka.stream.{ActorAttributes, Materializer, Supervision}
-
-import javax.inject.{Inject, Singleton}
+import akka.stream.{ActorAttributes, Materializer}
 import models.declarations.Declaration
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 
+import java.time.temporal.ChronoUnit
+import java.time.{LocalDateTime, ZoneOffset}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 @Singleton
 class AmendmentPaymentTimeoutWorker @Inject() (
@@ -40,42 +38,19 @@ class AmendmentPaymentTimeoutWorker @Inject() (
 
   private val logger: Logger = Logger(this.getClass)
 
-  private val initialDelayFromConfig               =
-    config.get[String]("workers.amendment-payment-timeout-worker.initial-delay").replace('.', ' ')
-  private val initialDelayFromConfigFiniteDuration =
-    config.get[FiniteDuration]("workers.amendment-payment-timeout-worker.initial-delay")
-  private val finiteInitialDelay                   = Duration(initialDelayFromConfig)
-  private val initialDelay                         =
-    Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
-
-  private val intervalFromConfig                   =
-    config.get[String]("workers.amendment-payment-timeout-worker.interval").replace('.', ' ')
-  private val intervalFromConfigFiniteDuration     =
-    config.get[FiniteDuration]("workers.amendment-payment-timeout-worker.interval")
-  private val finiteInterval                       = Duration(intervalFromConfig)
-  private val interval                             =
-    Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)
-
-  private val parallelism                          = config.get[Int]("workers.amendment-payment-timeout-worker.parallelism")
-
-  private val paymentTimeoutFromConfig                 =
-    config.get[String]("declarations.payment-no-response-timeout").replace('.', ' ')
-  private val paymentTimeoutFromConfigFiniteDuration   =
-    config.get[FiniteDuration]("declarations.payment-no-response-timeout")
-  private val finitePaymentTimeout                     = Duration(paymentTimeoutFromConfig)
-  private val paymentTimeout                           =
-    Some(finitePaymentTimeout).collect { case d: FiniteDuration => d }.getOrElse(paymentTimeoutFromConfigFiniteDuration)
-
-  private val supervisionStrategy: Supervision.Decider = {
-    case NonFatal(_) => Supervision.resume
-    case _           => Supervision.stop
-  }
+  private val initialDelay: FiniteDuration   =
+    durationValueFromConfig("workers.amendment-payment-timeout-worker.initial-delay", config)
+  private val interval: FiniteDuration       =
+    durationValueFromConfig("workers.amendment-payment-timeout-worker.interval", config)
+  private val paymentTimeout: FiniteDuration =
+    durationValueFromConfig("declarations.payment-no-response-timeout", config)
+  private val parallelism: Int               = config.get[Int]("workers.amendment-payment-timeout-worker.parallelism")
 
   val tap: SinkQueueWithCancel[Declaration] = {
 
     logger.info(" Amendment payment timeout worker started")
 
-    def timeout = LocalDateTime.now(ZoneOffset.UTC).minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
+    def timeout: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC).minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
 
     Source
       .tick(initialDelay, interval, declarationsRepository.unpaidAmendments)

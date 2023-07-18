@@ -29,17 +29,16 @@ import workers._
 class HmrcModuleSpec extends AnyWordSpec with Matchers {
 
   private val mockConfiguration: Configuration = mock[Configuration]
-  private val mockEnvironment: Environment = mock[Environment]
+  private val mockEnvironment: Environment     = mock[Environment]
 
   private val bindings: Seq[Binding[_]] = new HmrcModule().bindings(mockEnvironment, mockConfiguration)
 
-  "HmrcModuleSpec" when {
+  "HmrcModule" when {
     ".bindings" must {
-      def test (scenario: String, clazz: Class[_]): Unit = {
+      def test(scenario: String, clazz: Class[_]): Unit =
         s"bind the $scenario eagerly" in {
           bindings.filter(binding => binding.key.clazz == clazz).head.eager mustBe true
         }
-      }
 
       val input: Seq[(String, Class[_])] = Seq(
         ("DeclarationsRepository", classOf[DeclarationsRepository]),
@@ -55,10 +54,10 @@ class HmrcModuleSpec extends AnyWordSpec with Matchers {
         ("MetricsWorker", classOf[MetricsWorker])
       )
       input.foreach(args => (test _).tupled(args))
-    }
 
-    "not bind the CircuitBreaker eagerly" in {
-      bindings.filter(binding => binding.key.clazz == classOf[CircuitBreaker]).head.eager mustBe false
+      "not bind the CircuitBreaker eagerly" in {
+        bindings.filter(binding => binding.key.clazz == classOf[CircuitBreaker]).head.eager mustBe false
+      }
     }
   }
 }

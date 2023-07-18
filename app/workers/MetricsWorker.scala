@@ -17,44 +17,27 @@
 package workers
 
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
-import akka.stream.{ActorAttributes, Materializer, Supervision}
-import com.google.inject.{Inject, Singleton}
+import akka.stream.{ActorAttributes, Materializer}
 import metrics.MetricsOperator
 import models.DeclarationsStatus
 import play.api.{Configuration, Logger}
 import repositories.DeclarationsRepository
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 @Singleton
 class MetricsWorker @Inject() (
   declarationsRepository: DeclarationsRepository,
   config: Configuration,
   metricsOperator: MetricsOperator
-)(implicit mat: Materializer) {
+)(implicit mat: Materializer)
+    extends WorkerConfig {
 
   private val logger = Logger(this.getClass)
 
-  private val initialDelayFromConfig                   = config.get[String]("workers.metrics-worker.initial-delay").replace('.', ' ')
-  private val initialDelayFromConfigFiniteDuration     = config.get[FiniteDuration]("workers.metrics-worker.initial-delay")
-  private val finiteInitialDelay                       = Duration(initialDelayFromConfig)
-  private val initialDelay                             =
-    Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
-
-  private val intervalFromConfig                       = config.get[String]("workers.metrics-worker.interval").replace('.', ' ')
-  private val intervalFromConfigFiniteDuration         = config.get[FiniteDuration]("workers.metrics-worker.interval")
-  private val finiteInterval                           = Duration(intervalFromConfig)
-  private val interval                                 =
-    Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)
-
-  private val supervisionStrategy: Supervision.Decider = {
-    case NonFatal(e) =>
-      logger.warn("Exception thrown in metrics stream, resuming", e)
-      Supervision.resume
-    case _           =>
-      Supervision.stop
-  }
+  private val initialDelay: FiniteDuration = durationValueFromConfig("workers.metrics-worker.initial-delay", config)
+  private val interval: FiniteDuration     = durationValueFromConfig("workers.metrics-worker.interval", config)
 
   val tap: SinkQueueWithCancel[DeclarationsStatus] = {
 
