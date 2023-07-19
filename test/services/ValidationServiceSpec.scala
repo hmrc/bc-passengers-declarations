@@ -16,20 +16,19 @@
 
 package services
 
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Injecting
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-class ValidationServiceSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with Injecting {
+class ValidationServiceSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with Injecting {
 
   private lazy val validationService: ValidationService = inject[ValidationService]
   private lazy val validator: Validator                 = validationService.get("test-schema.json")
 
-  "a validator" - {
-
-    "must return an empty list of errors when a document is valid" in {
+  "Validator" must {
+    "return an empty list of errors when a document is valid" in {
 
       val json = Json.obj(
         "simpleDeclarationRequest" -> Json.obj(
@@ -40,7 +39,7 @@ class ValidationServiceSpec extends AnyFreeSpec with Matchers with GuiceOneAppPe
       validator.validate(json) mustBe empty
     }
 
-    "must return a list of validation errors when a document is invalid" in {
+    "return a list of validation errors when a document is invalid" in {
 
       val json = Json.obj()
 

@@ -18,26 +18,23 @@ package workers
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import helpers.Constants
 import models.declarations.State
 import org.mockito.MockitoSugar.{mock, when}
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
-import util.Constants
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class FailedSubmissionWorkerSpec extends AnyFreeSpec
-  with Matchers
-  with GuiceOneAppPerSuite
-  with Constants {
+class FailedSubmissionWorkerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with Constants {
 
   val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
-  val mockLockRepository: DefaultLockRepository = mock[DefaultLockRepository]
+  val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
 
   val config: Configuration = app.injector.instanceOf[Configuration]
 
@@ -51,13 +48,14 @@ class FailedSubmissionWorkerSpec extends AnyFreeSpec
     )
   }
 
-  "FailedSubmissionWorkerSpec" - {
-    "tap" - {
-      "retrieves declarations with a State SubmissionFailed and deletes them from the repository returning each Declaration removed" in new Setup {
+  "FailedSubmissionWorkerSpec" when {
+    ".tap" must {
+      "retrieve declarations with a State SubmissionFailed and deletes them from the repository returning each Declaration removed" in new Setup {
 
         when(mockDeclarationsRepository.failedDeclarations).thenReturn(Source(Vector(declaration)))
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockDeclarationsRepository.setState(declaration.chargeReference, State.Paid)).thenReturn(Future.successful(declaration))
+        when(mockDeclarationsRepository.setState(declaration.chargeReference, State.Paid))
+          .thenReturn(Future.successful(declaration))
 
         await(failedSubmissionWorker.tap.pull()) mustBe Some(declaration)
       }

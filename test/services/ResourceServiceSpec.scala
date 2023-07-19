@@ -16,15 +16,16 @@
 
 package services
 
-import java.io.IOException
 import com.fasterxml.jackson.core.JsonParseException
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Injecting
-import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-class ResourceServiceSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with Injecting {
+import java.io.IOException
+
+class ResourceServiceSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with Injecting {
 
   private lazy val resourceService: ResourceService = inject[ResourceService]
 
@@ -32,24 +33,23 @@ class ResourceServiceSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerS
     "foo" -> "bar"
   )
 
-  "a resource service" - {
-
-    "must return the contents of a file as a string" in {
+  "ResourceService" must {
+    "return the contents of a file as a string" in {
       resourceService.getFile("test.txt") mustEqual "foo = bar"
     }
 
-    "must return the contents of a file as json" in {
+    "return the contents of a file as json" in {
       resourceService.getJson("test.json") mustEqual json
     }
 
-    "must throw an exception when a file can't be found" in {
+    "throw an exception when a file can't be found" in {
 
       an[IOException] mustBe thrownBy {
         resourceService.getFile("non-existant.txt")
       }
     }
 
-    "must throw an exception when a file can't be parsed as json" in {
+    "throw an exception when a file can't be parsed as json" in {
 
       a[JsonParseException] mustBe thrownBy {
         resourceService.getJson("test.txt")

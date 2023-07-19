@@ -1,4 +1,4 @@
-import sbt._
+import sbt.*
 
 object AppDependencies {
 
@@ -15,7 +15,7 @@ object AppDependencies {
 
   private val test: Seq[ModuleID] = Seq(
     "org.scalatest"         %% "scalatest"               % "3.2.16",
-    "com.typesafe.play"     %% "play-test"               % "2.8.19",
+    "com.typesafe.play"     %% "play-test"               % "2.8.20",
     "org.mockito"           %% "mockito-scala-scalatest" % "1.17.14",
     "com.github.tomakehurst" % "wiremock-standalone"     % "2.27.2",
     "org.scalacheck"        %% "scalacheck"              % "1.17.0",

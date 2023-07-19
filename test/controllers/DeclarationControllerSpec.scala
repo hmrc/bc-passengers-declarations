@@ -16,13 +16,14 @@
 
 package controllers
 
+import helpers.Constants
 import models.declarations.State
 import models.{DeclarationResponse, PreviousDeclarationRequest}
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.MockitoSugar
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
@@ -31,12 +32,11 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.{DeclarationsRepository, LockRepository}
-import util.Constants
 
 import scala.concurrent.Future
 
 class DeclarationControllerSpec
-    extends AnyFreeSpec
+    extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
     with OptionValues
@@ -46,8 +46,7 @@ class DeclarationControllerSpec
     with Constants {
 
   private val declarationsRepository = mock[DeclarationsRepository]
-
-  private val lockRepository = mock[LockRepository]
+  private val lockRepository         = mock[LockRepository]
 
   override def beforeEach(): Unit = {
     reset(declarationsRepository)
@@ -66,534 +65,399 @@ class DeclarationControllerSpec
       .build()
   }
 
-  "submit" - {
+  "DeclarationController" should {
+    ".submit" when {
+      "given a valid request" when {
+        "mongo is available" must {
+          "return ACCEPTED and a Declaration" in {
 
-    "when given a valid request" - {
+            val request = FakeRequest(POST, routes.DeclarationController.submit().url)
+              .withJsonBody(declarationData)
+              .withHeaders("X-Correlation-ID" -> correlationId)
 
-      "and mongo is available" - {
+            when(declarationsRepository.insert(declarationData, correlationId, sentToEtmp = false))
+              .thenReturn(Future.successful(Right(declaration)))
 
-        "must return ACCEPTED and a Declaration" in {
+            val result = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+            headers(result) must contain("X-Correlation-ID" -> correlationId)
+            contentAsJson(result) mustBe declaration.data
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).insert(declarationData, correlationId, sentToEtmp = false)
+            }
+          }
+        }
+
+        "mongo is unavailable" must {
+          "throw an exception" in {
+
+            val requestBody = Json.obj("foo" -> "bar")
+
+            val request = FakeRequest(POST, routes.DeclarationController.submit().url)
+              .withJsonBody(requestBody)
+              .withHeaders("X-Correlation-ID" -> correlationId)
+
+            when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
+              .thenReturn(Future.failed(new Exception()))
+
+            val result = route(app, request).value
+
+            whenReady(result.failed) {
+              _ mustBe an[Exception]
+            }
+          }
+        }
+      }
+
+      "given an invalid request" must {
+        "return BAD_REQUEST when not supplied with a correlation id in the headers" in {
+
+          val requestBody = Json.obj()
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-            .withJsonBody(declarationData)
-            .withHeaders("X-Correlation-ID" -> correlationId)
+            .withJsonBody(requestBody)
 
-          when(declarationsRepository.insert(declarationData, correlationId, sentToEtmp = false))
+          when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
             .thenReturn(Future.successful(Right(declaration)))
 
           val result = route(app, request).value
 
-          status(result) mustBe ACCEPTED
-          headers(result) must contain("X-Correlation-ID" -> correlationId)
-          contentAsJson(result) mustBe declaration.data
-
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1)).insert(declarationData, correlationId, sentToEtmp = false)
-          }
-        }
-      }
-
-      "and mongo is unavailable" - {
-
-        "must throw an exception" in {
-
-          val requestBody = Json.obj("foo" -> "bar")
-
-          val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-            .withJsonBody(requestBody)
-            .withHeaders("X-Correlation-ID" -> correlationId)
-
-          when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
-            .thenReturn(Future.failed(new Exception()))
-
-          val result = route(app, request).value
-
-          whenReady(result.failed) {
-            _ mustBe an[Exception]
-          }
-        }
-      }
-    }
-
-    "when given an invalid request" - {
-
-      "must return BAD_REQUEST when not supplied with a correlation id in the headers" in {
-
-        val requestBody = Json.obj()
-
-        val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-          .withJsonBody(requestBody)
-
-        when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
-          .thenReturn(Future.successful(Right(declaration)))
-
-        val result = route(app, request).value
-
-        status(result) mustBe BAD_REQUEST
-        contentAsJson(result) mustEqual Json.obj(
-          "errors" -> Seq("Missing X-Correlation-ID header")
-        )
-      }
-
-      "must return BAD_REQUEST with a list of errors" in {
-
-        val requestBody = Json.obj()
-
-        val request = FakeRequest(POST, routes.DeclarationController.submit().url)
-          .withJsonBody(requestBody)
-          .withHeaders("X-Correlation-ID" -> correlationId)
-
-        when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
-          .thenReturn(Future.successful(Left(List("foo"))))
-
-        val result = route(app, request).value
-
-        status(result) mustBe BAD_REQUEST
-        headers(result) must contain("X-Correlation-ID" -> correlationId)
-        contentAsJson(result) mustEqual Json.obj(
-          "errors" -> Seq("foo")
-        )
-      }
-    }
-  }
-
-  "submit Amendment" - {
-
-    "when given a valid request" - {
-
-      "and mongo is available" - {
-
-        "must an updated Declaration with Amendment" in {
-
-          val inputAmendmentData: JsObject = Json.obj(
-            "journeyData"              -> journeyData,
-            "simpleDeclarationRequest" -> amendmentData("simpleDeclarationRequest")
+          status(result) mustBe BAD_REQUEST
+          contentAsJson(result) mustEqual Json.obj(
+            "errors" -> Seq("Missing X-Correlation-ID header")
           )
-
-          val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
-            .withJsonBody(inputAmendmentData)
-            .withHeaders("X-Correlation-ID" -> correlationId)
-
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-          when(declarationsRepository.insertAmendment(inputAmendmentData, correlationId, chargeReference))
-            .thenReturn(Future.successful(amendment))
-
-          val result = route(app, request).value
-
-          status(result) mustBe ACCEPTED
-          headers(result) must contain("X-Correlation-ID" -> correlationId)
-          contentAsJson(result) mustBe amendment.amendData.get
-
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1))
-              .insertAmendment(inputAmendmentData, correlationId, chargeReference)
-            verify(lockRepository, times(1)).release(chargeReferenceNumber)
-          }
         }
-      }
 
-      "and mongo is unavailable" - {
+        "return BAD_REQUEST with a list of errors" in {
 
-        "must throw an exception" in {
-
-          val requestBody = Json.obj("foo" -> "bar")
+          val requestBody = Json.obj()
 
           val request = FakeRequest(POST, routes.DeclarationController.submit().url)
             .withJsonBody(requestBody)
             .withHeaders("X-Correlation-ID" -> correlationId)
 
           when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
-            .thenReturn(Future.failed(new Exception()))
+            .thenReturn(Future.successful(Left(List("foo"))))
 
           val result = route(app, request).value
 
-          whenReady(result.failed) {
-            _ mustBe an[Exception]
-          }
+          status(result) mustBe BAD_REQUEST
+          headers(result) must contain("X-Correlation-ID" -> correlationId)
+          contentAsJson(result) mustEqual Json.obj(
+            "errors" -> Seq("foo")
+          )
         }
       }
     }
 
-    "when given an invalid request" - {
+    ".submitAmendment" when {
+      "when given a valid request" when {
+        "mongo is available" must {
+          "be an updated Declaration with Amendment" in {
 
-      "must throw an exception when there is an invalid chargeReference id in amendment data" in {
+            val inputAmendmentData: JsObject = Json.obj(
+              "journeyData"              -> journeyData,
+              "simpleDeclarationRequest" -> amendmentData("simpleDeclarationRequest")
+            )
 
-        val invalidData: JsObject = amendmentData.deepMerge(
-          Json.obj(
-            "simpleDeclarationRequest" -> Json.obj(
-              "requestDetail" -> Json.obj(
-                "declarationHeader" -> Json.obj(
-                  "chargeReference" -> "AAAAAAAAAAAAAA"
+            val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
+              .withJsonBody(inputAmendmentData)
+              .withHeaders("X-Correlation-ID" -> correlationId)
+
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+            when(declarationsRepository.insertAmendment(inputAmendmentData, correlationId, chargeReference))
+              .thenReturn(Future.successful(amendment))
+
+            val result = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+            headers(result) must contain("X-Correlation-ID" -> correlationId)
+            contentAsJson(result) mustBe amendment.amendData.get
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1))
+                .insertAmendment(inputAmendmentData, correlationId, chargeReference)
+              verify(lockRepository, times(1)).release(chargeReferenceNumber)
+            }
+          }
+        }
+
+        "mongo is unavailable" must {
+          "throw an exception" in {
+
+            val requestBody = Json.obj("foo" -> "bar")
+
+            val request = FakeRequest(POST, routes.DeclarationController.submit().url)
+              .withJsonBody(requestBody)
+              .withHeaders("X-Correlation-ID" -> correlationId)
+
+            when(declarationsRepository.insert(requestBody, correlationId, sentToEtmp = false))
+              .thenReturn(Future.failed(new Exception()))
+
+            val result = route(app, request).value
+
+            whenReady(result.failed) {
+              _ mustBe an[Exception]
+            }
+          }
+        }
+      }
+
+      "given an invalid request" must {
+        "throw an exception when there is an invalid chargeReference id in amendment data" in {
+
+          val invalidData: JsObject = amendmentData.deepMerge(
+            Json.obj(
+              "simpleDeclarationRequest" -> Json.obj(
+                "requestDetail" -> Json.obj(
+                  "declarationHeader" -> Json.obj(
+                    "chargeReference" -> "AAAAAAAAAAAAAA"
+                  )
                 )
               )
             )
           )
-        )
 
-        val inputInvalidAmendmentData: JsObject = Json.obj(
-          "journeyData"              -> journeyData,
-          "simpleDeclarationRequest" -> invalidData("simpleDeclarationRequest")
-        )
+          val inputInvalidAmendmentData: JsObject = Json.obj(
+            "journeyData"              -> journeyData,
+            "simpleDeclarationRequest" -> invalidData("simpleDeclarationRequest")
+          )
 
-        val request   = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
-          .withJsonBody(inputInvalidAmendmentData)
-          .withHeaders("X-Correlation-ID" -> correlationId)
+          val request   = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
+            .withJsonBody(inputInvalidAmendmentData)
+            .withHeaders("X-Correlation-ID" -> correlationId)
 
-        val exception = route(app, request).value
+          val exception = route(app, request).value
 
-        val result = intercept[Exception] {
-          status(exception)
-        }
-
-        result.getMessage mustBe "unable to extract charge reference:AAAAAAAAAAAAAA"
-      }
-
-      "must return BAD_REQUEST when not supplied with a correlation id in the headers" in {
-
-        val requestBody = Json.obj()
-
-        val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
-          .withJsonBody(requestBody)
-
-        when(declarationsRepository.insertAmendment(requestBody, correlationId, chargeReference))
-          .thenReturn(Future.successful(amendment))
-
-        val result = route(app, request).value
-
-        status(result) mustBe BAD_REQUEST
-        contentAsJson(result) mustEqual Json.obj(
-          "errors" -> Seq("Missing X-Correlation-ID header")
-        )
-      }
-
-      "must return BAD_REQUEST with errors" in {
-
-        val requestBody = Json.obj()
-
-        val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
-          .withJsonBody(requestBody)
-          .withHeaders("X-Correlation-ID" -> correlationId)
-
-        val result  = route(app, request).value
-
-        status(result) mustBe BAD_REQUEST
-        headers(result)                must contain("X-Correlation-ID" -> correlationId)
-        contentAsJson(result).toString must include(
-          "object has too few properties (found 0 but schema requires at least 1)"
-        )
-      }
-    }
-  }
-
-  "update" - {
-
-    val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
-
-    "when a matching declaration is found" - {
-
-      "and the declaration is locked" - {
-
-        "must return LOCKED" in {
-
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(false))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-
-          val result = route(app, request).value
-
-          status(result) mustBe LOCKED
-          verify(lockRepository, never).release(chargeReferenceNumber)
-        }
-      }
-
-      "and the declaration is in a Failed state" - {
-
-        "must return CONFLICT" in {
-
-          val declarationSubmissionFailed = declaration.copy(state = State.SubmissionFailed)
-
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(declarationSubmissionFailed)))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-
-          val result = route(app, request).value
-
-          status(result) mustBe CONFLICT
-          verify(lockRepository, times(1)).release(chargeReferenceNumber)
-        }
-      }
-
-      "and the declaration is in a Paid state" - {
-
-        "must return ACCEPTED without modifying the declaration" in {
-
-          val declarationPaid = declaration.copy(state = State.Paid)
-
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(declarationPaid)))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-
-          val result = route(app, request).value
-
-          status(result) mustBe ACCEPTED
-          verify(declarationsRepository, never).setState(eqTo(chargeReference), any())
-          verify(lockRepository, times(1)).release(chargeReferenceNumber)
-        }
-      }
-
-      "and updating its state fails" - {
-
-        "must throw an exception" in {
-
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(declaration)))
-          when(declarationsRepository.setState(chargeReference, State.Paid))
-            .thenReturn(Future.failed(new Exception))
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-
-          val result = route(app, request).value
-
-          intercept[Exception] {
-            status(result)
+          val result = intercept[Exception] {
+            status(exception)
           }
 
-          verify(lockRepository, times(1)).release(chargeReferenceNumber)
+          result.getMessage mustBe "unable to extract charge reference:AAAAAAAAAAAAAA"
         }
-      }
 
-      "and the payload status is Successful and updating its state succeeds" - {
+        "return BAD_REQUEST when not supplied with a correlation id in the headers" in {
 
-        "must return ACCEPTED and update the state to Paid" in {
+          val requestBody = Json.obj()
 
-          val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
+          val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
+            .withJsonBody(requestBody)
 
-          val updatedDeclaration = declaration.copy(state = State.Paid)
+          when(declarationsRepository.insertAmendment(requestBody, correlationId, chargeReference))
+            .thenReturn(Future.successful(amendment))
 
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(declaration)))
-          when(declarationsRepository.setState(chargeReference, State.Paid))
-            .thenReturn(Future.successful(updatedDeclaration))
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
+          val result = route(app, request).value
 
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+          status(result) mustBe BAD_REQUEST
+          contentAsJson(result) mustEqual Json.obj(
+            "errors" -> Seq("Missing X-Correlation-ID header")
+          )
+        }
+
+        "return BAD_REQUEST with errors" in {
+
+          val requestBody = Json.obj()
+
+          val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
+            .withJsonBody(requestBody)
+            .withHeaders("X-Correlation-ID" -> correlationId)
+
           val result  = route(app, request).value
 
-          status(result) mustBe ACCEPTED
-
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1)).get(chargeReference)
-            verify(declarationsRepository, times(1)).setState(chargeReference, State.Paid)
-            verify(lockRepository, times(1)).release(chargeReferenceNumber)
-          }
-        }
-      }
-
-      "and the payload status is Failed and updating its state succeeds" - {
-
-        "must return ACCEPTED and update the state to PaymentFailed" in {
-
-          val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Failed")
-
-          val updatedDeclaration = declaration.copy(state = State.PaymentFailed)
-
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(declaration)))
-          when(declarationsRepository.setState(chargeReference, State.PaymentFailed))
-            .thenReturn(Future.successful(updatedDeclaration))
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result  = route(app, request).value
-
-          status(result) mustBe ACCEPTED
-
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1)).get(chargeReference)
-            verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentFailed)
-            verify(lockRepository, times(1)).release(chargeReferenceNumber)
-          }
-        }
-      }
-
-      "and the payload status is Cancelled and updating its state succeeds" - {
-
-        "must return ACCEPTED and update the state to PaymentCancelled" in {
-
-          val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Cancelled")
-
-          val updatedDeclaration = declaration.copy(state = State.PaymentCancelled)
-
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(declaration)))
-          when(declarationsRepository.setState(chargeReference, State.PaymentCancelled))
-            .thenReturn(Future.successful(updatedDeclaration))
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result  = route(app, request).value
-
-          status(result) mustBe ACCEPTED
-
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1)).get(chargeReference)
-            verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentCancelled)
-            verify(lockRepository, times(1)).release(chargeReferenceNumber)
-          }
+          status(result) mustBe BAD_REQUEST
+          headers(result)                must contain("X-Correlation-ID" -> correlationId)
+          contentAsJson(result).toString must include(
+            "object has too few properties (found 0 but schema requires at least 1)"
+          )
         }
       }
     }
 
-    "when a matching declaration is not found" - {
+    ".update" when {
 
-      "must return NOT_FOUND" in {
+      val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
 
-        when(declarationsRepository.get(chargeReference))
-          .thenReturn(Future.successful(None))
-        when(lockRepository.lock(chargeReferenceNumber))
-          .thenReturn(Future.successful(true))
-        when(lockRepository.release(chargeReferenceNumber))
-          .thenReturn(Future.successful(()))
+      "a matching declaration is found" when {
+        "the declaration is locked" must {
+          "return LOCKED" in {
 
-        val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-        val result  = route(app, request).value
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(false))
 
-        status(result) mustBe NOT_FOUND
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
 
-        whenReady(result) { _ =>
-          verify(declarationsRepository, times(1)).get(chargeReference)
-        }
-      }
-    }
+            val result = route(app, request).value
 
-    "when a request is made with an invalid charge reference" - {
-
-      "must return BAD_REQUEST" in {
-
-        val jsonPayload = Json.obj("reference" -> "XDDD0000000105", "status" -> "Successful")
-        val request     = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-        val result      = route(app, request).value
-        status(result) mustBe BAD_REQUEST
-      }
-    }
-  }
-
-  "update amendment state" - {
-
-    val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
-
-    "when a matching amendment is found" - {
-
-      "and the amendment is in a Failed state" - {
-
-        "must return CONFLICT" in {
-
-          val amendmentDeclarationSubmissionFailed =
-            amendment.copy(amendState = Some(State.SubmissionFailed))
-
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(amendmentDeclarationSubmissionFailed)))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-
-          val result = route(app, request).value
-
-          status(result) mustBe CONFLICT
-          verify(lockRepository, times(1)).release(chargeReferenceNumber)
-        }
-      }
-
-      "and the amendment is in a Paid state" - {
-
-        "must return ACCEPTED without modifying the amendment" in {
-
-          val amendmentDeclarationPaid = amendment.copy(amendState = Some(State.Paid))
-
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(amendmentDeclarationPaid)))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-
-          val result = route(app, request).value
-
-          status(result) mustBe ACCEPTED
-          verify(declarationsRepository, never).setAmendState(eqTo(chargeReference), any())
-          verify(lockRepository, times(1)).release(chargeReferenceNumber)
-        }
-      }
-
-      "and updating its amendState fails" - {
-
-        "must throw an exception" in {
-
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(amendment)))
-          when(declarationsRepository.setAmendState(chargeReference, State.Paid))
-            .thenReturn(Future.failed(new Exception))
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
-
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-
-          val result = route(app, request).value
-
-          intercept[Exception] {
-            status(result)
+            status(result) mustBe LOCKED
+            verify(lockRepository, never).release(chargeReferenceNumber)
           }
+        }
 
-          verify(lockRepository, times(1)).release(chargeReferenceNumber)
+        "the declaration is in a Failed state" must {
+          "return CONFLICT" in {
+
+            val declarationSubmissionFailed = declaration.copy(state = State.SubmissionFailed)
+
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(declarationSubmissionFailed)))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+
+            val result = route(app, request).value
+
+            status(result) mustBe CONFLICT
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
+          }
+        }
+
+        "the declaration is in a Paid state" must {
+          "return ACCEPTED without modifying the declaration" in {
+
+            val declarationPaid = declaration.copy(state = State.Paid)
+
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(declarationPaid)))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+
+            val result = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+            verify(declarationsRepository, never).setState(eqTo(chargeReference), any())
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
+          }
+        }
+
+        "updating its state fails" must {
+          "throw an exception" in {
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(declaration)))
+            when(declarationsRepository.setState(chargeReference, State.Paid))
+              .thenReturn(Future.failed(new Exception))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+
+            val result = route(app, request).value
+
+            intercept[Exception] {
+              status(result)
+            }
+
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
+          }
+        }
+
+        "the payload status is Successful and updating its state succeeds" must {
+          "return ACCEPTED and update the state to Paid" in {
+
+            val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
+
+            val updatedDeclaration = declaration.copy(state = State.Paid)
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(declaration)))
+            when(declarationsRepository.setState(chargeReference, State.Paid))
+              .thenReturn(Future.successful(updatedDeclaration))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+            val result  = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setState(chargeReference, State.Paid)
+              verify(lockRepository, times(1)).release(chargeReferenceNumber)
+            }
+          }
+        }
+
+        "the payload status is Failed and updating its state succeeds" must {
+          "return ACCEPTED and update the state to PaymentFailed" in {
+
+            val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Failed")
+
+            val updatedDeclaration = declaration.copy(state = State.PaymentFailed)
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(declaration)))
+            when(declarationsRepository.setState(chargeReference, State.PaymentFailed))
+              .thenReturn(Future.successful(updatedDeclaration))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+            val result  = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentFailed)
+              verify(lockRepository, times(1)).release(chargeReferenceNumber)
+            }
+          }
+        }
+
+        "the payload status is Cancelled and updating its state succeeds" must {
+          "return ACCEPTED and update the state to PaymentCancelled" in {
+
+            val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Cancelled")
+
+            val updatedDeclaration = declaration.copy(state = State.PaymentCancelled)
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(declaration)))
+            when(declarationsRepository.setState(chargeReference, State.PaymentCancelled))
+              .thenReturn(Future.successful(updatedDeclaration))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+            val result  = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setState(chargeReference, State.PaymentCancelled)
+              verify(lockRepository, times(1)).release(chargeReferenceNumber)
+            }
+          }
         }
       }
 
-      "and the payload status is Successful and updating its amendState succeeds" - {
-
-        "must return ACCEPTED and update the amendState to Paid" in {
-
-          val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
-
-          val updatedAmendment = amendment.copy(amendState = Some(State.Paid))
+      "a matching declaration is not found" must {
+        "return NOT_FOUND" in {
 
           when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(amendment)))
-          when(declarationsRepository.setAmendState(chargeReference, State.Paid))
-            .thenReturn(Future.successful(updatedAmendment))
+            .thenReturn(Future.successful(None))
           when(lockRepository.lock(chargeReferenceNumber))
             .thenReturn(Future.successful(true))
           when(lockRepository.release(chargeReferenceNumber))
@@ -602,85 +466,252 @@ class DeclarationControllerSpec
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
           val result  = route(app, request).value
 
-          status(result) mustBe ACCEPTED
+          status(result) mustBe NOT_FOUND
 
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
-            verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.Paid)
-            verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
       }
 
-      "and the payload status is Failed and updating its amendState succeeds" - {
+      "a request is made with an invalid charge reference" must {
+        "return BAD_REQUEST" in {
 
-        "must return ACCEPTED and update the amendState to PaymentFailed" in {
+          val jsonPayload = Json.obj("reference" -> "XDDD0000000105", "status" -> "Successful")
+          val request     = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+          val result      = route(app, request).value
+          status(result) mustBe BAD_REQUEST
+        }
+      }
+    }
 
-          val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Failed")
+    ".update (amendment state)" when {
 
-          val updatedAmendment = amendment.copy(amendState = Some(State.PaymentFailed))
+      val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
 
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(amendment)))
-          when(declarationsRepository.setAmendState(chargeReference, State.PaymentFailed))
-            .thenReturn(Future.successful(updatedAmendment))
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
+      "a matching amendment is found" when {
+        "the amendment is in a Failed state" must {
+          "return CONFLICT" in {
 
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result  = route(app, request).value
+            val amendmentDeclarationSubmissionFailed =
+              amendment.copy(amendState = Some(State.SubmissionFailed))
 
-          status(result) mustBe ACCEPTED
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(amendmentDeclarationSubmissionFailed)))
 
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1)).get(chargeReference)
-            verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentFailed)
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+
+            val result = route(app, request).value
+
+            status(result) mustBe CONFLICT
             verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
-      }
 
-      "and the payload status is Cancelled and updating its amendState succeeds" - {
+        "the amendment is in a Paid state" must {
+          "return ACCEPTED without modifying the amendment" in {
 
-        "must return ACCEPTED and update the amendState to PaymentCancelled" in {
+            val amendmentDeclarationPaid = amendment.copy(amendState = Some(State.Paid))
 
-          val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Cancelled")
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(amendmentDeclarationPaid)))
 
-          val updatedAmendment = amendment.copy(amendState = Some(State.PaymentCancelled))
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
 
-          when(declarationsRepository.get(chargeReference))
-            .thenReturn(Future.successful(Some(amendment)))
-          when(declarationsRepository.setAmendState(chargeReference, State.PaymentCancelled))
-            .thenReturn(Future.successful(updatedAmendment))
-          when(lockRepository.lock(chargeReferenceNumber))
-            .thenReturn(Future.successful(true))
-          when(lockRepository.release(chargeReferenceNumber))
-            .thenReturn(Future.successful(()))
+            val result = route(app, request).value
 
-          val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
-          val result  = route(app, request).value
-
-          status(result) mustBe ACCEPTED
-
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1)).get(chargeReference)
-            verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentCancelled)
+            status(result) mustBe ACCEPTED
+            verify(declarationsRepository, never).setAmendState(eqTo(chargeReference), any())
             verify(lockRepository, times(1)).release(chargeReferenceNumber)
+          }
+        }
+
+        "updating its amendState fails" must {
+          "throw an exception" in {
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(amendment)))
+            when(declarationsRepository.setAmendState(chargeReference, State.Paid))
+              .thenReturn(Future.failed(new Exception))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+
+            val result = route(app, request).value
+
+            intercept[Exception] {
+              status(result)
+            }
+
+            verify(lockRepository, times(1)).release(chargeReferenceNumber)
+          }
+        }
+
+        "the payload status is Successful and updating its amendState succeeds" must {
+          "return ACCEPTED and update the amendState to Paid" in {
+
+            val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Successful")
+
+            val updatedAmendment = amendment.copy(amendState = Some(State.Paid))
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(amendment)))
+            when(declarationsRepository.setAmendState(chargeReference, State.Paid))
+              .thenReturn(Future.successful(updatedAmendment))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+            val result  = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.Paid)
+              verify(lockRepository, times(1)).release(chargeReferenceNumber)
+            }
+          }
+        }
+
+        "the payload status is Failed and updating its amendState succeeds" must {
+
+          "return ACCEPTED and update the amendState to PaymentFailed" in {
+
+            val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Failed")
+
+            val updatedAmendment = amendment.copy(amendState = Some(State.PaymentFailed))
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(amendment)))
+            when(declarationsRepository.setAmendState(chargeReference, State.PaymentFailed))
+              .thenReturn(Future.successful(updatedAmendment))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+            val result  = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentFailed)
+              verify(lockRepository, times(1)).release(chargeReferenceNumber)
+            }
+          }
+        }
+
+        "the payload status is Cancelled and updating its amendState succeeds" must {
+
+          "return ACCEPTED and update the amendState to PaymentCancelled" in {
+
+            val jsonPayload = Json.obj("reference" -> chargeReference, "status" -> "Cancelled")
+
+            val updatedAmendment = amendment.copy(amendState = Some(State.PaymentCancelled))
+
+            when(declarationsRepository.get(chargeReference))
+              .thenReturn(Future.successful(Some(amendment)))
+            when(declarationsRepository.setAmendState(chargeReference, State.PaymentCancelled))
+              .thenReturn(Future.successful(updatedAmendment))
+            when(lockRepository.lock(chargeReferenceNumber))
+              .thenReturn(Future.successful(true))
+            when(lockRepository.release(chargeReferenceNumber))
+              .thenReturn(Future.successful(()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
+            val result  = route(app, request).value
+
+            status(result) mustBe ACCEPTED
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).get(chargeReference)
+              verify(declarationsRepository, times(1)).setAmendState(chargeReference, State.PaymentCancelled)
+              verify(lockRepository, times(1)).release(chargeReferenceNumber)
+            }
           }
         }
       }
     }
-  }
 
-  "retrieve" - {
+    ".retrieveDeclaration" when {
+      "given a valid request" when {
+        "mongo is available" must {
+          "return OK and a matched Declaration" in {
 
-    "when given a valid request" - {
+            val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
-      "and mongo is available" - {
+            val declarationResponse = DeclarationResponse(
+              "greatBritain",
+              arrivingNI = false,
+              isOver17 = true,
+              isUKResident = Some(true),
+              isPrivateTravel = false,
+              Json.obj("userInformation"             -> "someUserInformation"),
+              Json.obj("calculation"                 -> "somecalcultaion"),
+              Json.obj("liabilityDetails"            -> "SomeLiability"),
+              Json.arr("oldPurchaseProductInstances" -> Json.obj()),
+              amendmentCount = Some(0),
+              Some(Json.obj("deltaCalculation" -> "somecalcultaion")),
+              amendState = Some("")
+            )
 
-        "must return OK and a matched Declaration" in {
+            when(declarationsRepository.get(input))
+              .thenReturn(Future.successful(Some(declarationResponse)))
+
+            val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
+              .withJsonBody(Json.toJsObject(input))
+
+            val result = route(app, request).value
+
+            status(result) mustBe OK
+            contentAsJson(result) mustBe Json.toJsObject(declarationResponse)
+
+            whenReady(result) { _ =>
+              verify(declarationsRepository, times(1)).get(input)
+            }
+          }
+        }
+
+        "mongo is unavailable" must {
+          "throw an exception" in {
+
+            val input = PreviousDeclarationRequest("POTTER", "1234567890")
+
+            when(declarationsRepository.get(input))
+              .thenReturn(Future.failed(new Exception()))
+
+            val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
+              .withJsonBody(Json.toJsObject(input))
+
+            val result = route(app, request).value
+
+            whenReady(result.failed) {
+              _ mustBe an[Exception]
+            }
+          }
+        }
+      }
+
+      "given an invalid request" must {
+        "return BAD_REQUEST when not supplied with a correlation id in the headers" in {
+
+          val requestBody = Json.obj()
 
           val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
@@ -699,97 +730,37 @@ class DeclarationControllerSpec
             amendState = Some("")
           )
 
+          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
+            .withJsonBody(requestBody)
+
           when(declarationsRepository.get(input))
             .thenReturn(Future.successful(Some(declarationResponse)))
 
-          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
-            .withJsonBody(Json.toJsObject(input))
-
           val result = route(app, request).value
 
-          status(result) mustBe OK
-          contentAsJson(result) mustBe Json.toJsObject(declarationResponse)
-
-          whenReady(result) { _ =>
-            verify(declarationsRepository, times(1)).get(input)
-          }
+          status(result) mustBe BAD_REQUEST
         }
       }
 
-      "and mongo is unavailable" - {
-
-        "must throw an exception" in {
+      "a matching declaration is not found" must {
+        "return NOT_FOUND" in {
 
           val input = PreviousDeclarationRequest("POTTER", "1234567890")
 
           when(declarationsRepository.get(input))
-            .thenReturn(Future.failed(new Exception()))
+            .thenReturn(Future.successful(None))
 
-          val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
-            .withJsonBody(Json.toJsObject(input))
+          val request =
+            FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
+              .withJsonBody(Json.toJsObject(input))
 
           val result = route(app, request).value
 
-          whenReady(result.failed) {
-            _ mustBe an[Exception]
+          status(result) mustBe NOT_FOUND
+
+          whenReady(result) { _ =>
+            verify(declarationsRepository, times(1)).get(input)
           }
-        }
-      }
-    }
-
-    "when given an invalid request" - {
-
-      "must return BAD_REQUEST when not supplied with a correlation id in the headers" in {
-
-        val requestBody = Json.obj()
-
-        val input = PreviousDeclarationRequest("POTTER", "1234567890")
-
-        val declarationResponse = DeclarationResponse(
-          "greatBritain",
-          arrivingNI = false,
-          isOver17 = true,
-          isUKResident = Some(true),
-          isPrivateTravel = false,
-          Json.obj("userInformation"             -> "someUserInformation"),
-          Json.obj("calculation"                 -> "somecalcultaion"),
-          Json.obj("liabilityDetails"            -> "SomeLiability"),
-          Json.arr("oldPurchaseProductInstances" -> Json.obj()),
-          amendmentCount = Some(0),
-          Some(Json.obj("deltaCalculation" -> "somecalcultaion")),
-          amendState = Some("")
-        )
-
-        val request = FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url)
-          .withJsonBody(requestBody)
-
-        when(declarationsRepository.get(input))
-          .thenReturn(Future.successful(Some(declarationResponse)))
-
-        val result = route(app, request).value
-
-        status(result) mustBe BAD_REQUEST
-      }
-    }
-
-    "when a matching declaration is not found" - {
-
-      "must return NOT_FOUND" in {
-
-        val input = PreviousDeclarationRequest("POTTER", "1234567890")
-
-        when(declarationsRepository.get(input))
-          .thenReturn(Future.successful(None))
-
-        val request =
-          FakeRequest(POST, routes.DeclarationController.retrieveDeclaration().url).withJsonBody(Json.toJsObject(input))
-
-        val result = route(app, request).value
-
-        status(result) mustBe NOT_FOUND
-
-        whenReady(result) { _ =>
-          verify(declarationsRepository, times(1)).get(input)
         }
       }
     }

@@ -21,19 +21,19 @@ import akka.stream.scaladsl.Source
 import metrics.MetricsOperator
 import models.DeclarationsStatus
 import org.mockito.MockitoSugar.{mock, when}
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import repositories.DefaultDeclarationsRepository
 
-class MetricsWorkerSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite {
+class MetricsWorkerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
 
   val metricsOperator: MetricsOperator = app.injector.instanceOf[MetricsOperator]
-  val config: Configuration = app.injector.instanceOf[Configuration]
+  val config: Configuration            = app.injector.instanceOf[Configuration]
 
   implicit val materializer: Materializer = app.injector.instanceOf[Materializer]
 
@@ -45,14 +45,16 @@ class MetricsWorkerSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSui
     )
   }
 
-  "MetricsWorker" - {
-    "tap" - {
-      "sets the totals for metrics from a queue of DeclarationStatus and returns the current totals as a DeclarationStatus" in new Setup {
+  "MetricsWorker" when {
+    ".tap" must {
+      "set the totals for metrics from a queue of DeclarationStatus and returns the current totals as a DeclarationStatus" in new Setup {
 
-        val declarationStatus: DeclarationsStatus = DeclarationsStatus(1, 2, 3, 1, 1)
+        val declarationStatus: DeclarationsStatus            = DeclarationsStatus(1, 2, 3, 1, 1)
         val alternativeDeclarationStatus: DeclarationsStatus = DeclarationsStatus(0, 2, 1, 3, 1)
 
-        when(mockDeclarationsRepository.metricsCount).thenReturn(Source(Vector(declarationStatus, alternativeDeclarationStatus)))
+        when(mockDeclarationsRepository.metricsCount).thenReturn(
+          Source(Vector(declarationStatus, alternativeDeclarationStatus))
+        )
 
         await(metricsWorker.tap.pull()) mustBe Some(declarationStatus)
         await(metricsWorker.tap.pull()) mustBe Some(alternativeDeclarationStatus)

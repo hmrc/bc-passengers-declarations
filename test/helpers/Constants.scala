@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package util
+package helpers
 
 import models.ChargeReference
 import models.declarations.{Declaration, State}

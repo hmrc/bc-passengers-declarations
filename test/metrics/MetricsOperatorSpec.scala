@@ -19,20 +19,21 @@ package metrics
 import com.codahale.metrics.Timer
 import com.codahale.metrics.Timer.Context
 import com.kenshoo.play.metrics.MetricsImpl
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-class MetricsOperatorSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite {
+class MetricsOperatorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val metrics: MetricsImpl             = app.injector.instanceOf[MetricsImpl]
   val metricsOperator: MetricsOperator = new MetricsOperator(metrics)
 
-  "MetricsOperator" - {
+  "MetricsOperator" must {
     ".startTimer" in {
       metricsOperator.startTimer() mustBe a[Timer.Context]
       metricsOperator.registry.getTimers.get("submission-timer") mustBe a[Timer]
     }
+
     ".stopTimer" in {
       val context: Context  = metricsOperator.registry.timer("test").time()
       val elapsedTime: Long = metricsOperator.stopTimer(context)
@@ -40,13 +41,13 @@ class MetricsOperatorSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerS
       elapsedTime.toInt must be > 0
     }
 
-    ".setCounter" - {
-      "sets a counter up in metrics" in {
+    ".setCounter" must {
+      "set a counter up in metrics" in {
         metricsOperator.setCounter("test")(1) mustBe ()
         metricsOperator.registry.counter("test").getCount mustBe 1
       }
 
-      "resets the counter when the same counter is accessed" in {
+      "reset the counter when the same counter is accessed" in {
         metricsOperator.setCounter("test")(1) mustBe ()
         metricsOperator.registry.counter("test").getCount mustBe 1
         metricsOperator.setCounter("test")(3) mustBe ()

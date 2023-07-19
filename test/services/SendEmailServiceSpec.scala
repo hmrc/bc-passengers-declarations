@@ -16,9 +16,8 @@
 
 package services
 
-import util.Constants
 import connectors.SendEmailConnector
-import helpers.BaseSpec
+import helpers.{BaseSpec, Constants}
 import models._
 import models.declarations.Declaration
 import org.mockito.ArgumentMatchers.any
@@ -102,8 +101,7 @@ class SendEmailServiceSpec extends BaseSpec {
 
   }
 
-  "generateEmailRequest" should {
-
+  "generateEmailRequest" must {
     "return a EmailRequest with the correct email " in new Setup {
       val testRequest: SendEmailRequest = SendEmailRequest(
         to = Seq(emailAddress),
@@ -116,34 +114,36 @@ class SendEmailServiceSpec extends BaseSpec {
     }
   }
 
-  "getDeclaration" should {
+  "getDeclaration" must {
     "return a valid Declaration on a valid Charge Reference" in new Setup {
       val declarationResult: Declaration = emailService.getDeclaration(chargeReference).futureValue
       declarationResult shouldBe declaration
     }
   }
 
-  "sendEmail" should {
-    "Return true for a valid email and params" in new Setup {
+  "sendEmail" must {
+    "return true for a valid email and params" in new Setup {
       emailService.sendEmail(emailAddress, testParams).futureValue shouldBe true
     }
-    "Return true for a blank email and valid params" in new Setup {
+
+    "return true for a blank email and valid params" in new Setup {
       emailService.sendEmail("", testParams).futureValue shouldBe true
     }
   }
 
-  "sendPassengerEmail" should {
-    "Return true for a valid email and params" in new Setup {
+  "sendPassengerEmail" must {
+    "return true for a valid email and params" in new Setup {
       emailService.sendPassengerEmail(emailAddress, testParams).futureValue shouldBe true
     }
   }
 
-  "getEmailParamsFromData" should {
-    "Return a map of emailId and parameters" in new Setup {
+  "getEmailParamsFromData" must {
+    "return a map of emailId and parameters" in new Setup {
       val emailParams: Map[String, Map[String, String]] = Map(emailAddress -> testParams)
       emailService.getEmailParamsFromData(declarationData) shouldBe emailParams
     }
-    "Return a map of emailId and parameters where some data can be unavailable" in new Setup {
+
+    "return a map of emailId and parameters where some data can be unavailable" in new Setup {
 
       val alteredParams: Map[String, String]      =
         testParams ++ Map("AllITEMS" -> "[]", "DATE" -> "", "DATEOFARRIVAL" -> "", "TIMEOFARRIVAL" -> "")
@@ -166,7 +166,7 @@ class SendEmailServiceSpec extends BaseSpec {
     }
   }
 
-  "getEmailParamsFromAmendedData" should {
+  "getEmailParamsFromAmendedData" must {
     "Return a map of emailId and parameters" in new Setup {
       val emailParams: Map[String, Map[String, String]] = Map(emailAddress -> testParams)
 
@@ -174,7 +174,7 @@ class SendEmailServiceSpec extends BaseSpec {
     }
   }
 
-  "Generating an email request" should {
+  "Generating an email request" must {
     "construct the correct JSON" in new Setup {
       val result: SendEmailRequest =
         emailService.generateEmailRequest(Seq(emailAddress), testParams)
@@ -208,16 +208,17 @@ class SendEmailServiceSpec extends BaseSpec {
     }
   }
 
-  "isZeroPound " should {
+  ".isZeroPound " must {
     "return true if a Zero Pound Journey" in new Setup {
       emailService.isZeroPound(zeroPoundsData) shouldBe true
     }
+
     "return false if not a Zero Pound Journey" in new Setup {
       emailService.isZeroPound(declarationData) shouldBe false
     }
   }
 
-  "constructAndSendEmail" should {
+  ".constructAndSendEmail" must {
     "send an email for a zero pound journey when disable-zero-pound-email feature is false" in new Setup {
       val zeroPoundsDeclaration: Declaration = declaration.copy(data = zeroPoundsData)
 

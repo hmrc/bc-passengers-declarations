@@ -16,18 +16,19 @@
 
 package util
 
+import helpers.Constants
 import models.declarations.Etmp
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.Injecting
-class AuditingToolsSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with Injecting with Constants {
+class AuditingToolsSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with Injecting with Constants {
 
   private lazy val auditingTools: AuditingTools = inject[AuditingTools]
 
-  "buildDeclarationDataEvent" - {
-    "must produce the expected output when supplied a declaration" in {
+  "buildDeclarationDataEvent" must {
+    "produce the expected output when supplied a declaration" in {
 
       val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration.data)
 

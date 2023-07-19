@@ -1,4 +1,4 @@
-import uk.gov.hmrc.DefaultBuildSettings._
+import uk.gov.hmrc.DefaultBuildSettings.*
 
 val appName = "bc-passengers-declarations"
 
@@ -6,10 +6,10 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
   .configs(IntegrationTest)
-  .settings(integrationTestSettings(): _*)
-  .settings(inConfig(IntegrationTest)(itSettings): _*)
-  .settings(inConfig(Test)(testSettings): _*)
-  .settings(scalaVersion := "2.13.10")
+  .settings(integrationTestSettings())
+  .settings(inConfig(IntegrationTest)(itSettings))
+  .settings(inConfig(Test)(testSettings))
+  .settings(scalaVersion := "2.13.11")
   .settings(
     PlayKeys.playDefaultPort := 9073,
     majorVersion := 0,
@@ -27,7 +27,7 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings(
     coverageExcludedPackages := "<empty>;Reverse.*;..*Routes.*;",
-    coverageMinimumStmtTotal := 95,
+    coverageMinimumStmtTotal := 100,
     coverageFailOnMinimum := true
   )
 

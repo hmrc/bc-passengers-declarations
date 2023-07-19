@@ -16,16 +16,16 @@
 
 package repositories
 
-import java.time.{LocalDate, LocalDateTime}
-
 import org.scalatest.OptionValues
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 
-class MongoDateTimeFormatsSpec extends AnyFreeSpec with Matchers with OptionValues with MongoDateTimeFormats {
+import java.time.{LocalDate, LocalDateTime}
 
-  "a LocalDateTime" - {
+class MongoDateTimeFormatsSpec extends AnyWordSpec with Matchers with OptionValues with MongoDateTimeFormats {
+
+  "MongoDateTimeFormats" must {
 
     val date = LocalDate.of(2018, 2, 1).atStartOfDay
 
@@ -35,17 +35,17 @@ class MongoDateTimeFormatsSpec extends AnyFreeSpec with Matchers with OptionValu
       s"$$date" -> dateMillis
     )
 
-    "must serialise to json" in {
+    "serialise a date to json" in {
       val result = Json.toJson(date)
       result mustEqual json
     }
 
-    "must deserialise from json" in {
+    "deserialise a date from json" in {
       val result = json.as[LocalDateTime]
       result mustEqual date
     }
 
-    "must serialise/deserialise to the same value" in {
+    "serialise/deserialise to the same value" in {
       val result = Json.toJson(date).as[LocalDateTime]
       result mustEqual date
     }

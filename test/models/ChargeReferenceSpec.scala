@@ -16,19 +16,18 @@
 
 package models
 
+import helpers.Constants
 import org.scalacheck.Gen
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import play.api.libs.json.{JsString, Json}
 import play.api.mvc.PathBindable
-import util.Constants
 
-class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues with OptionValues with Constants {
+class ChargeReferenceSpec extends AnyWordSpec with Matchers with EitherValues with OptionValues with Constants {
 
-  "a charge reference" - {
-
-    "must be bound from a url path" in {
+  "ChargeReference" must {
+    "be bound from a url path" in {
 
       val chargeReference = ChargeReference(chargeReferenceNumber)
 
@@ -38,7 +37,7 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
       result.value mustEqual chargeReference
     }
 
-    "must unbind" in {
+    "unbind" in {
 
       val result = implicitly[PathBindable[ChargeReference]]
         .unbind("chargeReference", ChargeReference(chargeReferenceNumber))
@@ -46,21 +45,21 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
       result mustEqual "XHPR1234567890"
     }
 
-    "must deserialise" in {
+    "deserialise" in {
 
       val chargeReference = ChargeReference(chargeReferenceNumber)
 
       JsString(chargeReference.toString).as[ChargeReference] mustEqual chargeReference
     }
 
-    "must serialise" in {
+    "serialise" in {
 
       val chargeReference = ChargeReference(chargeReferenceNumber)
 
       Json.toJson(chargeReference) mustEqual JsString(chargeReference.toString)
     }
 
-    "must generate a modulo 23 check character" in {
+    "generate a modulo 23 check character" in {
 
       ChargeReference(1).checkCharacter mustEqual 'Y'
       ChargeReference(2).checkCharacter mustEqual 'Q'
@@ -89,46 +88,46 @@ class ChargeReferenceSpec extends AnyFreeSpec with Matchers with EitherValues wi
       ChargeReference(58).checkCharacter mustEqual 'Z'
     }
 
-    "must fail to build from an input that is not 14 characters" in {
+    "fail to build from an input that is not 14 characters" in {
       ChargeReference("1234567890123")   must not be defined
       ChargeReference("123456789012345") must not be defined
     }
 
-    "must fail to build from an input that doesn't start with X" in {
+    "fail to build from an input that doesn't start with X" in {
       ChargeReference("1234567890123") must not be defined
     }
 
-    "must fail to build from an input that does not have P as the third character" in {
+    "fail to build from an input that does not have P as the third character" in {
       ChargeReference("XAXR1234567890") must not be defined
     }
 
-    "must fail to build from an input that does not have R as the fourth character" in {
+    "fail to build from an input that does not have R as the fourth character" in {
       ChargeReference("XAPX1234567890") must not be defined
     }
 
-    "must fail to build from an input that does not have ten digits as characters 5 to 14" in {
+    "fail to build from an input that does not have ten digits as characters 5 to 14" in {
       ChargeReference("XAPRX000000001") must not be defined
     }
 
-    "must fail to build from an input that does not have the correct check character as the second character" in {
+    "fail to build from an input that does not have the correct check character as the second character" in {
       ChargeReference("XAPR0000000001") must not be defined
     }
 
-    "must build from a valid input" in {
+    "build from a valid input" in {
 
       ChargeReference("XYPR0000000001").value mustEqual ChargeReference(1)
     }
 
-    "must convert to a string in the correct format" in {
+    "convert to a string in the correct format" in {
       ChargeReference(1).toString mustEqual "XYPR0000000001"
     }
 
-    "must treat .apply and .toString as dual" in {
+    "treat .apply and .toString as dual" in {
 
       Gen.choose(0, Int.MaxValue).map(ChargeReference(_))
     }
 
-    "must fail to build from inputs with invalid check characters" in {
+    "fail to build from inputs with invalid check characters" in {
       val remainingCharactersLength = 12
 
       for {

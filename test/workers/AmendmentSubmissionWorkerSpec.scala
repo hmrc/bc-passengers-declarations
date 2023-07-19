@@ -19,24 +19,25 @@ package workers
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import connectors.HODConnector
+import helpers.Constants
 import models.SubmissionResponse
 import models.declarations.{Declaration, State}
 import org.mockito.MockitoSugar.{mock, reset, when}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import util.{AuditingTools, Constants}
+import util.AuditingTools
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class AmendmentSubmissionWorkerSpec
-    extends AnyFreeSpec
+    extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
     with BeforeAndAfterEach
@@ -45,8 +46,8 @@ class AmendmentSubmissionWorkerSpec
   val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
   val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
   val mockHodConnector: HODConnector                            = mock[HODConnector]
-  val mockAuditConnector: AuditConnector = mock[AuditConnector]
-  val mockAuditingTools: AuditingTools = mock[AuditingTools]
+  val mockAuditConnector: AuditConnector                        = mock[AuditConnector]
+  val mockAuditingTools: AuditingTools                          = mock[AuditingTools]
 
   val config: Configuration = app.injector.instanceOf[Configuration]
 
@@ -68,11 +69,11 @@ class AmendmentSubmissionWorkerSpec
     reset(mockLockRepository)
   }
 
-  "AmendmentSubmissionWorker" - {
-    ".tap" - {
-      "submits a queue of paid amendments to Etmp and returns amendments with a Submitted response" in new Setup {
+  "AmendmentSubmissionWorker" when {
+    ".tap" must {
+      "submit a queue of paid amendments to Etmp and returns amendments with a Submitted response" in new Setup {
 
-        val queuedAmendment: Declaration        = amendment.copy(
+        val queuedAmendment: Declaration = amendment.copy(
           randomChargeReference(),
           sentToEtmp = true,
           amendState = Some(State.Paid),
@@ -101,37 +102,41 @@ class AmendmentSubmissionWorkerSpec
 
       }
 
-      "returns an amendment with an Error response when DES does not respond" in new Setup {
+      "return an amendment with an Error response when DES does not respond" in new Setup {
 
         when(mockDeclarationsRepository.paidAmendmentsForEtmp).thenReturn(Source(Vector(amendment)))
 
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(amendment, isAmendment = true)).thenReturn(Future.successful(SubmissionResponse.Error))
+        when(mockHodConnector.submit(amendment, isAmendment = true))
+          .thenReturn(Future.successful(SubmissionResponse.Error))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
         await(amendmentSubmissionWorker.tap.pull()) mustBe Some((amendment, SubmissionResponse.Error))
 
       }
 
-      "returns an amendment with a ParsingException response when there is a problem found in the amendment data" in new Setup {
+      "return an amendment with a ParsingException response when there is a problem found in the amendment data" in new Setup {
 
         when(mockDeclarationsRepository.paidAmendmentsForEtmp).thenReturn(Source(Vector(amendment)))
 
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(amendment, isAmendment = true)).thenReturn(Future.successful(SubmissionResponse.ParsingException))
+        when(mockHodConnector.submit(amendment, isAmendment = true))
+          .thenReturn(Future.successful(SubmissionResponse.ParsingException))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
         await(amendmentSubmissionWorker.tap.pull()) mustBe Some((amendment, SubmissionResponse.ParsingException))
 
       }
 
-      "returns an amendment with a Failed response when a Bad Request is received from DES" in new Setup {
+      "return an amendment with a Failed response when a Bad Request is received from DES" in new Setup {
 
         when(mockDeclarationsRepository.paidAmendmentsForEtmp).thenReturn(Source(Vector(amendment)))
 
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(amendment, isAmendment = true)).thenReturn(Future.successful(SubmissionResponse.Failed))
-        when(mockDeclarationsRepository.setAmendState(amendment.chargeReference, State.SubmissionFailed)).thenReturn(Future.successful(amendment))
+        when(mockHodConnector.submit(amendment, isAmendment = true))
+          .thenReturn(Future.successful(SubmissionResponse.Failed))
+        when(mockDeclarationsRepository.setAmendState(amendment.chargeReference, State.SubmissionFailed))
+          .thenReturn(Future.successful(amendment))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
         await(amendmentSubmissionWorker.tap.pull()) mustBe Some((amendment, SubmissionResponse.Failed))

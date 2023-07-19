@@ -18,16 +18,16 @@ package workers
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import helpers.Constants
 import models.declarations.Declaration
 import org.mockito.MockitoSugar.{mock, when}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
-import util.Constants
 
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDateTime, ZoneOffset}
@@ -36,12 +36,11 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 class PaymentTimeoutWorkerSpec
-    extends AnyFreeSpec
+    extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
     with BeforeAndAfterEach
     with Constants {
-
 
   val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
   val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
@@ -58,13 +57,12 @@ class PaymentTimeoutWorkerSpec
     )
   }
 
-  "PaymentTimeoutWorker" - {
-    "tap" - {
-      "retrieves unpaid declarations with a State relating to Payment and deletes them from the repository returning each Declaration removed" in new Setup {
+  "PaymentTimeoutWorker" when {
+    ".tap" must {
+      "retrieve unpaid declarations with a State relating to Payment and deletes them from the repository returning each Declaration removed" in new Setup {
 
         val expiredDate: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC).minus(15.days.toMillis, ChronoUnit.MILLIS)
-        val outDated: Declaration = declaration.copy(
-          lastUpdated = expiredDate)
+        val outDated: Declaration      = declaration.copy(lastUpdated = expiredDate)
 
         when(mockDeclarationsRepository.unpaidDeclarations).thenReturn(Source(Vector(outDated)))
         when(mockLockRepository.lock(outDated.chargeReference.value)).thenReturn(Future.successful(true))

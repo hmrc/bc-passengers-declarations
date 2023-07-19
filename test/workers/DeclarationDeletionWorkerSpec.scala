@@ -18,16 +18,16 @@ package workers
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import helpers.Constants
 import models.declarations.Declaration
 import org.mockito.MockitoSugar.{mock, when}
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
-import util.Constants
 
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -36,11 +36,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class DeclarationDeletionWorkerSpec
-    extends AnyFreeSpec
-    with Matchers
-    with GuiceOneAppPerSuite
-    with Constants {
+class DeclarationDeletionWorkerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with Constants {
 
   val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
   val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
@@ -57,9 +53,9 @@ class DeclarationDeletionWorkerSpec
     )
   }
 
-  "DeclarationDeletionWorker" - {
-    "tap" - {
-      "successfully retrieves all stale declarations and deletes them from the repository returning each Declaration removed" in new Setup {
+  "DeclarationDeletionWorker" when {
+    ".tap" must {
+      "successfully retrieve all stale declarations and deletes them from the repository returning each Declaration removed" in new Setup {
 
         val expiredDate: String = LocalDateTime
           .now(ZoneOffset.UTC)
@@ -81,9 +77,12 @@ class DeclarationDeletionWorkerSpec
 
         val invalidDeclaration: Declaration = declaration.copy(data = dataWithInvalidReceiptDate)
 
-        val queuedDeclaration: Declaration = declaration.copy(randomChargeReference(), data = dataWithInvalidReceiptDate)
+        val queuedDeclaration: Declaration =
+          declaration.copy(randomChargeReference(), data = dataWithInvalidReceiptDate)
 
-        when(mockDeclarationsRepository.paidDeclarationsForDeletion).thenReturn(Source(Vector(invalidDeclaration, queuedDeclaration)))
+        when(mockDeclarationsRepository.paidDeclarationsForDeletion).thenReturn(
+          Source(Vector(invalidDeclaration, queuedDeclaration))
+        )
 
         when(mockLockRepository.lock(invalidDeclaration.chargeReference.value)).thenReturn(Future.successful(true))
         when(mockDeclarationsRepository.remove(invalidDeclaration.chargeReference))

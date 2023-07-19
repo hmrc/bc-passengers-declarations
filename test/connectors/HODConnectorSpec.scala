@@ -19,11 +19,12 @@ package connectors
 import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.http.Fault
+import helpers.Constants
 import models.SubmissionResponse
 import models.declarations.Etmp
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.http.ContentTypes
@@ -31,11 +32,10 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
 import play.api.test.Injecting
-import util.Constants
 import utils.WireMockHelper
 
 class HODConnectorSpec
-    extends AnyFreeSpec
+    extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
     with WireMockHelper
@@ -65,9 +65,8 @@ class HODConnectorSpec
 
   private lazy val connector: HODConnector = inject[HODConnector]
 
-  "hod connector" - {
-
-    "must call the HOD when declaration is submitted" in {
+  "HODConnector" must {
+    "call the HOD when declaration is submitted" in {
 
       server.stubFor(
         stubCall()
@@ -77,7 +76,7 @@ class HODConnectorSpec
       connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Submitted
     }
 
-    "must fall back to a SubmissionResponse.Error when the downstream call errors while submitting declaration" in {
+    "fall back to a SubmissionResponse.Error when the downstream call errors while submitting declaration" in {
 
       server.stubFor(
         stubCall()
@@ -87,7 +86,7 @@ class HODConnectorSpec
       connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Error
     }
 
-    "must fail fast while the circuit breaker is open when declaration is submitted" in {
+    "fail fast while the circuit breaker is open when declaration is submitted" in {
 
       server.stubFor(
         stubCall()
@@ -102,7 +101,7 @@ class HODConnectorSpec
       connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Submitted
     }
 
-    "must call the HOD when amendment is submitted" in {
+    "call the HOD when amendment is submitted" in {
 
       server.stubFor(
         stubCall(amendmentData)
@@ -112,7 +111,7 @@ class HODConnectorSpec
       connector.submit(amendment, isAmendment = true).futureValue mustBe SubmissionResponse.Submitted
     }
 
-    "must throw an exception when amendment is submitted but contains no correlation id" in {
+    "throw an exception when amendment is submitted but contains no correlation id" in {
 
       val amendmentWithNoAmendmentCorrelationId = amendment.copy(amendCorrelationId = None)
 
@@ -123,7 +122,7 @@ class HODConnectorSpec
       result.getMessage mustBe "AmendCorrelation Id is empty"
     }
 
-    "must fall back to a SubmissionResponse.ParsingException when the declaration data is not complete" in {
+    "fall back to a SubmissionResponse.ParsingException when the declaration data is not complete" in {
 
       val missingDataDeclaration = declaration.copy(data = Json.obj())
 
@@ -132,7 +131,7 @@ class HODConnectorSpec
         .futureValue mustBe SubmissionResponse.ParsingException
     }
 
-    "must fall back to a SubmissionResponse.ParsingException when the amendment data is not complete" in {
+    "fall back to a SubmissionResponse.ParsingException when the amendment data is not complete" in {
 
       val missingAmendmentDataDeclaration = amendment.copy(amendData = Some(Json.obj()))
 
@@ -141,7 +140,7 @@ class HODConnectorSpec
         .futureValue mustBe SubmissionResponse.ParsingException
     }
 
-    "must fall back to a SubmissionResponse.Error when the downstream call errors in amendments journey" in {
+    "fall back to a SubmissionResponse.Error when the downstream call errors in amendments journey" in {
 
       server.stubFor(
         stubCall(amendmentData)
@@ -151,7 +150,7 @@ class HODConnectorSpec
       connector.submit(amendment, isAmendment = true).futureValue mustBe SubmissionResponse.Error
     }
 
-    "must fail fast while the circuit breaker is open in amendments journey" in {
+    "fail fast while the circuit breaker is open in amendments journey" in {
 
       server.stubFor(
         stubCall(amendmentData)

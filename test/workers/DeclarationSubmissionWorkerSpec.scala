@@ -19,25 +19,26 @@ package workers
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import connectors.HODConnector
+import helpers.Constants
 import models.SubmissionResponse
 import models.declarations.{Declaration, State}
 import org.mockito.MockitoSugar.{mock, reset, when}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import util.{AuditingTools, Constants}
+import util.AuditingTools
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.ControlThrowable
 
 class DeclarationSubmissionWorkerSpec
-    extends AnyFreeSpec
+    extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
     with BeforeAndAfterEach
@@ -69,13 +70,15 @@ class DeclarationSubmissionWorkerSpec
     reset(mockLockRepository)
   }
 
-  "DeclarationSubmissionWorker" - {
-    "tap" - {
-      "submits a queue of paid declarations to Etmp and returns a declaration with Submitted response" in new Setup {
+  "DeclarationSubmissionWorker" when {
+    ".tap" must {
+      "submit a queue of paid declarations to Etmp and returns a declaration with Submitted response" in new Setup {
 
         val queuedDeclaration: Declaration = declaration.copy(randomChargeReference())
 
-        when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration, queuedDeclaration)))
+        when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(
+          Source(Vector(declaration, queuedDeclaration))
+        )
 
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(true))
         when(mockHodConnector.submit(declaration, isAmendment = false))
@@ -97,7 +100,7 @@ class DeclarationSubmissionWorkerSpec
 
       }
 
-      "returns a declaration with an Error response when DES does not respond" in new Setup {
+      "return a declaration with an Error response when DES does not respond" in new Setup {
 
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
 
@@ -110,7 +113,7 @@ class DeclarationSubmissionWorkerSpec
 
       }
 
-      "returns a declaration with a ParsingException response when there is a problem found in the declaration data" in new Setup {
+      "return a declaration with a ParsingException response when there is a problem found in the declaration data" in new Setup {
 
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
 
@@ -123,7 +126,7 @@ class DeclarationSubmissionWorkerSpec
 
       }
 
-      "returns a declaration with a Failed response when a Bad Request is received from DES" in new Setup {
+      "return a declaration with a Failed response when a Bad Request is received from DES" in new Setup {
 
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
 
@@ -138,7 +141,7 @@ class DeclarationSubmissionWorkerSpec
 
       }
 
-      "reaches no result if a Declaration is not successfully Locked" in new Setup {
+      "reach no result if a Declaration is not successfully Locked" in new Setup {
 
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
 
@@ -148,11 +151,13 @@ class DeclarationSubmissionWorkerSpec
 
       }
 
-      "a NonFatal exception is thrown processing a declaration and resumes to the next available declaration" in new Setup {
+      "throw a NonFatal exception is thrown processing a declaration and resumes to the next available declaration" in new Setup {
 
         val queuedDeclaration: Declaration = declaration.copy(randomChargeReference())
 
-        when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration, queuedDeclaration)))
+        when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(
+          Source(Vector(declaration, queuedDeclaration))
+        )
 
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenThrow(new Exception)
 
@@ -167,7 +172,7 @@ class DeclarationSubmissionWorkerSpec
 
       }
 
-      "a Fatal exception is thrown processing a declaration and stops the queue" in new Setup {
+      "throw a Fatal exception is thrown processing a declaration and stops the queue" in new Setup {
 
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenThrow(new ControlThrowable {})
@@ -175,9 +180,6 @@ class DeclarationSubmissionWorkerSpec
         declarationSubmissionWorker.tap.pull().failed.map(_ mustBe an[ControlThrowable])
 
       }
-
     }
-
   }
-
 }

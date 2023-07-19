@@ -16,20 +16,21 @@
 
 package repositories
 
+import helpers.Constants
+import helpers.MongoTestUtils.givenAnExistingDocument
 import models.Lock
-import org.mongodb.scala.model.{Filters, FindOneAndReplaceOptions}
-import org.scalatest.freespec.AnyFreeSpec
+import org.mongodb.scala.MongoCollection
+import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-import util.Constants
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class LockRepositorySpec
-    extends AnyFreeSpec
+    extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
     with DefaultPlayMongoRepositorySupport[Lock]
@@ -42,13 +43,15 @@ class LockRepositorySpec
   override lazy val checkTtlIndex: Boolean = false
   // each lock defines it's own expiry, so doesn't rely on ttl indexes
 
-  "LockRepository" - {
+  implicit val inCollection: MongoCollection[Lock] = repository.collection
+
+  "LockRepository" when {
     ".lock" in {
       await(repository.lock(1)) mustBe true
     }
 
-    ".release" - {
-      "finds a lock document and removes it from the database" in {
+    ".release" must {
+      "find a lock document and removes it from the database" in {
         givenAnExistingDocument(Lock(1))
 
         await(repository.release(1)) mustBe ()
@@ -56,35 +59,22 @@ class LockRepositorySpec
         repository.collection.find(Filters.equal("_id", 1)).toFuture().futureValue mustBe Seq.empty[Lock]
       }
 
-      "no matching lock documents found" in {
+      "find no matching lock documents" in {
         val result: Unit = await(repository.release(1))
         result mustBe None.orNull.asInstanceOf[Seq[Lock]]
       }
     }
 
-    ".isLocked" - {
-      "returns true when a lock document is found" in {
-
+    ".isLocked" must {
+      "return true when a lock document is found" in {
         givenAnExistingDocument(Lock(1))
+
         await(repository.isLocked(1)) mustBe true
       }
 
-      "returns false when no document found" in {
+      "return false when no document found" in {
         await(repository.isLocked(1)) mustBe false
       }
     }
-
   }
-
-  private def givenAnExistingDocument(lock: Lock): Unit = {
-    val selector = Filters.equal("_id", lock._id)
-
-    val result = repository.collection
-      .findOneAndReplace(selector, lock, FindOneAndReplaceOptions().upsert(true))
-      .toFuture()
-      .flatMap(_ => Future.unit)
-
-    await(result)
-  }
-
 }

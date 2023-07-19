@@ -16,17 +16,16 @@
 
 package models
 
+import helpers.Constants
 import models.declarations.{Declaration, State}
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
-import util.Constants
 
-class DeclarationSpec extends AnyFreeSpec with Matchers with Constants {
+class DeclarationSpec extends AnyWordSpec with Matchers with Constants {
 
-  "a Declaration" - {
-
-    "must deserialise" in {
+  "Declaration" must {
+    "deserialise" in {
 
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
@@ -54,7 +53,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers with Constants {
         )
     }
 
-    "must serialise" in {
+    "serialise" in {
 
       val json = Json.obj(
         "_id"           -> "XHPR1234567890",
@@ -83,7 +82,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers with Constants {
       ) mustEqual json
     }
 
-    "must deserialise with amendState and amendSentToEtmp" in {
+    "deserialise with amendState and amendSentToEtmp" in {
 
       val json = Json.obj(
         "_id"             -> "XHPR1234567890",
@@ -113,7 +112,7 @@ class DeclarationSpec extends AnyFreeSpec with Matchers with Constants {
         )
     }
 
-    "must serialise with amendState, amendCorrelationId and amendSentToEtmp" in {
+    "serialise with amendState, amendCorrelationId and amendSentToEtmp" in {
 
       val amendCorrelationId = correlationId
 

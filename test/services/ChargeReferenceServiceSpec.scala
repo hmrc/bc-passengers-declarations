@@ -16,55 +16,37 @@
 
 package services
 
-import akka.util.Timeout
+import helpers.MongoTestUtils.givenAnExistingDocument
 import models.ChargeRefJsons.ChargeRefJson
 import models.ChargeReference
 import org.mongodb.scala.MongoCollection
-import org.mongodb.scala.model.{Filters, FindOneAndReplaceOptions}
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Helpers.await
-import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 
 class ChargeReferenceServiceSpec
-    extends AnyFreeSpec
+    extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
-    with CleanMongoCollectionSupport
-    with ScalaFutures {
-  override lazy val app: Application = new GuiceApplicationBuilder().build()
+    with DefaultPlayMongoRepositorySupport[ChargeRefJson] {
 
-  implicit val timeout: Timeout = Timeout(5.seconds)
+  override protected val repository: SequentialChargeReferenceService = new SequentialChargeReferenceService(
+    mongoComponent = mongoComponent
+  )
 
-  lazy val chargeReferenceService = new SequentialChargeReferenceService(mongoComponent = mongoComponent)
+  implicit val inCollection: MongoCollection[ChargeRefJson] = repository.collection
 
-  protected def collection: MongoCollection[ChargeRefJson] = chargeReferenceService.collection
-
-  "ChargeReferenceService" - {
-    ".nextChargeReference" - {
+  "ChargeReferenceService" when {
+    ".nextChargeReference" must {
       "calculates the next ChargeReference id based on the last charge reference recorded" in {
         givenAnExistingDocument(ChargeRefJson("counter", 2))
-        await(chargeReferenceService.nextChargeReference()) mustBe ChargeReference(3)
+
+        await(repository.nextChargeReference()) mustBe ChargeReference(3)
       }
     }
-  }
-
-  private def givenAnExistingDocument(chargeRefJson: ChargeRefJson): Unit = {
-    val selector = Filters.equal("_id", "counter")
-
-    val result = collection
-      .findOneAndReplace(selector, chargeRefJson, FindOneAndReplaceOptions().upsert(true))
-      .toFuture()
-      .flatMap(_ => Future.unit)
-
-    await(result)
   }
 }

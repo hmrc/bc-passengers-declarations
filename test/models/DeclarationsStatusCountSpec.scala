@@ -16,18 +16,20 @@
 
 package models
 
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 
-class DeclarationsStatusCountSpec extends AnyFreeSpec with Matchers {
-  "DeclarationStatusCount" - {
-    "must deserialise" in {
+class DeclarationsStatusCountSpec extends AnyWordSpec with Matchers {
+
+  "DeclarationStatusCount" must {
+    "deserialise" in {
       val json = Json.obj("messageState" -> "pending-payment", "count" -> 1)
       json.as[DeclarationsStatusCount] mustEqual DeclarationsStatusCount("pending-payment", 1)
     }
-    ".toDeclarationsStatus" - {
-      "should map received DeclarationStatusCount into a DeclarationStatus" in {
+
+    ".toDeclarationsStatus" must {
+      "map received DeclarationStatusCount into a DeclarationStatus" in {
         val exampleStatusCountList: List[DeclarationsStatusCount] =
           List(
             DeclarationsStatusCount("pending-payment", 1),

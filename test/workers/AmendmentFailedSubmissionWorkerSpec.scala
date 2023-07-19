@@ -18,24 +18,23 @@ package workers
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
+import helpers.Constants
 import models.declarations.State
 import org.mockito.MockitoSugar.{mock, when}
-import org.scalatest.BeforeAndAfterEach
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
-import util.Constants
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AmendmentFailedSubmissionWorkerSpec extends AnyFreeSpec with Matchers with GuiceOneAppPerSuite with BeforeAndAfterEach with Constants {
+class AmendmentFailedSubmissionWorkerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with Constants {
 
   val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
-  val mockLockRepository: DefaultLockRepository = mock[DefaultLockRepository]
+  val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
 
   val config: Configuration = app.injector.instanceOf[Configuration]
 
@@ -49,12 +48,13 @@ class AmendmentFailedSubmissionWorkerSpec extends AnyFreeSpec with Matchers with
     )
   }
 
-  "AmendmentFailedSubmissionWorker" - {
-    ".tap" - {
-      "retrieves amendments with an amendState SubmissionFailed and deletes them from the repository returning each Amendment removed" in new Setup {
+  "AmendmentFailedSubmissionWorker" when {
+    ".tap" must {
+      "retrieve amendments with an amendState SubmissionFailed and deletes them from the repository returning each Amendment removed" in new Setup {
         when(mockDeclarationsRepository.failedAmendments).thenReturn(Source(Vector(amendment)))
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockDeclarationsRepository.setAmendState(amendment.chargeReference, State.Paid)).thenReturn(Future.successful(amendment))
+        when(mockDeclarationsRepository.setAmendState(amendment.chargeReference, State.Paid))
+          .thenReturn(Future.successful(amendment))
 
         await(amendmentFailedSubmissionWorker.tap.pull()) mustBe Some(amendment)
       }
