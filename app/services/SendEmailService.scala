@@ -17,17 +17,17 @@
 package services
 
 import connectors.{EmailErrorResponse, SendEmailConnector, SendEmailConnectorImpl}
-
-import javax.inject.Inject
 import models.declarations.Declaration
 import models.{ChargeReference, SendEmailRequest}
-import org.joda.time.{LocalDate, LocalTime}
 import play.api.i18n.Lang.logger.logger
 import play.api.libs.json._
 import repositories.{DeclarationsRepository, DefaultDeclarationsRepository}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.{LocalDate, LocalTime}
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SendEmailServiceImpl @Inject() (
@@ -83,10 +83,12 @@ trait SendEmailService {
       .getOrElse("")
       .equalsIgnoreCase("0.00")
 
-  private[services] def getDataOrAmendmentData(declaration: Declaration): JsObject = if (
-    declaration.amendState.isDefined
-  ) declaration.amendData.getOrElse(throw new Exception(s"No Amendment data found"))
-  else declaration.data
+  private[services] def getDataOrAmendmentData(declaration: Declaration): JsObject =
+    if (declaration.amendState.isDefined) {
+      declaration.amendData.getOrElse(throw new Exception(s"No Amendment data found"))
+    } else {
+      declaration.data
+    }
 
   private[services] def getEmailParamsFromData(data: JsObject): Map[String, Map[String, String]] = {
     val simpleDeclarationRequest: JsValue = data.value.apply("simpleDeclarationRequest")
@@ -117,20 +119,26 @@ trait SendEmailService {
     val fullName          = s"$firstName $lastName"
 
     val receiptDate: String          = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
-    val receiptDateForParsing        = receiptDate.substring(0, 10)
-    val receiptDateFormatted: String =
-      if (receiptDate.equals("")) receiptDate else LocalDate.parse(receiptDateForParsing).toString("dd MMMM YYYY")
+    val receiptDateFormatted: String = Option(receiptDate)
+      .filter(_.nonEmpty)
+      .map(dateString => {
+        LocalDate.parse(dateString.substring(0, 10)).format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+      })
+      .getOrElse(receiptDate)
 
     val portOfEntry: String = declarationHeader.\("portOfEntryName").asOpt[String].getOrElse("")
 
     val expectedDateOfArrival: String = declarationHeader.\("expectedDateOfArrival").asOpt[String].getOrElse("")
-    val expectedDateArr: String       =
-      if (expectedDateOfArrival.equals("")) expectedDateOfArrival
-      else LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
+    val expectedDateArr: String       = Option(expectedDateOfArrival)
+      .filter(_.nonEmpty)
+      .map(dateString => LocalDate.parse(dateString).format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
+      .getOrElse(expectedDateOfArrival)
 
-    val timeOfEntry: String  = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
-    val formattedTimeOfEntry =
-      if (timeOfEntry.trim.equals("")) timeOfEntry else LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
+    val timeOfEntry: String          = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
+    val formattedTimeOfEntry: String = Option(timeOfEntry)
+      .filter(_.trim.nonEmpty)
+      .map(timeString => LocalTime.parse(timeString).format(DateTimeFormatter.ofPattern("hh:mm a")).toUpperCase())
+      .getOrElse(timeOfEntry)
 
     val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
     val travellingFrom: String  = declarationHeader.\("travellingFrom").asOpt[String].getOrElse("")
@@ -142,7 +150,11 @@ trait SendEmailService {
 
     val staticSubjectNonZero = "Receipt for payment on goods brought into the UK - Reference number "
     val staticSubjectZero    = "Receipt for declaration of goods brought into Northern Ireland - Reference number "
-    val dynamicSubject       = if (grandTotalGBP.equalsIgnoreCase("£0.00")) staticSubjectZero else staticSubjectNonZero
+    val dynamicSubject       = if (grandTotalGBP.equalsIgnoreCase("£0.00")) {
+      staticSubjectZero
+    } else {
+      staticSubjectNonZero
+    }
     val subject              = s"$dynamicSubject $chargeReference"
 
     val parameters: Map[String, String] = Map(

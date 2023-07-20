@@ -76,7 +76,7 @@ class HODConnector @Inject() (
       }
 
     def call: Future[SubmissionResponse] =
-      if (isAmendment)
+      if (isAmendment) {
         getRefinedData(declaration.amendData.get) match {
           case returnedJsObject if returnedJsObject.value.isEmpty =>
             Future.successful(SubmissionResponse.ParsingException)
@@ -85,7 +85,7 @@ class HODConnector @Inject() (
               .POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", returnedJsObject)
               .filter(_ != SubmissionResponse.Error)
         }
-      else
+      } else {
         getRefinedData(declaration.data) match {
           case returnedJsObject if returnedJsObject.value.isEmpty =>
             Future.successful(SubmissionResponse.ParsingException)
@@ -94,6 +94,7 @@ class HODConnector @Inject() (
               .POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", returnedJsObject)
               .filter(_ != SubmissionResponse.Error)
         }
+      }
 
     circuitBreaker
       .withCircuitBreaker(call)

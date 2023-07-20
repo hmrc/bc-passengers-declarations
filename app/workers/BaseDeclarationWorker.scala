@@ -16,13 +16,18 @@
 
 package workers
 
+import akka.stream.Supervision
 import models.declarations.Declaration
+import play.api.Configuration
+import play.api.i18n.Lang.logger
 import repositories.LockRepository
 
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
+import scala.util.control.NonFatal
 
-trait BaseDeclarationWorker {
-
+trait BaseDeclarationWorker extends WorkerConfig {
   protected def lockRepository: LockRepository
 
   protected def getLock(declaration: Declaration)(implicit ec: ExecutionContext): Future[(Boolean, Declaration)] =
@@ -31,6 +36,30 @@ trait BaseDeclarationWorker {
   protected def lockSuccessful(data: (Boolean, Declaration)): List[Declaration]                                  =
     data match {
       case (hasLock, declaration) =>
-        if (hasLock) List(declaration) else Nil
+        if (hasLock) {
+          List(declaration)
+        } else {
+          Nil
+        }
     }
+}
+
+trait WorkerConfig {
+
+  val supervisionStrategy: Supervision.Decider = {
+    case NonFatal(e) =>
+      logger.warn(s"[${this.getClass.getName}] [supervisionStrategy] NonFatal exception returned, $e")
+      Supervision.resume
+    case e           =>
+      logger.error(s"[${this.getClass.getName}] [supervisionStrategy] Fatal exception returned, $e")
+      Supervision.stop
+  }
+
+  def durationValueFromConfig(value: String, config: Configuration): FiniteDuration = {
+    val valueFromConfigFiniteDuration = config.get[FiniteDuration](value)
+    Try {
+      val valueFromConfig = config.get[String](value).replace('.', ' ')
+      Duration(valueFromConfig).asInstanceOf[FiniteDuration]
+    }.getOrElse(valueFromConfigFiniteDuration)
+  }
 }

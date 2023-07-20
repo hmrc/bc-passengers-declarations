@@ -17,8 +17,7 @@
 package workers
 
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
-import akka.stream.{ActorAttributes, Materializer, Supervision}
-import com.google.inject.{Inject, Singleton}
+import akka.stream.{ActorAttributes, Materializer}
 import connectors.HODConnector
 import models.SubmissionResponse
 import models.declarations.{Declaration, State}
@@ -27,9 +26,9 @@ import repositories.{DeclarationsRepository, LockRepository}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import util.AuditingTools
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 @Singleton
 class AmendmentSubmissionWorker @Inject() (
@@ -44,34 +43,12 @@ class AmendmentSubmissionWorker @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  private val initialDelayFromConfig               =
-    config.get[String]("workers.amendment-submission-worker.initial-delay").replace('.', ' ')
-  private val initialDelayFromConfigFiniteDuration =
-    config.get[FiniteDuration]("workers.amendment-submission-worker.initial-delay")
-  private val finiteInitialDelay                   = Duration(initialDelayFromConfig)
-  private val initialDelay                         =
-    Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
-
-  private val intervalFromConfig                   = config.get[String]("workers.amendment-submission-worker.interval").replace('.', ' ')
-  private val intervalFromConfigFiniteDuration     =
-    config.get[FiniteDuration]("workers.amendment-submission-worker.interval")
-  private val finiteInterval                       = Duration(intervalFromConfig)
-  private val interval                             =
-    Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)
-
-  private val parallelism                          = config.get[Int]("workers.amendment-submission-worker.parallelism")
-  private val elements                             = config.get[Int]("workers.amendment-submission-worker.throttle.elements")
-
-  private val perFromConfig               = config.get[String]("workers.amendment-submission-worker.throttle.per").replace('.', ' ')
-  private val perFromConfigFiniteDuration =
-    config.get[FiniteDuration]("workers.amendment-submission-worker.throttle.per")
-  private val finitePer                   = Duration(perFromConfig)
-  private val per                         = Some(finitePer).collect { case d: FiniteDuration => d }.getOrElse(perFromConfigFiniteDuration)
-
-  private val supervisionStrategy: Supervision.Decider = {
-    case NonFatal(_) => Supervision.resume
-    case _           => Supervision.stop
-  }
+  private val initialDelay: FiniteDuration =
+    durationValueFromConfig("workers.amendment-submission-worker.initial-delay", config)
+  private val interval: FiniteDuration     = durationValueFromConfig("workers.amendment-submission-worker.interval", config)
+  private val per: FiniteDuration          = durationValueFromConfig("workers.amendment-submission-worker.throttle.per", config)
+  private val parallelism: Int             = config.get[Int]("workers.amendment-submission-worker.parallelism")
+  private val elements: Int                = config.get[Int]("workers.amendment-submission-worker.throttle.elements")
 
   val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] = {
 
@@ -85,7 +62,7 @@ class AmendmentSubmissionWorker @Inject() (
       .mapConcat(lockSuccessful)
       .mapAsync(parallelism) { declaration =>
         for {
-          result <- hodConnector.submit(declaration, true)
+          result <- hodConnector.submit(declaration, isAmendment = true)
           _      <- result match {
                       case SubmissionResponse.Submitted        =>
                         auditConnector.sendExtendedEvent(
@@ -94,16 +71,20 @@ class AmendmentSubmissionWorker @Inject() (
                         declarationsRepository.setAmendSentToEtmp(declaration.chargeReference, amendSentToEtmp = true)
                       case SubmissionResponse.Error            =>
                         logger.error(
-                          s"PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] call to DES (EIS) is failed. ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.amendCorrelationId
-                            .getOrElse("amendCorrelationId is not available in Mongo")}"
+                          s"""PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] call to DES (EIS) is failed.
+                              |ChargeReference:  ${declaration.chargeReference},
+                              |CorrelationId:  ${declaration.amendCorrelationId
+                            .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
                         )
                         Future.successful(())
                       case SubmissionResponse.ParsingException =>
                         Future.successful(())
                       case SubmissionResponse.Failed           =>
                         logger.error(
-                          s"PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] BAD Request is received from DES (EIS) ChargeReference:  ${declaration.chargeReference}, CorrelationId :  ${declaration.amendCorrelationId
-                            .getOrElse("amendCorrelationId is not available in Mongo")}"
+                          s"""PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] BAD Request is received from DES (EIS)
+                              |ChargeReference:  ${declaration.chargeReference},
+                              |CorrelationId:  ${declaration.amendCorrelationId
+                            .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
                         )
                         declarationsRepository.setAmendState(declaration.chargeReference, State.SubmissionFailed)
                     }

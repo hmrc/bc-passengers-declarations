@@ -25,7 +25,7 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ChargeReferenceServiceSpec
+class ChargeReferenceServiceISpec
     extends IntegrationSpecCommonBase
     with DefaultPlayMongoRepositorySupport[ChargeRefJson] {
 

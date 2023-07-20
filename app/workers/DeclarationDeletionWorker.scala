@@ -17,18 +17,17 @@
 package workers
 
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
-import akka.stream.{ActorAttributes, Materializer, Supervision}
-import com.google.inject.{Inject, Singleton}
+import akka.stream.{ActorAttributes, Materializer}
 import models.declarations.Declaration
-import org.joda.time.{DateTime, DateTimeZone}
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import play.api.libs.json.JsObject
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 
+import java.time.format.DateTimeFormatter
+import java.time.{ZoneOffset, ZonedDateTime}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.control.NonFatal
 
 @Singleton
 class DeclarationDeletionWorker @Inject() (
@@ -40,35 +39,13 @@ class DeclarationDeletionWorker @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  private val initialDelayFromConfig               =
-    config.get[String]("workers.declaration-deletion-worker.initial-delay").replace('.', ' ')
-  private val initialDelayFromConfigFiniteDuration =
-    config.get[FiniteDuration]("workers.declaration-deletion-worker.initial-delay")
-  private val finiteInitialDelay                   = Duration(initialDelayFromConfig)
-  private val initialDelay                         =
-    Some(finiteInitialDelay).collect { case d: FiniteDuration => d }.getOrElse(initialDelayFromConfigFiniteDuration)
-
-  private val intervalFromConfig                   = config.get[String]("workers.declaration-deletion-worker.interval").replace('.', ' ')
-  private val intervalFromConfigFiniteDuration     =
-    config.get[FiniteDuration]("workers.declaration-deletion-worker.interval")
-  private val finiteInterval                       = Duration(intervalFromConfig)
-  private val interval                             =
-    Some(finiteInterval).collect { case d: FiniteDuration => d }.getOrElse(intervalFromConfigFiniteDuration)
-
-  private val parallelism                          = config.get[Int]("workers.declaration-deletion-worker.parallelism")
-
-  private val timeToHoldFromConfig                     =
-    config.get[String]("workers.declaration-deletion-worker.timeToHold").replace('.', ' ')
-  private val timeToHoldFromConfigFiniteDuration       =
-    config.get[FiniteDuration]("workers.declaration-deletion-worker.timeToHold")
-  private val finiteTimeToHold                         = Duration(timeToHoldFromConfig)
-  private val timeToHold                               =
-    Some(finiteTimeToHold).collect { case d: FiniteDuration => d }.getOrElse(timeToHoldFromConfigFiniteDuration)
-
-  private val supervisionStrategy: Supervision.Decider = {
-    case NonFatal(_) => Supervision.resume
-    case _           => Supervision.stop
-  }
+  private val initialDelay: FiniteDuration =
+    durationValueFromConfig("workers.declaration-deletion-worker.initial-delay", config)
+  private val interval: FiniteDuration     =
+    durationValueFromConfig("workers.declaration-deletion-worker.interval", config)
+  private val timeToHold: FiniteDuration   =
+    durationValueFromConfig("workers.declaration-deletion-worker.timeToHold", config)
+  private val parallelism: Int             = config.get[Int]("workers.declaration-deletion-worker.parallelism")
 
   val tap: SinkQueueWithCancel[Declaration] = {
     logger.info("Declaration deletion worker started")
@@ -101,8 +78,8 @@ class DeclarationDeletionWorker @Inject() (
       .apply("receiptDate")
       .as[String]
     val dateFormatter: DateTimeFormatter =
-      DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(DateTimeZone.UTC)
-    val receiptDateTime                  = DateTime.parse(dateString, dateFormatter)
-    receiptDateTime.plusMinutes(timeToHold.toMinutes.toInt).isBefore(DateTime.now.withZone(DateTimeZone.UTC))
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC)
+    val receiptDateTime                  = ZonedDateTime.parse(dateString, dateFormatter)
+    receiptDateTime.plusMinutes(timeToHold.toMinutes.toInt).isBefore(ZonedDateTime.now(ZoneOffset.UTC))
   }
 }

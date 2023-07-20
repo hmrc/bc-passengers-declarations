@@ -17,14 +17,13 @@
 package models
 
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 
-class ServiceSpec extends AnyFreeSpec with Matchers {
+class ServiceSpec extends AnyWordSpec with Matchers {
 
-  "a service" - {
-
-    "must be read from config" in {
+  "Service" must {
+    "be read from config" in {
 
       val config = Configuration(
         "service.host"     -> "localhost",
@@ -41,7 +40,7 @@ class ServiceSpec extends AnyFreeSpec with Matchers {
       )
     }
 
-    "must return its base url" in {
+    "return its base url" in {
 
       val service = Service(
         host = "localhost",
@@ -52,7 +51,7 @@ class ServiceSpec extends AnyFreeSpec with Matchers {
       service.baseUrl mustEqual "https://localhost:443"
     }
 
-    "must return its base url through implicit conversion to string" in {
+    "return its base url through implicit conversion to a string" in {
 
       val service: String = Service(
         host = "localhost",

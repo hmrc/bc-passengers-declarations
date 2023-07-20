@@ -16,16 +16,16 @@
 
 package connectors
 
-import org.joda.time.{DateTime, DateTimeZone}
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import java.time.format.DateTimeFormatter
+import java.time.{ZoneOffset, ZonedDateTime}
 
 trait HttpDate {
 
   protected val dateFormatter: DateTimeFormatter =
-    DateTimeFormat
-      .forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-      .withZone(DateTimeZone.UTC)
+    DateTimeFormatter
+      .ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+      .withZone(ZoneOffset.UTC)
 
   def now: String =
-    dateFormatter.print(DateTime.now.withZone(DateTimeZone.UTC))
+    dateFormatter.format(ZonedDateTime.now(ZoneOffset.UTC))
 }

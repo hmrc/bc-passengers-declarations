@@ -37,12 +37,12 @@ class DeclarationController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  val CorrelationIdKey = "X-Correlation-ID"
+  private val CorrelationIdKey = "X-Correlation-ID"
 
   def submit(): Action[JsValue] = Action.async(parse.tolerantJson) { implicit request =>
     request.headers.get(CorrelationIdKey) match {
       case Some(cid) =>
-        repository.insert(request.body.as[JsObject], cid, false).map {
+        repository.insert(request.body.as[JsObject], cid, sentToEtmp = false).map {
           case Right(declaration) =>
             Accepted(declaration.data).withHeaders(CorrelationIdKey -> cid)
           case Left(errors)       =>

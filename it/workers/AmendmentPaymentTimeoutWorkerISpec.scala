@@ -16,28 +16,26 @@
 
 package workers
 
+import akka.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
-
-import java.time.{LocalDateTime, ZoneOffset}
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
+import org.mongodb.scala.model.Filters
+import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.test.Helpers.{await, running}
+import play.api.test.Helpers._
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
+import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.Helpers._
-import akka.stream.Materializer
-import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 
-class AmendmentPaymentTimeoutWorkerSpec
+class AmendmentPaymentTimeoutWorkerISpec
     extends IntegrationSpecCommonBase
     with DefaultPlayMongoRepositorySupport[Declaration] {
 

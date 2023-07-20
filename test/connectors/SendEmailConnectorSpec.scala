@@ -65,9 +65,8 @@ class SendEmailConnectorSpec extends BaseSpec {
     force = true
   )
 
-  "send Email" should {
-
-    "Return a true when a request to send a new email is successful" in new Setup {
+  "requestEmail" must {
+    "return true when a request to send a new email is successful" in new Setup {
       when(
         mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
           any(),
@@ -79,7 +78,7 @@ class SendEmailConnectorSpec extends BaseSpec {
       await(connector.requestEmail(emailRequest)) shouldBe true
     }
 
-    "Fail the future when the service cannot be found" in new Setup {
+    "fail the future when the service cannot be found" in new Setup {
       when(
         mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
           any(),
@@ -93,7 +92,7 @@ class SendEmailConnectorSpec extends BaseSpec {
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
-    "Fail the future when we send a bad request" in new Setup {
+    "fail the future when we send a bad request" in new Setup {
       when(
         mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
           any(),
@@ -107,7 +106,7 @@ class SendEmailConnectorSpec extends BaseSpec {
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
-    "Fail the future when EVS returns an internal server error" in new Setup {
+    "fail the future when EVS returns an internal server error" in new Setup {
       when(
         mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
           any(),
@@ -121,7 +120,7 @@ class SendEmailConnectorSpec extends BaseSpec {
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
-    "Fail the future when EVS returns an upstream error" in new Setup {
+    "fail the future when EVS returns an upstream error" in new Setup {
       when(
         mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
           any(),
@@ -135,7 +134,7 @@ class SendEmailConnectorSpec extends BaseSpec {
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
-    "Fail the future when EVS returns another HTTP exception e.g 501" in new Setup {
+    "fail the future when EVS returns another HTTP exception e.g 501" in new Setup {
       when(
         mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
           any(),

@@ -16,26 +16,26 @@
 
 package workers
 
+import akka.stream.Materializer
+import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
 import com.typesafe.config.ConfigFactory
+import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
+import models.{ChargeReference, Lock}
+import org.mongodb.scala.model.Filters
+import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.Helpers.await
+import play.api.libs.json.Json
+import play.api.test.Helpers._
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.Helpers._
-import akka.stream.Materializer
-import helpers.IntegrationSpecCommonBase
-import models.ChargeReference
-import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
-import play.api.libs.json.Json
 import utils.WireMockHelper
 
-class AmendmentFailedSubmissionWorkerSpec
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class FailedSubmissionWorkerISpec
     extends IntegrationSpecCommonBase
     with WireMockHelper
     with DefaultPlayMongoRepositorySupport[Declaration] {
@@ -56,51 +56,45 @@ class AmendmentFailedSubmissionWorkerSpec
   private lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
 
-  "an amendment failed submission worker" should {
-
+  "a failed submission worker" should {
     val correlationId = "fe28db96-d9db-4220-9e12-f2d267267c29"
-
-    val amendCorrelationId = "ge28db96-d9db-4220-9e12-f2d267267c30"
 
     "must lock failed records when it processes them" in {
       await(repository.collection.deleteMany(Filters.empty()).toFuture())
 
-      val declarations = Seq(
+      val declarations = List(
         Declaration(
           ChargeReference(0),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         ),
         Declaration(
           ChargeReference(1),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         ),
         Declaration(
           ChargeReference(2),
-          State.Paid,
-          Some(State.PendingPayment),
-          sentToEtmp = true,
-          Some(false),
+          State.PendingPayment,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         )
       )
 
@@ -110,7 +104,7 @@ class AmendmentFailedSubmissionWorkerSpec
 
       running(app) {
 
-        val worker = new AmendmentFailedSubmissionWorker(
+        val worker = new FailedSubmissionWorker(
           repository,
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
@@ -127,43 +121,41 @@ class AmendmentFailedSubmissionWorkerSpec
 
     "must not process locked records" in {
       await(repository.collection.deleteMany(Filters.empty()).toFuture())
-      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       val declarations = List(
         Declaration(
           ChargeReference(0),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         ),
         Declaration(
           ChargeReference(1),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         )
       )
+
       await(repository.collection.insertMany(declarations).toFuture())
 
-      await(lockRepository.lock(0))
+      await(lockRepository.collection.insertOne(Lock(0)).toFuture())
 
       val app = builder.build()
 
       running(app) {
 
-        val worker = new AmendmentFailedSubmissionWorker(
+        val worker = new FailedSubmissionWorker(
           repository,
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
@@ -176,32 +168,29 @@ class AmendmentFailedSubmissionWorkerSpec
 
     "must set failed records to have a status of Paid" in {
       await(repository.collection.deleteMany(Filters.empty()).toFuture())
-      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       val declarations = List(
         Declaration(
           ChargeReference(0),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         ),
         Declaration(
           ChargeReference(1),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         )
       )
 
@@ -211,7 +200,7 @@ class AmendmentFailedSubmissionWorkerSpec
 
       running(app) {
 
-        val worker = new AmendmentFailedSubmissionWorker(
+        val worker = new FailedSubmissionWorker(
           repository,
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
@@ -219,37 +208,35 @@ class AmendmentFailedSubmissionWorkerSpec
 
         val declaration = worker.tap.pull().futureValue.get
         declaration.chargeReference.value mustEqual 0
+        declaration.state mustEqual State.Paid
       }
     }
 
     "must complete when all failed declarations have been processed" in {
       await(repository.collection.deleteMany(Filters.empty()).toFuture())
-      await(lockRepository.collection.deleteMany(Filters.empty()).toFuture())
 
       val declarations = List(
         Declaration(
           ChargeReference(0),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         ),
         Declaration(
           ChargeReference(1),
-          State.Paid,
-          Some(State.SubmissionFailed),
-          sentToEtmp = true,
-          Some(false),
+          State.SubmissionFailed,
+          None,
+          sentToEtmp = false,
+          None,
           correlationId,
-          Some(amendCorrelationId),
+          None,
           Json.obj(),
-          Json.obj(),
-          Some(Json.obj())
+          Json.obj()
         )
       )
 
@@ -259,7 +246,7 @@ class AmendmentFailedSubmissionWorkerSpec
 
       running(app) {
 
-        val worker = new AmendmentFailedSubmissionWorker(
+        val worker = new FailedSubmissionWorker(
           repository,
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
