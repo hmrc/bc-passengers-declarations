@@ -1,4 +1,4 @@
-import uk.gov.hmrc.DefaultBuildSettings.*
+import uk.gov.hmrc.DefaultBuildSettings.integrationTestSettings
 
 val appName = "bc-passengers-declarations"
 

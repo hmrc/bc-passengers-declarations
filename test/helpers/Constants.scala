@@ -31,11 +31,11 @@ trait Constants {
   val correlationId: String                    = "fe28db96-d9db-4220-9e12-f2d267267c29"
   val lastUpdated: LocalDateTime               = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
 
-  val emailAddress = "testEmail@digital.hmrc.gov.uk"
+  val emailAddress = "john.doe@example.com"
 
   val userInformation: JsObject = Json.obj(
-    "firstName"            -> "Harry",
-    "lastName"             -> "Potter",
+    "firstName"            -> "John",
+    "lastName"             -> "Doe",
     "identificationType"   -> "passport",
     "identificationNumber" -> "SX12345",
     "emailAddress"         -> emailAddress,
@@ -168,7 +168,11 @@ trait Constants {
   val requestDetail: JsObject = Json.obj(
     "declarationAlcohol" -> declarationAlcohol,
     "liabilityDetails"   -> liabilityDetails,
-    "customerReference"  -> Json.obj("idType" -> "passport", "idValue" -> "SX12345", "ukResident" -> false),
+    "customerReference"  -> Json.obj(
+      "idType"     -> userInformation("identificationType"),
+      "idValue"    -> userInformation("identificationNumber"),
+      "ukResident" -> false
+    ),
     "personalDetails"    -> Json
       .obj("firstName" -> userInformation("firstName"), "lastName" -> userInformation("lastName")),
     "declarationTobacco" -> declarationTobacco,

@@ -17,17 +17,17 @@
 package services
 
 import connectors.{EmailErrorResponse, SendEmailConnector, SendEmailConnectorImpl}
-
-import javax.inject.Inject
 import models.declarations.Declaration
 import models.{ChargeReference, SendEmailRequest}
-import org.joda.time.{LocalDate, LocalTime}
 import play.api.i18n.Lang.logger.logger
 import play.api.libs.json._
 import repositories.{DeclarationsRepository, DefaultDeclarationsRepository}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.{LocalDate, LocalTime}
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class SendEmailServiceImpl @Inject() (
@@ -119,27 +119,26 @@ trait SendEmailService {
     val fullName          = s"$firstName $lastName"
 
     val receiptDate: String          = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
-    val receiptDateFormatted: String = if (receiptDate.equals("")) {
-      receiptDate
-    } else {
-      LocalDate.parse(receiptDate.substring(0, 10)).toString("dd MMMM YYYY")
-    }
+    val receiptDateFormatted: String = Option(receiptDate)
+      .filter(_.nonEmpty)
+      .map(dateString => {
+        LocalDate.parse(dateString.substring(0, 10)).format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+      })
+      .getOrElse(receiptDate)
 
     val portOfEntry: String = declarationHeader.\("portOfEntryName").asOpt[String].getOrElse("")
 
     val expectedDateOfArrival: String = declarationHeader.\("expectedDateOfArrival").asOpt[String].getOrElse("")
-    val expectedDateArr: String       = if (expectedDateOfArrival.equals("")) {
-      expectedDateOfArrival
-    } else {
-      LocalDate.parse(expectedDateOfArrival).toString("dd MMMM YYYY")
-    }
+    val expectedDateArr: String       = Option(expectedDateOfArrival)
+      .filter(_.nonEmpty)
+      .map(dateString => LocalDate.parse(dateString).format(DateTimeFormatter.ofPattern("dd MMMM yyyy")))
+      .getOrElse(expectedDateOfArrival)
 
-    val timeOfEntry: String  = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
-    val formattedTimeOfEntry = if (timeOfEntry.trim.equals("")) {
-      timeOfEntry
-    } else {
-      LocalTime.parse(timeOfEntry).toString("hh:mm aa").toUpperCase()
-    }
+    val timeOfEntry: String          = declarationHeader.\("timeOfEntry").asOpt[String].getOrElse("")
+    val formattedTimeOfEntry: String = Option(timeOfEntry)
+      .filter(_.trim.nonEmpty)
+      .map(timeString => LocalTime.parse(timeString).format(DateTimeFormatter.ofPattern("hh:mm a")).toUpperCase())
+      .getOrElse(timeOfEntry)
 
     val chargeReference: String = declarationHeader.\("chargeReference").asOpt[String].getOrElse("")
     val travellingFrom: String  = declarationHeader.\("travellingFrom").asOpt[String].getOrElse("")

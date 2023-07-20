@@ -19,12 +19,12 @@ package workers
 import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import akka.stream.{ActorAttributes, Materializer}
 import models.declarations.Declaration
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
-import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.JsObject
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}
 
+import java.time.format.DateTimeFormatter
+import java.time.{ZoneOffset, ZonedDateTime}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -78,8 +78,8 @@ class DeclarationDeletionWorker @Inject() (
       .apply("receiptDate")
       .as[String]
     val dateFormatter: DateTimeFormatter =
-      DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(DateTimeZone.UTC)
-    val receiptDateTime                  = DateTime.parse(dateString, dateFormatter)
-    receiptDateTime.plusMinutes(timeToHold.toMinutes.toInt).isBefore(DateTime.now.withZone(DateTimeZone.UTC))
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC)
+    val receiptDateTime                  = ZonedDateTime.parse(dateString, dateFormatter)
+    receiptDateTime.plusMinutes(timeToHold.toMinutes.toInt).isBefore(ZonedDateTime.now(ZoneOffset.UTC))
   }
 }

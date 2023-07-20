@@ -22,7 +22,9 @@ import helpers.IntegrationSpecCommonBase
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
-import org.joda.time.{DateTime, DateTimeZone}
+
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
@@ -67,9 +69,11 @@ class DeclarationDeletionWorkerISpec
     "bringingOverAllowance" -> true
   )
 
-  private val dateTimeInPast =
-    DateTime.now().minusMinutes(5).withZone(DateTimeZone.UTC).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-  private val dateTime       = DateTime.now().withZone(DateTimeZone.UTC).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  private val dateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC)
+  private val dateTimeInPast                   =
+    ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(3).format(dateFormatter)
+  private val dateTime                         = ZonedDateTime.now(ZoneOffset.UTC).format(dateFormatter)
 
   private val dataInPast: JsObject = Json.obj(
     "simpleDeclarationRequest" -> Json.obj(
