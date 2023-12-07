@@ -16,7 +16,7 @@ object AppDependencies {
     "org.scalatest"         %% "scalatest"               % "3.2.17",
     "com.typesafe.play"     %% "play-test"               % "2.8.21",
     "org.mockito"           %% "mockito-scala-scalatest" % "1.17.30",
-    "com.github.tomakehurst" % "wiremock-standalone"     % "3.0.1",
+    "com.github.tomakehurst" % "wiremock-standalone"     % "2.27.2",
     "org.scalacheck"        %% "scalacheck"              % "1.17.0",
     "uk.gov.hmrc.mongo"     %% "hmrc-mongo-test-play-28" % hmrcMongoVersion,
     "uk.gov.hmrc"           %% "bootstrap-test-play-28"  % bootstrapPlayVersion,
