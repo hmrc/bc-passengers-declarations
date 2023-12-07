@@ -9,7 +9,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(integrationTestSettings())
   .settings(inConfig(IntegrationTest)(itSettings))
   .settings(inConfig(Test)(testSettings))
-  .settings(scalaVersion := "2.13.11")
+  .settings(scalaVersion := "2.13.12")
   .settings(
     PlayKeys.playDefaultPort := 9073,
     majorVersion := 0,
