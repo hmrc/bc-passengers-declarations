@@ -17,17 +17,16 @@
 package metrics
 
 import com.codahale.metrics._
-import com.kenshoo.play.metrics.Metrics
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
+
 import javax.inject.Inject
 
 class MetricsOperator @Inject() (val metrics: Metrics) {
 
-  type Metric = String
+  lazy val registry: MetricRegistry = metrics.defaultRegistry
 
-  lazy val registry = metrics.defaultRegistry
-
-  def startTimer()                      = registry.timer("submission-timer").time()
-  def stopTimer(context: Timer.Context) = context.stop()
+  def startTimer(): Timer.Context             = registry.timer("submission-timer").time()
+  def stopTimer(context: Timer.Context): Long = context.stop()
 
   def setCounter(name: String)(newCount: Int): Unit = {
     registry.remove(name)
@@ -35,10 +34,10 @@ class MetricsOperator @Inject() (val metrics: Metrics) {
 
   }
 
-  val setPendingPaymentCounter   = setCounter("pending-payment-counter") _
-  val setPaymentCompleteCounter  = setCounter("payment-complete-counter") _
-  val setPaymentFailedCounter    = setCounter("payment-failed-counter") _
-  val setPaymentCancelledCounter = setCounter("payment-cancelled-counter") _
-  val setFailedSubmissionCounter = setCounter("failed-submission-counter") _
+  val setPendingPaymentCounter: Int => Unit   = setCounter("pending-payment-counter")
+  val setPaymentCompleteCounter: Int => Unit  = setCounter("payment-complete-counter")
+  val setPaymentFailedCounter: Int => Unit    = setCounter("payment-failed-counter")
+  val setPaymentCancelledCounter: Int => Unit = setCounter("payment-cancelled-counter")
+  val setFailedSubmissionCounter: Int => Unit = setCounter("failed-submission-counter")
 
 }

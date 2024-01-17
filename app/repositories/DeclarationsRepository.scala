@@ -16,12 +16,12 @@
 
 package repositories
 
-import akka.NotUsed
-import akka.stream.scaladsl.Source
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.client.model.Accumulators.{first, sum}
-import models.declarations.{Declaration, State}
 import models._
+import models.declarations.{Declaration, State}
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
 import org.mongodb.scala.model.Aggregates.group
 import org.mongodb.scala.model.Filters._

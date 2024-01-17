@@ -16,10 +16,10 @@
 
 package workers
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
 import metrics.MetricsOperator
 import models.DeclarationsStatus
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import org.mockito.MockitoSugar.{mock, when}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec

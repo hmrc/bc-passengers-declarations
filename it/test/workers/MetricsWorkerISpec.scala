@@ -16,20 +16,19 @@
 
 package workers
 
-import akka.stream.Materializer
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import metrics.MetricsOperator
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus}
+import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{JsPath, Json, Reads}
-import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
@@ -162,15 +161,6 @@ class MetricsWorkerISpec
 
         worker.tap.pull().futureValue mustBe Some(DeclarationsStatus(1, 1, 1, 1, 1))
 
-        val r1 = route(app, FakeRequest("GET", "/admin/metrics")).get
-        r1.futureValue
-        Json.fromJson[DeclarationsStatus](contentAsJson(r1))(declarationsStatusReads).get mustBe DeclarationsStatus(
-          1,
-          1,
-          1,
-          1,
-          1
-        )
       }
     }
   }

@@ -16,15 +16,12 @@
 
 package workers
 
-import akka.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
-
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
@@ -35,7 +32,8 @@ import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeclarationDeletionWorkerISpec

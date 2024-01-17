@@ -16,7 +16,7 @@
 
 package connectors
 
-import akka.pattern.CircuitBreaker
+import org.apache.pekko.pattern.CircuitBreaker
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, Etmp}

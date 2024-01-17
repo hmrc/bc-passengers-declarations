@@ -16,11 +16,11 @@
 
 package repositories
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus, PreviousDeclarationRequest}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
 import org.mongodb.scala.Document
 import org.scalatest.Inside.inside
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
@@ -67,7 +67,7 @@ class DeclarationsRepositoryISpec
   lazy val builder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
 
-  val userInformation = Json.obj(
+  val userInformation: JsObject = Json.obj(
     "firstName"            -> "Harry",
     "lastName"             -> "Potter",
     "identificationType"   -> "passport",

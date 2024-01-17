@@ -16,8 +16,8 @@
 
 package workers
 
-import akka.stream.Supervision
 import models.declarations.Declaration
+import org.apache.pekko.stream.Supervision
 import play.api.Configuration
 import play.api.i18n.Lang.logger
 import repositories.LockRepository

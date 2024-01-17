@@ -17,8 +17,8 @@
 package utils
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.VerificationException
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
-import org.apache.bcel.verifier.exc.VerificationException
 
 object WireMockUtils {
 

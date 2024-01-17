@@ -16,12 +16,12 @@
 
 package repositories
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
 import helpers.Constants
 import helpers.MongoTestUtils.{beEquivalentTo, givenAnExistingDocument, givenExistingDocuments}
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationResponse, DeclarationsStatus, PreviousDeclarationRequest}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
 import org.mockito.MockitoSugar.{mock, when}
 import org.mongodb.scala.MongoCollection
 import org.scalatest.matchers.must.Matchers

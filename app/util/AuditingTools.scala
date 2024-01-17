@@ -26,7 +26,7 @@ class AuditingTools @Inject() (
   @Named("appName") val appName: String
 ) {
 
-  def buildDeclarationSubmittedDataEvent(data: JsObject) =
+  def buildDeclarationSubmittedDataEvent(data: JsObject): ExtendedDataEvent =
     ExtendedDataEvent(
       auditSource = appName,
       auditType = "passengerdeclaration",

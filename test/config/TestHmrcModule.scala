@@ -16,7 +16,7 @@
 
 package config
 
-import akka.pattern.CircuitBreaker
+import org.apache.pekko.pattern.CircuitBreaker
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository, LockRepository}

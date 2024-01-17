@@ -16,12 +16,12 @@
 
 package workers
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
 import connectors.HODConnector
 import helpers.Constants
 import models.SubmissionResponse
 import models.declarations.{Declaration, State}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import org.mockito.MockitoSugar.{mock, reset, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.must.Matchers

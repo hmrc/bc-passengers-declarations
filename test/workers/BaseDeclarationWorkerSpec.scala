@@ -16,9 +16,9 @@
 
 package workers
 
-import akka.stream.Supervision
 import helpers.Constants
 import models.declarations.Declaration
+import org.apache.pekko.stream.Supervision
 import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar.{mock, when}
 import org.scalatest.matchers.must.Matchers

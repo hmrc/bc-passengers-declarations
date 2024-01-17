@@ -16,13 +16,13 @@
 
 package workers
 
-import akka.stream.Materializer
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import logger.TestLoggerAppender
 import models.ChargeReference
 import models.declarations.{Declaration, State}
+import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration

@@ -16,8 +16,8 @@
 
 package workers
 
-import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel}
-import akka.stream.{ActorAttributes, Materializer}
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel}
+import org.apache.pekko.stream.{ActorAttributes, Materializer}
 import models.declarations.{Declaration, State}
 import play.api.{Configuration, Logger}
 import repositories.{DeclarationsRepository, LockRepository}

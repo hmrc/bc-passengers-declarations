@@ -63,7 +63,7 @@ class SendEmailServiceSpec extends BaseSpec {
 
   trait Setup extends Constants {
 
-    val emailService = new SendEmailService {
+    val emailService: SendEmailService = new SendEmailService {
       val emailConnector: SendEmailConnector = mockSendEmailConnector
       val repository: DeclarationsRepository = declarationsRepository
       val servicesConfig: ServicesConfig     = mockServicesConfig

@@ -16,7 +16,7 @@
 
 package config
 
-import akka.pattern.CircuitBreaker
+import org.apache.pekko.pattern.CircuitBreaker
 import org.mockito.MockitoSugar.mock
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
