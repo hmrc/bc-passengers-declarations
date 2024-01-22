@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,9 +121,9 @@ trait SendEmailService {
     val receiptDate: String          = requestCommon.\("receiptDate").asOpt[String].getOrElse("")
     val receiptDateFormatted: String = Option(receiptDate)
       .filter(_.nonEmpty)
-      .map(dateString => {
+      .map { dateString =>
         LocalDate.parse(dateString.substring(0, 10)).format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
-      })
+      }
       .getOrElse(receiptDate)
 
     val portOfEntry: String = declarationHeader.\("portOfEntryName").asOpt[String].getOrElse("")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package config
 
-import akka.pattern.CircuitBreaker
-import play.api.{Configuration, Environment}
+import org.apache.pekko.pattern.CircuitBreaker
 import play.api.inject.{Binding, Module}
+import play.api.{Configuration, Environment}
 import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository, LockRepository}
 import services.{ChargeReferenceService, SequentialChargeReferenceService}
 import workers._
