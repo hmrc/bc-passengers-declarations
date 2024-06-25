@@ -20,7 +20,8 @@ import helpers.Constants
 import models.declarations.Declaration
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
-import org.mockito.MockitoSugar.{mock, when}
+import org.mockito.Mockito
+import org.mockito.Mockito.when
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -42,8 +43,8 @@ class PaymentTimeoutWorkerSpec
     with BeforeAndAfterEach
     with Constants {
 
-  val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
-  val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
+  val mockDeclarationsRepository: DefaultDeclarationsRepository = Mockito.mock(classOf[DefaultDeclarationsRepository])
+  val mockLockRepository: DefaultLockRepository                 = Mockito.mock(classOf[DefaultLockRepository])
 
   val config: Configuration = app.injector.instanceOf[Configuration]
 

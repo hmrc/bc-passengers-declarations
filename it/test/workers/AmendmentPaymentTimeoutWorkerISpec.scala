@@ -148,9 +148,9 @@ class AmendmentPaymentTimeoutWorkerISpec
       TestLoggerAppender.queue.dequeueAll(_ => true)
 
       val staleDeclarations = List(
-        worker.tap.pull().futureValue.get,
-        worker.tap.pull().futureValue.get,
-        worker.tap.pull().futureValue.get
+        await(worker.tap.pull()).get,
+        await(worker.tap.pull()).get,
+        await(worker.tap.pull()).get
       )
 
       staleDeclarations
@@ -173,7 +173,7 @@ class AmendmentPaymentTimeoutWorkerISpec
         "Declaration 0 is stale, deleting"
       )
 
-      val remaining = repository.collection.find().toFuture().map(_.toList).futureValue
+      val remaining = await(repository.collection.find().toFuture().map(_.toList))
 
       remaining mustEqual declarations.filter(_.chargeReference.value > 2)
     }
@@ -239,7 +239,7 @@ class AmendmentPaymentTimeoutWorkerISpec
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
 
-        val declaration = worker.tap.pull().futureValue.get
+        val declaration = await(worker.tap.pull()).get
         declaration.chargeReference.value mustEqual 1
 
       }
@@ -303,12 +303,12 @@ class AmendmentPaymentTimeoutWorkerISpec
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
 
-        worker.tap.pull().futureValue
-        worker.tap.pull().futureValue
+        await(worker.tap.pull())
+        await(worker.tap.pull())
 
-        lockRepository.isLocked(0).futureValue mustEqual true
-        lockRepository.isLocked(1).futureValue mustEqual true
-        lockRepository.isLocked(2).futureValue mustEqual false
+        await(lockRepository.isLocked(0)) mustEqual true
+        await(lockRepository.isLocked(1)) mustEqual true
+        await(lockRepository.isLocked(2)) mustEqual false
       }
     }
   }

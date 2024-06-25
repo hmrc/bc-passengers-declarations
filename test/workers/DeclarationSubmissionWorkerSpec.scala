@@ -22,7 +22,8 @@ import models.SubmissionResponse
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
-import org.mockito.MockitoSugar.{mock, reset, when}
+import org.mockito.Mockito
+import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -44,11 +45,11 @@ class DeclarationSubmissionWorkerSpec
     with BeforeAndAfterEach
     with Constants {
 
-  val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
-  val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
-  val mockHodConnector: HODConnector                            = mock[HODConnector]
-  val mockAuditConnector: AuditConnector                        = mock[AuditConnector]
-  val mockAuditingTools: AuditingTools                          = mock[AuditingTools]
+  val mockDeclarationsRepository: DefaultDeclarationsRepository = Mockito.mock(classOf[DefaultDeclarationsRepository])
+  val mockLockRepository: DefaultLockRepository                 = Mockito.mock(classOf[DefaultLockRepository])
+  val mockHodConnector: HODConnector                            = Mockito.mock(classOf[HODConnector])
+  val mockAuditConnector: AuditConnector                        = Mockito.mock(classOf[AuditConnector])
+  val mockAuditingTools: AuditingTools                          = Mockito.mock(classOf[AuditingTools])
 
   val config: Configuration = app.injector.instanceOf[Configuration]
 
@@ -159,7 +160,8 @@ class DeclarationSubmissionWorkerSpec
           Source(Vector(declaration, queuedDeclaration))
         )
 
-        when(mockLockRepository.lock(declaration.chargeReference.value)).thenThrow(new Exception)
+        when(mockLockRepository.lock(declaration.chargeReference.value))
+          .thenThrow(new RuntimeException("Test Exception"))
 
         when(mockLockRepository.lock(queuedDeclaration.chargeReference.value)).thenReturn(Future.successful(true))
         when(mockHodConnector.submit(queuedDeclaration, isAmendment = false))
@@ -175,7 +177,8 @@ class DeclarationSubmissionWorkerSpec
       "throw a Fatal exception is thrown processing a declaration and stops the queue" in new Setup {
 
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
-        when(mockLockRepository.lock(declaration.chargeReference.value)).thenThrow(new ControlThrowable {})
+        when(mockLockRepository.lock(declaration.chargeReference.value))
+          .thenThrow(new RuntimeException("Test Exception"))
 
         declarationSubmissionWorker.tap.pull().failed.map(_ mustBe an[ControlThrowable])
 

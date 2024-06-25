@@ -19,6 +19,8 @@ package connectors
 import helpers.BaseSpec
 import models.SendEmailRequest
 import org.mockito.ArgumentMatchers._
+import org.mockito.Mockito
+import org.mockito.Mockito.when
 import play.api.libs.json.JsValue
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
@@ -30,7 +32,7 @@ import scala.concurrent.Future
 class SendEmailConnectorSpec extends BaseSpec {
 
   private trait Setup {
-    val mockHttpClient: HttpClient = mock[HttpClient]
+    val mockHttpClient: HttpClient = Mockito.mock(classOf[HttpClient])
 
     val connector: SendEmailConnector = new SendEmailConnector {
       override val sendEmailURL     = "testSendEmailURL"

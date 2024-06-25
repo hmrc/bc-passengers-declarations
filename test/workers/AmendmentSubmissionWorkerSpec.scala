@@ -22,7 +22,8 @@ import models.SubmissionResponse
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
-import org.mockito.MockitoSugar.{mock, reset, when}
+import org.mockito.Mockito
+import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -43,11 +44,11 @@ class AmendmentSubmissionWorkerSpec
     with BeforeAndAfterEach
     with Constants {
 
-  val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
-  val mockLockRepository: DefaultLockRepository                 = mock[DefaultLockRepository]
-  val mockHodConnector: HODConnector                            = mock[HODConnector]
-  val mockAuditConnector: AuditConnector                        = mock[AuditConnector]
-  val mockAuditingTools: AuditingTools                          = mock[AuditingTools]
+  val mockDeclarationsRepository: DefaultDeclarationsRepository = Mockito.mock(classOf[DefaultDeclarationsRepository])
+  val mockLockRepository: DefaultLockRepository                 = Mockito.mock(classOf[DefaultLockRepository])
+  val mockHodConnector: HODConnector                            = Mockito.mock(classOf[HODConnector])
+  val mockAuditConnector: AuditConnector                        = Mockito.mock(classOf[AuditConnector])
+  val mockAuditingTools: AuditingTools                          = Mockito.mock(classOf[AuditingTools])
 
   val config: Configuration = app.injector.instanceOf[Configuration]
 

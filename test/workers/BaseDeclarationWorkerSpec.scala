@@ -20,7 +20,8 @@ import helpers.Constants
 import models.declarations.Declaration
 import org.apache.pekko.stream.Supervision
 import org.mockito.ArgumentMatchers.any
-import org.mockito.MockitoSugar.{mock, when}
+import org.mockito.Mockito
+import org.mockito.Mockito.when
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -33,8 +34,8 @@ import scala.concurrent.Future
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 class BaseDeclarationWorkerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with Constants {
-  private val mockLockRepository: DefaultLockRepository = mock[DefaultLockRepository]
-  private val mockConfiguration: Configuration          = mock[Configuration]
+  private val mockLockRepository: DefaultLockRepository = Mockito.mock(classOf[DefaultLockRepository])
+  private val mockConfiguration: Configuration          = Mockito.mock(classOf[Configuration])
 
   object BaseDeclarationWorkerTest extends BaseDeclarationWorker {
     override protected def lockRepository: LockRepository = mockLockRepository

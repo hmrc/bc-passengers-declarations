@@ -22,7 +22,8 @@ import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationResponse, DeclarationsStatus, PreviousDeclarationRequest}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
-import org.mockito.MockitoSugar.{mock, when}
+import org.mockito.Mockito
+import org.mockito.Mockito.when
 import org.mongodb.scala.MongoCollection
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -45,7 +46,7 @@ class DeclarationsRepositorySpec
 
   private lazy val config: Configuration                              = app.injector.instanceOf[Configuration]
   private lazy val validationService                                  = app.injector.instanceOf[ValidationService]
-  private lazy val mockChargeReferenceService: ChargeReferenceService = mock[ChargeReferenceService]
+  private lazy val mockChargeReferenceService: ChargeReferenceService = Mockito.mock(classOf[ChargeReferenceService])
 
   override protected val repository: DefaultDeclarationsRepository = new DefaultDeclarationsRepository(
     mongoComponent,

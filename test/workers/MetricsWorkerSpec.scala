@@ -20,7 +20,8 @@ import metrics.MetricsOperator
 import models.DeclarationsStatus
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
-import org.mockito.MockitoSugar.{mock, when}
+import org.mockito.Mockito
+import org.mockito.Mockito.when
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -30,7 +31,7 @@ import repositories.DefaultDeclarationsRepository
 
 class MetricsWorkerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
-  val mockDeclarationsRepository: DefaultDeclarationsRepository = mock[DefaultDeclarationsRepository]
+  val mockDeclarationsRepository: DefaultDeclarationsRepository = Mockito.mock(classOf[DefaultDeclarationsRepository])
 
   val metricsOperator: MetricsOperator = app.injector.instanceOf[MetricsOperator]
   val config: Configuration            = app.injector.instanceOf[Configuration]
