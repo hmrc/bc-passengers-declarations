@@ -30,7 +30,7 @@ import play.api.Application
 import play.api.http.ContentTypes
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
-import play.api.test.Helpers._
+import play.api.test.Helpers.{await, _}
 import play.api.test.Injecting
 import utils.WireMockHelper
 
@@ -73,7 +73,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Submitted
     }
 
     "fall back to a SubmissionResponse.Error when the downstream call errors while submitting declaration" in {
@@ -83,7 +83,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE))
       )
 
-      connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Error
+      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Error
     }
 
     "fail fast while the circuit breaker is open when declaration is submitted" in {
@@ -94,11 +94,11 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Error
-      connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Error
+      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Error
+      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Error
 
       Thread.sleep(2000)
-      connector.submit(declaration, isAmendment = false).futureValue mustBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Submitted
     }
 
     "call the HOD when amendment is submitted" in {
@@ -108,7 +108,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      connector.submit(amendment, isAmendment = true).futureValue mustBe SubmissionResponse.Submitted
+      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Submitted
     }
 
     "throw an exception when amendment is submitted but contains no correlation id" in {
@@ -126,18 +126,17 @@ class HODConnectorSpec
 
       val missingDataDeclaration = declaration.copy(data = Json.obj())
 
-      connector
-        .submit(missingDataDeclaration, isAmendment = false)
-        .futureValue mustBe SubmissionResponse.ParsingException
+      await(connector.submit(missingDataDeclaration, isAmendment = false)) mustBe SubmissionResponse.ParsingException
     }
 
     "fall back to a SubmissionResponse.ParsingException when the amendment data is not complete" in {
 
       val missingAmendmentDataDeclaration = amendment.copy(amendData = Some(Json.obj()))
 
-      connector
-        .submit(missingAmendmentDataDeclaration, isAmendment = true)
-        .futureValue mustBe SubmissionResponse.ParsingException
+      await(
+        connector
+          .submit(missingAmendmentDataDeclaration, isAmendment = true)
+      ) mustBe SubmissionResponse.ParsingException
     }
 
     "fall back to a SubmissionResponse.Error when the downstream call errors in amendments journey" in {
@@ -147,7 +146,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE))
       )
 
-      connector.submit(amendment, isAmendment = true).futureValue mustBe SubmissionResponse.Error
+      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Error
     }
 
     "fail fast while the circuit breaker is open in amendments journey" in {
@@ -158,11 +157,11 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      connector.submit(amendment, isAmendment = true).futureValue mustBe SubmissionResponse.Error
-      connector.submit(amendment, isAmendment = true).futureValue mustBe SubmissionResponse.Error
+      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Error
+      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Error
 
       Thread.sleep(2000)
-      connector.submit(amendment, isAmendment = true).futureValue mustBe SubmissionResponse.Submitted
+      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Submitted
     }
   }
 }

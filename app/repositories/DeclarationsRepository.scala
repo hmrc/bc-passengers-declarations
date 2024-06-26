@@ -176,7 +176,7 @@ class DefaultDeclarationsRepository @Inject() (
               dec.journeyData.value("purchasedProductInstances").as[JsArray],
               dec.journeyData.\("amendmentCount").asOpt[Int],
               dec.journeyData.\("deltaCalculation").asOpt[JsObject],
-              Some(dec.amendState.getOrElse("None").toString)
+              Some(dec.amendState.map(_.toString).getOrElse("None"))
             )
           )
         case _                            => Option.empty

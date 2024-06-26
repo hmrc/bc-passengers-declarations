@@ -17,7 +17,7 @@
 package config
 
 import org.apache.pekko.pattern.CircuitBreaker
-import org.mockito.MockitoSugar.mock
+import org.mockito.Mockito
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.inject.Binding
@@ -28,8 +28,8 @@ import workers._
 
 class HmrcModuleSpec extends AnyWordSpec with Matchers {
 
-  private val mockConfiguration: Configuration = mock[Configuration]
-  private val mockEnvironment: Environment     = mock[Environment]
+  private val mockConfiguration: Configuration = Mockito.mock(classOf[Configuration])
+  private val mockEnvironment: Environment     = Mockito.mock(classOf[Environment])
 
   private val bindings: Seq[Binding[_]] = new HmrcModule().bindings(mockEnvironment, mockConfiguration)
 

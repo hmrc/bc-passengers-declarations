@@ -21,6 +21,8 @@ import helpers.{BaseSpec, Constants}
 import models._
 import models.declarations.Declaration
 import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
+import org.mockito.Mockito.{reset, when}
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import play.api.Application
 import play.api.http.Status.ACCEPTED
@@ -41,7 +43,7 @@ class SendEmailServiceSpec extends BaseSpec {
   implicit val hc: HeaderCarrier                        = HeaderCarrier()
   implicit val req: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/test-path")
   lazy val app: Application                             = GuiceApplicationBuilder()
-    .overrides(bind[HttpClient].toInstance(mock[HttpClient]))
+    .overrides(bind[HttpClient].toInstance(Mockito.mock(classOf[HttpClient])))
     .build()
 
   override def beforeEach(): Unit =
@@ -49,14 +51,14 @@ class SendEmailServiceSpec extends BaseSpec {
 
   private val mockSendEmailConnector: SendEmailConnector = new SendEmailConnector {
     override val sendEmailURL     = "testSendEmailURL"
-    override val http: HttpClient = mock[HttpClient]
+    override val http: HttpClient = Mockito.mock(classOf[HttpClient])
 
     when(http.POST[JsValue, HttpResponse](any(), any(), any())(any(), any(), any(), any()))
       .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
 
   }
-  private val mockServicesConfig: ServicesConfig         = mock[ServicesConfig]
-  private val declarationsRepository                     = mock[DeclarationsRepository]
+  private val mockServicesConfig: ServicesConfig         = Mockito.mock(classOf[ServicesConfig])
+  private val declarationsRepository                     = Mockito.mock(classOf[DeclarationsRepository])
 
   def resetMocks(): Unit =
     reset(declarationsRepository)

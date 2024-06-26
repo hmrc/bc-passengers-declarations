@@ -20,7 +20,8 @@ import helpers.Constants
 import models.declarations.State
 import models.{DeclarationResponse, PreviousDeclarationRequest}
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import org.mockito.MockitoSugar
+import org.mockito.Mockito.{never, reset, times, verify, when}
+import org.mockito.Mockito
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -40,13 +41,12 @@ class DeclarationControllerSpec
     with Matchers
     with GuiceOneAppPerSuite
     with OptionValues
-    with MockitoSugar
     with ScalaFutures
     with BeforeAndAfterEach
     with Constants {
 
-  private val declarationsRepository = mock[DeclarationsRepository]
-  private val lockRepository         = mock[LockRepository]
+  private val declarationsRepository = Mockito.mock(classOf[DeclarationsRepository])
+  private val lockRepository         = Mockito.mock(classOf[LockRepository])
 
   override def beforeEach(): Unit = {
     reset(declarationsRepository)
@@ -529,7 +529,7 @@ class DeclarationControllerSpec
             val result = route(app, request).value
 
             status(result) mustBe ACCEPTED
-            verify(declarationsRepository, never).setAmendState(eqTo(chargeReference), any())
+            verify(declarationsRepository, never()).setAmendState(eqTo(chargeReference), any())
             verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
