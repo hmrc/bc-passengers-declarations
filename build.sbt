@@ -1,11 +1,9 @@
 import uk.gov.hmrc.DefaultBuildSettings
 
-val appName = "bc-passengers-declarations"
-
 ThisBuild / scalaVersion := "2.13.14"
 ThisBuild / majorVersion := 0
 
-lazy val microservice = Project(appName, file("."))
+lazy val microservice = Project("bc-passengers-declarations", file("."))
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
   .settings(CodeCoverageSettings.settings)
@@ -39,4 +37,3 @@ lazy val it = project
   )
 
 addCommandAlias("scalafmtAll", "all scalafmtSbt scalafmt Test/scalafmt it/Test/scalafmt")
-addCommandAlias("scalastyleAll", "all scalastyle Test/scalastyle it/Test/scalastyle")
