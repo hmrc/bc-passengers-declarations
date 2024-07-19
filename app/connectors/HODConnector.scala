@@ -25,19 +25,21 @@ import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.i18n.Lang.logger.logger
 import play.api.libs.json.{JsError, JsObject, Json}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class HODConnector @Inject() (
-  http: HttpClient,
+  httpClientV2: HttpClientV2,
   config: Configuration,
   @Named("des") circuitBreaker: CircuitBreaker
 )(implicit ec: ExecutionContext)
     extends HttpDate {
 
-  private val baseUrl = config.get[Service]("microservice.services.des")
+  private val baseUrl            = config.get[Service]("microservice.services.des")
+  private val declarationFullUrl = s"$baseUrl/declarations/passengerdeclaration/v1"
 
   private val bearerToken = config.get[String]("microservice.services.des.bearer-token")
 
@@ -81,8 +83,10 @@ class HODConnector @Inject() (
           case returnedJsObject if returnedJsObject.value.isEmpty =>
             Future.successful(SubmissionResponse.ParsingException)
           case returnedJsObject                                   =>
-            http
-              .POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", returnedJsObject)
+            httpClientV2
+              .post(url"$declarationFullUrl")
+              .withBody(Json.toJson(returnedJsObject))
+              .execute[SubmissionResponse]
               .filter(_ != SubmissionResponse.Error)
         }
       } else {
@@ -90,8 +94,10 @@ class HODConnector @Inject() (
           case returnedJsObject if returnedJsObject.value.isEmpty =>
             Future.successful(SubmissionResponse.ParsingException)
           case returnedJsObject                                   =>
-            http
-              .POST[JsObject, SubmissionResponse](s"$baseUrl/declarations/passengerdeclaration/v1", returnedJsObject)
+            httpClientV2
+              .post(url"$declarationFullUrl")
+              .withBody(Json.toJson(returnedJsObject))
+              .execute[SubmissionResponse]
               .filter(_ != SubmissionResponse.Error)
         }
       }

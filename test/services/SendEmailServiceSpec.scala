@@ -21,7 +21,7 @@ import helpers.{BaseSpec, Constants}
 import models._
 import models.declarations.Declaration
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.{reset, when}
 import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import play.api.Application
@@ -32,7 +32,8 @@ import play.api.libs.json._
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import repositories.DeclarationsRepository
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,25 +41,37 @@ import scala.concurrent.Future
 
 class SendEmailServiceSpec extends BaseSpec {
 
+  val mockHttpClientV2: HttpClientV2     = mock(classOf[HttpClientV2])
+  val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
+
   implicit val hc: HeaderCarrier                        = HeaderCarrier()
   implicit val req: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/test-path")
   lazy val app: Application                             = GuiceApplicationBuilder()
-    .overrides(bind[HttpClient].toInstance(Mockito.mock(classOf[HttpClient])))
+    .overrides(bind[HttpClientV2].toInstance(mockHttpClientV2))
     .build()
 
   override def beforeEach(): Unit =
     resetMocks()
 
   private val mockSendEmailConnector: SendEmailConnector = new SendEmailConnector {
-    override val sendEmailURL     = "testSendEmailURL"
-    override val http: HttpClient = Mockito.mock(classOf[HttpClient])
+    override val sendEmailURL       = "http://testSendEmailURL"
+    override val http: HttpClientV2 = mock(classOf[HttpClientV2])
 
-    when(http.POST[JsValue, HttpResponse](any(), any(), any())(any(), any(), any(), any()))
-      .thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
+    when(mockRequestBuilder.withBody(any())(any(), any(), any()))
+      .thenReturn(mockRequestBuilder)
+
+    val response: HttpResponse =
+      HttpResponse(ACCEPTED, "")
+
+    when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+      .thenReturn(Future(response))
+
+    when(http.post(any())(any()))
+      .thenReturn(mockRequestBuilder)
 
   }
-  private val mockServicesConfig: ServicesConfig         = Mockito.mock(classOf[ServicesConfig])
-  private val declarationsRepository                     = Mockito.mock(classOf[DeclarationsRepository])
+  private val mockServicesConfig: ServicesConfig         = mock(classOf[ServicesConfig])
+  private val declarationsRepository                     = mock(classOf[DeclarationsRepository])
 
   def resetMocks(): Unit =
     reset(declarationsRepository)

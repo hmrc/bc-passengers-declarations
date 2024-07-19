@@ -19,12 +19,11 @@ package connectors
 import helpers.BaseSpec
 import models.SendEmailRequest
 import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito
-import org.mockito.Mockito.when
-import play.api.libs.json.JsValue
+import org.mockito.Mockito.{mock, when}
 import play.api.test.Helpers._
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.{HttpClient, HttpResponse}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.http.HttpResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,13 +31,18 @@ import scala.concurrent.Future
 class SendEmailConnectorSpec extends BaseSpec {
 
   private trait Setup {
-    val mockHttpClient: HttpClient = Mockito.mock(classOf[HttpClient])
+    val mockHttpClientV2: HttpClientV2     = mock(classOf[HttpClientV2])
+    val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
 
     val connector: SendEmailConnector = new SendEmailConnector {
-      override val sendEmailURL     = "testSendEmailURL"
-      override val http: HttpClient = mockHttpClient
+      override val sendEmailURL       = "http://testSendEmailURL"
+      override val http: HttpClientV2 = mockHttpClientV2
 
     }
+
+    when(mockRequestBuilder.withBody(any())(any(), any(), any()))
+      .thenReturn(mockRequestBuilder)
+
   }
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -69,83 +73,80 @@ class SendEmailConnectorSpec extends BaseSpec {
 
   "requestEmail" must {
     "return true when a request to send a new email is successful" in new Setup {
+      val response: HttpResponse =
+        HttpResponse(ACCEPTED, "")
+
+      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future(response))
+
       when(
-        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
-          any(),
-          any(),
-          any(),
-          any()
-        )
-      ).thenReturn(Future.successful(HttpResponse.apply(ACCEPTED, "")))
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
       await(connector.requestEmail(emailRequest)) shouldBe true
     }
 
     "fail the future when the service cannot be found" in new Setup {
+      val response = new NotFoundException("error")
+
+      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future.failed(response))
+
       when(
-        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
-          any(),
-          any(),
-          any(),
-          any()
-        )
-      )
-        .thenReturn(Future.failed(new NotFoundException("error")))
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
 
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
     "fail the future when we send a bad request" in new Setup {
+      val response = new BadRequestException("error")
+
+      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future.failed(response))
+
       when(
-        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
-          any(),
-          any(),
-          any(),
-          any()
-        )
-      )
-        .thenReturn(Future.failed(new BadRequestException("error")))
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
 
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
     "fail the future when EVS returns an internal server error" in new Setup {
+      val response = new InternalServerException("error")
+
+      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future.failed(response))
+
       when(
-        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
-          any(),
-          any(),
-          any(),
-          any()
-        )
-      )
-        .thenReturn(Future.failed(new InternalServerException("error")))
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
 
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
     "fail the future when EVS returns an upstream error" in new Setup {
+      val response = new BadGatewayException("error")
+
+      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future.failed(response))
+
       when(
-        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
-          any(),
-          any(),
-          any(),
-          any()
-        )
-      )
-        .thenReturn(Future.failed(new BadGatewayException("error")))
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
 
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
     "fail the future when EVS returns another HTTP exception e.g 501" in new Setup {
+      val response = new NotImplementedException("error")
+
+      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future.failed(response))
+
       when(
-        mockHttpClient.POST[JsValue, HttpResponse](any(), any(), any())(
-          any(),
-          any(),
-          any(),
-          any()
-        )
-      )
-        .thenReturn(Future.failed(new NotImplementedException("error")))
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
 
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
