@@ -20,10 +20,11 @@ import javax.inject.{Inject, Singleton}
 import models.SendEmailRequest
 import play.api.i18n.Lang.logger.logger
 import play.api.http.Status._
+import play.api.libs.json.Json
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.client.HttpClientV2
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
@@ -31,7 +32,7 @@ import scala.util.control.NoStackTrace
 class EmailErrorResponse() extends NoStackTrace
 
 @Singleton
-class SendEmailConnectorImpl @Inject() (servicesConfig: ServicesConfig, val http: HttpClient)
+class SendEmailConnectorImpl @Inject() (servicesConfig: ServicesConfig, val http: HttpClientV2)
     extends SendEmailConnector
     with HttpErrorFunctions {
   val emailDomain: String  = servicesConfig.getConfString("email.domain", "")
@@ -39,7 +40,7 @@ class SendEmailConnectorImpl @Inject() (servicesConfig: ServicesConfig, val http
 }
 
 trait SendEmailConnector extends HttpErrorFunctions {
-  val http: HttpClient
+  val http: HttpClientV2
   val sendEmailURL: String
 
   def requestEmail(
@@ -51,7 +52,8 @@ trait SendEmailConnector extends HttpErrorFunctions {
       )
       throw new EmailErrorResponse()
     }
-    http.POST[SendEmailRequest, HttpResponse](s"$sendEmailURL", EmailRequest) map { r =>
+
+    http.post(url"$sendEmailURL").withBody(Json.toJson(EmailRequest)).execute[HttpResponse] map { r =>
       r.status match {
         case ACCEPTED =>
           logger.debug("[SendEmailConnector] [sendEmail] request to email service was successful")
