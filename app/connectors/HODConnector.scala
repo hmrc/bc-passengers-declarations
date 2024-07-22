@@ -16,17 +16,17 @@
 
 package connectors
 
-import org.apache.pekko.pattern.CircuitBreaker
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, Etmp}
 import models.{Service, SubmissionResponse}
+import org.apache.pekko.pattern.CircuitBreaker
 import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.i18n.Lang.logger.logger
 import play.api.libs.json.{JsError, JsObject, Json}
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -85,7 +85,7 @@ class HODConnector @Inject() (
           case returnedJsObject                                   =>
             httpClientV2
               .post(url"$declarationFullUrl")
-              .withBody(Json.toJson(returnedJsObject))
+              .withBody(returnedJsObject)
               .execute[SubmissionResponse]
               .filter(_ != SubmissionResponse.Error)
         }
@@ -96,7 +96,7 @@ class HODConnector @Inject() (
           case returnedJsObject                                   =>
             httpClientV2
               .post(url"$declarationFullUrl")
-              .withBody(Json.toJson(returnedJsObject))
+              .withBody(returnedJsObject)
               .execute[SubmissionResponse]
               .filter(_ != SubmissionResponse.Error)
         }
