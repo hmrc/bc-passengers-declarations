@@ -48,10 +48,10 @@ trait WorkerConfig {
 
   val supervisionStrategy: Supervision.Decider = {
     case NonFatal(e) =>
-      logger.warn(s"[${this.getClass.getName}] [supervisionStrategy] NonFatal exception returned, $e")
+      logger.warn(s"[${this.getClass.getName}][supervisionStrategy] NonFatal exception returned, $e")
       Supervision.resume
     case e           =>
-      logger.error(s"[${this.getClass.getName}] [supervisionStrategy] Fatal exception returned, $e")
+      logger.error(s"[${this.getClass.getName}][supervisionStrategy] Fatal exception returned, $e")
       Supervision.stop
   }
 

@@ -62,13 +62,13 @@ trait SendEmailService {
     val configuredEmailSecond: String = servicesConfig.getConfString("email.addressSecond", "")
     if (emailAddress.nonEmpty) {
       emailConnector.requestEmail(generateEmailRequest(Seq(emailAddress), parameters)).map { _ =>
-        logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for the passenger")
+        logger.info("[SendEmailService][sendEmail] Email sent for the passenger")
       }
     }
     emailConnector
       .requestEmail(generateEmailRequest(Seq(configuredEmailFirst, configuredEmailSecond), parameters))
       .map { result =>
-        logger.info("[SendEmailServiceImpl] [sendEmail] Email sent for Border force/Isle of Man")
+        logger.info("[SendEmailService][sendEmail] Email sent for Border force/Isle of Man")
         result
       }
   }
@@ -187,7 +187,7 @@ trait SendEmailService {
       val params         = emailParams.getOrElse(emailId, Map.empty)
       if (disableZeroPoundEmail && isZeroPound(data)) {
         logger.warn(
-          "[SendEmailServiceImpl] [constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled"
+          "[SendEmailService][constructAndSendEmail] Email not sent as Zero Pound and Zero Pound Email is disabled"
         )
         Future.successful(false)
       } else {
@@ -208,7 +208,7 @@ trait SendEmailService {
     ec: ExecutionContext
   ): Future[Boolean] =
     sendEmail(emailAddressAll, parameters) recover { case _: EmailErrorResponse =>
-      logger.error("[SendEmailServiceImpl] [sendPassengerEmail] Error in sending email")
+      logger.error("[SendEmailServiceImpl][sendPassengerEmail] Error in sending email")
       true
     }
 

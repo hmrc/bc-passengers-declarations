@@ -52,7 +52,7 @@ class AmendmentSubmissionWorker @Inject() (
 
   val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] = {
 
-    logger.info("Amendment submission worker started")
+    logger.info("[AmendmentSubmissionWorker][tap] Amendment submission worker started")
 
     Source
       .tick(initialDelay, interval, declarationsRepository.paidAmendmentsForEtmp)
@@ -71,7 +71,7 @@ class AmendmentSubmissionWorker @Inject() (
                         declarationsRepository.setAmendSentToEtmp(declaration.chargeReference, amendSentToEtmp = true)
                       case SubmissionResponse.Error            =>
                         logger.error(
-                          s"""PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] call to DES (EIS) is failed.
+                          s"""[AmendmentSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
                               |ChargeReference:  ${declaration.chargeReference},
                               |CorrelationId:  ${declaration.amendCorrelationId
                             .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
@@ -81,7 +81,7 @@ class AmendmentSubmissionWorker @Inject() (
                         Future.successful(())
                       case SubmissionResponse.Failed           =>
                         logger.error(
-                          s"""PNGRS_DES_SUBMISSION_FAILURE  [AmendmentSubmissionWorker] BAD Request is received from DES (EIS)
+                          s"""[AmendmentSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS)
                               |ChargeReference:  ${declaration.chargeReference},
                               |CorrelationId:  ${declaration.amendCorrelationId
                             .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
