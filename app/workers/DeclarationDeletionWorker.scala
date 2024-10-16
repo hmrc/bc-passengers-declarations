@@ -48,7 +48,7 @@ class DeclarationDeletionWorker @Inject() (
   private val parallelism: Int             = config.get[Int]("workers.declaration-deletion-worker.parallelism")
 
   val tap: SinkQueueWithCancel[Declaration] = {
-    logger.info("Declaration deletion worker started")
+    logger.info("[DeclarationDeletionWorker][tap] Declaration deletion worker started")
     Source
       .tick(initialDelay, interval, declarationsRepository.paidDeclarationsForDeletion)
       .flatMapConcat(identity)

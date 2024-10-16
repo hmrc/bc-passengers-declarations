@@ -41,7 +41,7 @@ class MetricsWorker @Inject() (
 
   val tap: SinkQueueWithCancel[DeclarationsStatus] = {
 
-    logger.info("Metrics worker started")
+    logger.info("[MetricsWorker][tap] Metrics worker started")
 
     Source
       .tick(initialDelay, interval, declarationsRepository.metricsCount)
