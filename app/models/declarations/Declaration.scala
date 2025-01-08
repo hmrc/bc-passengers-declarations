@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ object Declaration {
         (__ \ "data").read[JsObject] and
         (__ \ "amendData").readNullable[JsObject] and
         (__ \ "lastUpdated").read[LocalDateTime]
-    )(Declaration.apply _)
+    )(Declaration.apply)
   }
 
   implicit lazy val writes: OWrites[Declaration] = {
@@ -75,7 +75,7 @@ object Declaration {
         (__ \ "data").write[JsObject] and
         (__ \ "amendData").writeNullable[JsObject] and
         (__ \ "lastUpdated").write[LocalDateTime]
-    )(unlift(Declaration.unapply))
+    )(o => Tuple.fromProductTyped(o))
   }
 
   implicit val format: OFormat[Declaration] = OFormat(

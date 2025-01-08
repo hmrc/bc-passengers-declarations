@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package util
 
 import helpers.Constants
 import models.declarations.Etmp
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
@@ -27,14 +27,14 @@ class AuditingToolsSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
 
   private lazy val auditingTools: AuditingTools = inject[AuditingTools]
 
-  "buildDeclarationDataEvent" must {
+  "buildDeclarationDataEvent" when {
     "produce the expected output when supplied a declaration" in {
 
       val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration.data)
 
-      declarationEvent.tags mustBe Map("transactionName" -> "passengerdeclarationsubmitted")
-      declarationEvent.detail mustBe Json.toJsObject(declarationData.as[Etmp])
-      declarationEvent.auditSource mustBe "bc-passengers-declarations"
+      declarationEvent.tags        shouldBe Map("transactionName" -> "passengerdeclarationsubmitted")
+      declarationEvent.detail      shouldBe Json.toJsObject(declarationData.as[Etmp])
+      declarationEvent.auditSource shouldBe "bc-passengers-declarations"
     }
   }
 }

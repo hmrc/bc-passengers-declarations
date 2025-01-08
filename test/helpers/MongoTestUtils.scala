@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.{Filters, FindOneAndReplaceOptions, ReplaceOneModel, ReplaceOptions}
 import org.scalatest.matchers.{MatchResult, Matcher}
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import org.mongodb.scala.SingleObservableFuture
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global

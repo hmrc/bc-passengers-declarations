@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package services
 
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
@@ -27,7 +27,7 @@ class ValidationServiceSpec extends AnyWordSpec with Matchers with GuiceOneAppPe
   private lazy val validationService: ValidationService = inject[ValidationService]
   private lazy val validator: Validator                 = validationService.get("test-schema.json")
 
-  "Validator" must {
+  "Validator" when {
     "return an empty list of errors when a document is valid" in {
 
       val json = Json.obj(
@@ -36,14 +36,14 @@ class ValidationServiceSpec extends AnyWordSpec with Matchers with GuiceOneAppPe
         )
       )
 
-      validator.validate(json) mustBe empty
+      validator.validate(json) shouldBe empty
     }
 
     "return a list of validation errors when a document is invalid" in {
 
       val json = Json.obj()
 
-      validator.validate(json) must contain(
+      validator.validate(json) should contain(
         """object has missing required properties (["simpleDeclarationRequest"])"""
       )
     }

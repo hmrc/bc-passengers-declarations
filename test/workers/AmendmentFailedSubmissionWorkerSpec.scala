@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.mockito.Mockito
 import org.mockito.Mockito.when
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
@@ -57,7 +57,7 @@ class AmendmentFailedSubmissionWorkerSpec extends AnyWordSpec with Matchers with
         when(mockDeclarationsRepository.setAmendState(amendment.chargeReference, State.Paid))
           .thenReturn(Future.successful(amendment))
 
-        await(amendmentFailedSubmissionWorker.tap.pull()) mustBe Some(amendment)
+        await(amendmentFailedSubmissionWorker.tap.pull()) shouldBe Some(amendment)
       }
     }
   }

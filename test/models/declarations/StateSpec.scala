@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package models.declarations
 
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{JsError, JsString, Json}
 
@@ -26,67 +26,67 @@ class StateSpec extends AnyWordSpec with Matchers {
     "as pending-payment" must {
       "deserialise from json" in {
 
-        JsString("pending-payment").as[State] mustEqual State.PendingPayment
+        JsString("pending-payment").as[State] shouldBe State.PendingPayment
       }
 
       "serialise to json" in {
 
-        Json.toJson(State.PendingPayment.toString()) mustEqual JsString("pending-payment")
+        Json.toJson(State.PendingPayment.toString()) shouldBe JsString("pending-payment")
       }
     }
 
     "as paid" must {
       "deserialise from json" in {
 
-        JsString("paid").as[State] mustEqual State.Paid
+        JsString("paid").as[State] shouldBe State.Paid
       }
 
       "serialise to json" in {
 
-        Json.toJson(State.Paid.toString()) mustEqual JsString("paid")
+        Json.toJson(State.Paid.toString()) shouldBe JsString("paid")
       }
     }
 
     "as submission-failed" must {
       "deserialise from json" in {
 
-        JsString("submission-failed").as[State] mustEqual State.SubmissionFailed
+        JsString("submission-failed").as[State] shouldBe State.SubmissionFailed
       }
 
       "serialise to json" in {
 
-        Json.toJson(State.SubmissionFailed.toString()) mustEqual JsString("submission-failed")
+        Json.toJson(State.SubmissionFailed.toString()) shouldBe JsString("submission-failed")
       }
     }
 
     "as payment-failed" must {
       "deserialise from json" in {
 
-        JsString("payment-failed").as[State] mustEqual State.PaymentFailed
+        JsString("payment-failed").as[State] shouldBe State.PaymentFailed
       }
 
       "serialise to json" in {
 
-        Json.toJson(State.PaymentFailed.toString()) mustEqual JsString("payment-failed")
+        Json.toJson(State.PaymentFailed.toString()) shouldBe JsString("payment-failed")
       }
     }
 
     "as payment-cancelled" must {
       "deserialise from json" in {
 
-        JsString("payment-cancelled").as[State] mustEqual State.PaymentCancelled
+        JsString("payment-cancelled").as[State] shouldBe State.PaymentCancelled
       }
 
       "serialise to json" in {
 
-        Json.toJson(State.PaymentCancelled.toString()) mustEqual JsString("payment-cancelled")
+        Json.toJson(State.PaymentCancelled.toString()) shouldBe JsString("payment-cancelled")
       }
     }
 
     "as an invalid value" must {
       "fail to deserialise from json" in {
 
-        Json.fromJson[State](JsString("foo")) mustEqual JsError("invalid declaration state")
+        Json.fromJson[State](JsString("foo")) shouldBe JsError("invalid declaration state")
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package models
 
 import helpers.Constants
 import models.declarations.{Declaration, State}
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 
 class DeclarationSpec extends AnyWordSpec with Matchers with Constants {
 
-  "Declaration" must {
+  "Declaration" when {
     "deserialise" in {
 
       val json = Json.obj(
@@ -37,7 +37,7 @@ class DeclarationSpec extends AnyWordSpec with Matchers with Constants {
         "lastUpdated"   -> Json.toJson(lastUpdated)
       )
 
-      json.as[Declaration] mustEqual
+      json.as[Declaration] shouldBe
         Declaration(
           chargeReference,
           State.PendingPayment,
@@ -79,7 +79,7 @@ class DeclarationSpec extends AnyWordSpec with Matchers with Constants {
           None,
           lastUpdated
         )
-      ) mustEqual json
+      ) shouldBe json
     }
 
     "deserialise with amendState and amendSentToEtmp" in {
@@ -96,7 +96,7 @@ class DeclarationSpec extends AnyWordSpec with Matchers with Constants {
         "lastUpdated"     -> Json.toJson(lastUpdated)
       )
 
-      json.as[Declaration] mustEqual
+      json.as[Declaration] shouldBe
         Declaration(
           chargeReference,
           State.PendingPayment,
@@ -143,7 +143,7 @@ class DeclarationSpec extends AnyWordSpec with Matchers with Constants {
           None,
           lastUpdated
         )
-      ) mustEqual json
+      ) shouldBe json
     }
   }
 }

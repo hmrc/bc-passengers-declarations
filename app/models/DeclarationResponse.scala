@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ object DeclarationResponse {
         (__ \ "journeyData" \ "amendmentCount").readNullable[Int] and
         (__ \ "journeyData" \ "deltaCalculation").readNullable[JsObject] and
         (__ \ "amendState").readNullable[String]
-    )(DeclarationResponse.apply _)
+    )(DeclarationResponse.apply)
   }
 
   implicit lazy val writes: OWrites[DeclarationResponse] = Json.writes[DeclarationResponse]

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import models.ChargeReference
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -31,7 +30,7 @@ import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import utils.WireMockHelper
-
+import org.mongodb.scala.SingleObservableFuture
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AmendmentFailedSubmissionWorkerISpec
@@ -110,7 +109,7 @@ class AmendmentFailedSubmissionWorkerISpec
       running(app) {
 
         val worker = new AmendmentFailedSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DefaultDeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
@@ -118,9 +117,9 @@ class AmendmentFailedSubmissionWorkerISpec
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
 
-        lockRepository.isLocked(0).futureValue mustEqual true
-        lockRepository.isLocked(1).futureValue mustEqual true
-        lockRepository.isLocked(2).futureValue mustEqual false
+        lockRepository.isLocked(0).futureValue shouldBe true
+        lockRepository.isLocked(1).futureValue shouldBe true
+        lockRepository.isLocked(2).futureValue shouldBe false
       }
     }
 
@@ -163,13 +162,13 @@ class AmendmentFailedSubmissionWorkerISpec
       running(app) {
 
         val worker = new AmendmentFailedSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DefaultDeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
 
         val declaration = worker.tap.pull().futureValue.get
-        declaration.chargeReference.value mustEqual 1
+        declaration.chargeReference.value shouldBe 1
       }
     }
 
@@ -211,13 +210,13 @@ class AmendmentFailedSubmissionWorkerISpec
       running(app) {
 
         val worker = new AmendmentFailedSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DefaultDeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
 
         val declaration = worker.tap.pull().futureValue.get
-        declaration.chargeReference.value mustEqual 0
+        declaration.chargeReference.value shouldBe 0
       }
     }
 
@@ -259,7 +258,7 @@ class AmendmentFailedSubmissionWorkerISpec
       running(app) {
 
         val worker = new AmendmentFailedSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DefaultDeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
@@ -267,7 +266,7 @@ class AmendmentFailedSubmissionWorkerISpec
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
 
-        worker.tap.pull().futureValue must not be defined
+        worker.tap.pull().futureValue should not be defined
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ class AmendmentSubmissionWorker @Inject() (
                           s"""[AmendmentSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
                               |ChargeReference:  ${declaration.chargeReference},
                               |CorrelationId:  ${declaration.amendCorrelationId
-                            .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
+                              .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
                         )
                         Future.successful(())
                       case SubmissionResponse.ParsingException =>
@@ -84,7 +84,7 @@ class AmendmentSubmissionWorker @Inject() (
                           s"""[AmendmentSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS)
                               |ChargeReference:  ${declaration.chargeReference},
                               |CorrelationId:  ${declaration.amendCorrelationId
-                            .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
+                              .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
                         )
                         declarationsRepository.setAmendState(declaration.chargeReference, State.SubmissionFailed)
                     }

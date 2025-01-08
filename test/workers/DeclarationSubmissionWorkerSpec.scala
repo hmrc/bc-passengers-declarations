@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.mockito.Mockito
 import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
@@ -88,7 +88,7 @@ class DeclarationSubmissionWorkerSpec
           .thenReturn(Future.successful(declaration))
         when(mockLockRepository.release(declaration.chargeReference.value)).thenReturn(Future.unit)
 
-        await(declarationSubmissionWorker.tap.pull()) mustBe Some((declaration, SubmissionResponse.Submitted))
+        await(declarationSubmissionWorker.tap.pull()) shouldBe Some((declaration, SubmissionResponse.Submitted))
 
         when(mockLockRepository.lock(queuedDeclaration.chargeReference.value)).thenReturn(Future.successful(true))
         when(mockHodConnector.submit(queuedDeclaration, isAmendment = false))
@@ -97,7 +97,7 @@ class DeclarationSubmissionWorkerSpec
           .thenReturn(Future.successful(queuedDeclaration))
         when(mockLockRepository.release(queuedDeclaration.chargeReference.value)).thenReturn(Future.unit)
 
-        await(declarationSubmissionWorker.tap.pull()) mustBe Some((queuedDeclaration, SubmissionResponse.Submitted))
+        await(declarationSubmissionWorker.tap.pull()) shouldBe Some((queuedDeclaration, SubmissionResponse.Submitted))
 
       }
 
@@ -110,7 +110,7 @@ class DeclarationSubmissionWorkerSpec
           .thenReturn(Future.successful(SubmissionResponse.Error))
         when(mockLockRepository.release(declaration.chargeReference.value)).thenReturn(Future.unit)
 
-        await(declarationSubmissionWorker.tap.pull()) mustBe Some((declaration, SubmissionResponse.Error))
+        await(declarationSubmissionWorker.tap.pull()) shouldBe Some((declaration, SubmissionResponse.Error))
 
       }
 
@@ -123,7 +123,7 @@ class DeclarationSubmissionWorkerSpec
           .thenReturn(Future.successful(SubmissionResponse.ParsingException))
         when(mockLockRepository.release(declaration.chargeReference.value)).thenReturn(Future.unit)
 
-        await(declarationSubmissionWorker.tap.pull()) mustBe Some((declaration, SubmissionResponse.ParsingException))
+        await(declarationSubmissionWorker.tap.pull()) shouldBe Some((declaration, SubmissionResponse.ParsingException))
 
       }
 
@@ -138,7 +138,7 @@ class DeclarationSubmissionWorkerSpec
           .thenReturn(Future.successful(declaration))
         when(mockLockRepository.release(declaration.chargeReference.value)).thenReturn(Future.unit)
 
-        await(declarationSubmissionWorker.tap.pull()) mustBe Some((declaration, SubmissionResponse.Failed))
+        await(declarationSubmissionWorker.tap.pull()) shouldBe Some((declaration, SubmissionResponse.Failed))
 
       }
 
@@ -148,7 +148,7 @@ class DeclarationSubmissionWorkerSpec
 
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(false))
 
-        declarationSubmissionWorker.tap.pull().value mustBe None
+        declarationSubmissionWorker.tap.pull().value shouldBe None
 
       }
 
@@ -170,7 +170,7 @@ class DeclarationSubmissionWorkerSpec
           .thenReturn(Future.successful(queuedDeclaration))
         when(mockLockRepository.release(queuedDeclaration.chargeReference.value)).thenReturn(Future.unit)
 
-        await(declarationSubmissionWorker.tap.pull()) mustBe Some((queuedDeclaration, SubmissionResponse.Submitted))
+        await(declarationSubmissionWorker.tap.pull()) shouldBe Some((queuedDeclaration, SubmissionResponse.Submitted))
 
       }
 
@@ -180,7 +180,7 @@ class DeclarationSubmissionWorkerSpec
         when(mockLockRepository.lock(declaration.chargeReference.value))
           .thenThrow(new RuntimeException("Test Exception"))
 
-        declarationSubmissionWorker.tap.pull().failed.map(_ mustBe an[ControlThrowable])
+        declarationSubmissionWorker.tap.pull().failed.map(_ shouldBe an[ControlThrowable])
 
       }
     }

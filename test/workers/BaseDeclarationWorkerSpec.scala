@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.apache.pekko.stream.Supervision
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
 import org.mockito.Mockito.when
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
@@ -51,16 +51,16 @@ class BaseDeclarationWorkerSpec extends AnyWordSpec with Matchers with GuiceOneA
     "getLock" must {
       "return a tuple when the lock is successful" in {
         when(mockLockRepository.lock(any[Int]())).thenReturn(Future.successful(true))
-        await(BaseDeclarationWorkerTest.testGetLock(declaration)) mustBe (true, declaration)
+        await(BaseDeclarationWorkerTest.testGetLock(declaration)) shouldBe (true, declaration)
       }
     }
 
     "lockSuccessful" must {
       "return the declaration in a list" in {
-        BaseDeclarationWorkerTest.testLockSuccessful((true, declaration)) mustBe List(declaration)
+        BaseDeclarationWorkerTest.testLockSuccessful((true, declaration)) shouldBe List(declaration)
       }
       "return Nil when the lockStatus is false" in {
-        BaseDeclarationWorkerTest.testLockSuccessful((false, declaration)) mustBe Nil
+        BaseDeclarationWorkerTest.testLockSuccessful((false, declaration)) shouldBe Nil
       }
     }
 
@@ -69,14 +69,14 @@ class BaseDeclarationWorkerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
         val nonFatalException: Exception = new Exception("")
 
-        BaseDeclarationWorkerTest.supervisionStrategy(nonFatalException) mustBe Supervision.resume
+        BaseDeclarationWorkerTest.supervisionStrategy(nonFatalException) shouldBe Supervision.resume
       }
 
       "set supervisionStrategy state to stop a worker queue when encountering a Fatal Exception" in {
 
         val fatalException: VirtualMachineError = new VirtualMachineError {}
 
-        BaseDeclarationWorkerTest.supervisionStrategy(fatalException) mustBe Supervision.stop
+        BaseDeclarationWorkerTest.supervisionStrategy(fatalException) shouldBe Supervision.stop
       }
     }
 
@@ -84,12 +84,12 @@ class BaseDeclarationWorkerSpec extends AnyWordSpec with Matchers with GuiceOneA
       "return a configuration value as a FiniteDuration" in {
         when(mockConfiguration.get[FiniteDuration]("test")).thenReturn(2.seconds)
 
-        BaseDeclarationWorkerTest.durationValueFromConfig("test", mockConfiguration) mustBe 2.seconds
+        BaseDeclarationWorkerTest.durationValueFromConfig("test", mockConfiguration) shouldBe 2.seconds
       }
       "return a configuration value as a FiniteDuration if it is a String" in {
         when(mockConfiguration.get[String]("test")).thenReturn("3.seconds")
 
-        BaseDeclarationWorkerTest.durationValueFromConfig("test", mockConfiguration) mustBe 3.seconds
+        BaseDeclarationWorkerTest.durationValueFromConfig("test", mockConfiguration) shouldBe 3.seconds
       }
     }
   }

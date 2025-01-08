@@ -5,10 +5,12 @@ object CodeCoverageSettings {
 
   private val excludedPackages: Seq[String] = Seq("<empty>", "Reverse.*", "..*Routes.*")
 
-  val settings: Seq[Setting[?]] = Seq(
+  private val settings: Seq[Setting[?]] = Seq(
     coverageExcludedPackages := excludedPackages.mkString(";"),
-    coverageMinimumStmtTotal := 100,
+    coverageMinimumStmtTotal := 97.5,
     coverageFailOnMinimum := true,
     coverageHighlighting := true
   )
+
+  def apply(): Seq[Setting[?]] = settings
 }

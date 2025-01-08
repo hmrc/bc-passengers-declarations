@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package services
 
 import connectors.SendEmailConnector
 import helpers.{BaseSpec, Constants}
-import models._
+import models.*
 import models.declarations.Declaration
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.mock
@@ -28,7 +28,8 @@ import play.api.Application
 import play.api.http.Status.ACCEPTED
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.BodyWritable
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import repositories.DeclarationsRepository
@@ -37,7 +38,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class SendEmailServiceSpec extends BaseSpec {
 
@@ -57,13 +58,13 @@ class SendEmailServiceSpec extends BaseSpec {
     override val sendEmailURL       = "http://testSendEmailURL"
     override val http: HttpClientV2 = mock(classOf[HttpClientV2])
 
-    when(mockRequestBuilder.withBody(any())(any(), any(), any()))
+    when(mockRequestBuilder.withBody(any())(using any[BodyWritable[JsValue]], any(), any()))
       .thenReturn(mockRequestBuilder)
 
     val response: HttpResponse =
       HttpResponse(ACCEPTED, "")
 
-    when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+    when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
       .thenReturn(Future(response))
 
     when(http.post(any())(any()))
@@ -160,13 +161,13 @@ class SendEmailServiceSpec extends BaseSpec {
 
     "return a map of emailId and parameters where some data can be unavailable" in new Setup {
 
-      val alteredParams: Map[String, String]      =
+      val alteredParams: Map[String, String] =
         testParams ++ Map("AllITEMS" -> "[]", "DATE" -> "", "DATEOFARRIVAL" -> "", "TIMEOFARRIVAL" -> "")
 
-      val missingDateRequestCommon: JsObject      = requestCommon + ("receiptDate" -> JsString(""))
-      val missingDatesDeclarationHeader: JsObject =
-        declarationHeader + ("expectedDateOfArrival" -> JsString("")) + ("timeOfEntry" -> JsString(""))
-      val missingItemsInRequestDetail: JsObject =
+      val missingDateRequestCommon: JsObject                                                                 = requestCommon + ("receiptDate" -> JsString(""))
+      val missingDatesDeclarationHeader: JsObject                                                            =
+        declarationHeader + ("expectedDateOfArrival"                                                            -> JsString("")) + ("timeOfEntry" -> JsString(""))
+      val missingItemsInRequestDetail: JsObject                                                              =
         requestDetail - "declarationAlcohol" - "declarationTobacco" - "declarationOther" + ("declarationHeader" -> missingDatesDeclarationHeader)
 
       val changedDeclarationData: JsObject =

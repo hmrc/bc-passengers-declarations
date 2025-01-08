@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package workers
 
-import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import logger.TestLoggerAppender
@@ -24,15 +23,15 @@ import models.ChargeReference
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.test.Helpers._
-import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import play.api.test.Helpers.*
+import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import utils.WireMockHelper
+import org.mongodb.scala.SingleObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -146,7 +145,7 @@ class PaymentTimeoutWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val worker = new PaymentTimeoutWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
@@ -160,9 +159,9 @@ class PaymentTimeoutWorkerISpec
         )
 
         staleDeclarations
-          .map(_.chargeReference) must contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
+          .map(_.chargeReference) should contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
         staleDeclarations
-          .map(_.state)           must contain.allOf(State.PendingPayment, State.PaymentFailed, State.PaymentCancelled)
+          .map(_.state)           should contain.allOf(State.PendingPayment, State.PaymentFailed, State.PaymentCancelled)
 
         val logEvents = List(
           TestLoggerAppender.queue.dequeue(),
@@ -170,7 +169,7 @@ class PaymentTimeoutWorkerISpec
           TestLoggerAppender.queue.dequeue()
         )
 
-        logEvents.map(_.getMessage) must contain.allOf(
+        logEvents.map(_.getMessage) should contain.allOf(
           "[PaymentTimeoutWorker][tap] Declaration 2 is stale, deleting",
           "[PaymentTimeoutWorker][tap] Declaration 1 is stale, deleting",
           "[PaymentTimeoutWorker][tap] Declaration 0 is stale, deleting"
@@ -178,7 +177,7 @@ class PaymentTimeoutWorkerISpec
 
         val remaining = repository.collection.find()
 
-        await(remaining.collect().toFuture().map(_.toList)).size mustBe 2
+        await(remaining.collect().toFuture().map(_.toList)).size shouldBe 2
       }
     }
 
@@ -238,13 +237,13 @@ class PaymentTimeoutWorkerISpec
         await(lockRepository.lock(0))
 
         val worker = new PaymentTimeoutWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
 
         val declaration = worker.tap.pull().futureValue.get
-        declaration.chargeReference.value mustEqual 1
+        declaration.chargeReference.value shouldBe 1
       }
     }
 
@@ -301,7 +300,7 @@ class PaymentTimeoutWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val worker = new PaymentTimeoutWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
@@ -309,9 +308,9 @@ class PaymentTimeoutWorkerISpec
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
 
-        lockRepository.isLocked(0).futureValue mustEqual true
-        lockRepository.isLocked(1).futureValue mustEqual true
-        lockRepository.isLocked(2).futureValue mustEqual false
+        lockRepository.isLocked(0).futureValue shouldBe true
+        lockRepository.isLocked(1).futureValue shouldBe true
+        lockRepository.isLocked(2).futureValue shouldBe false
       }
     }
 
@@ -355,7 +354,7 @@ class PaymentTimeoutWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val worker = new PaymentTimeoutWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )

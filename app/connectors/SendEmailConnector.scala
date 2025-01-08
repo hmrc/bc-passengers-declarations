@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,18 +25,19 @@ import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.http.client.HttpClientV2
+import play.api.libs.ws.writeableOf_JsValue
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
-class EmailErrorResponse() extends NoStackTrace
+class EmailErrorResponse extends NoStackTrace
 
 @Singleton
 class SendEmailConnectorImpl @Inject() (servicesConfig: ServicesConfig, val http: HttpClientV2)
     extends SendEmailConnector
     with HttpErrorFunctions {
-  val emailDomain: String  = servicesConfig.getConfString("email.domain", "")
-  val sendEmailURL: String = s"${servicesConfig.baseUrl("email.sendEmailURL")}/$emailDomain/email"
+  private val emailDomain: String = servicesConfig.getConfString("email.domain", "")
+  val sendEmailURL: String        = s"${servicesConfig.baseUrl("email.sendEmailURL")}/$emailDomain/email"
 }
 
 trait SendEmailConnector extends HttpErrorFunctions {
@@ -46,14 +47,14 @@ trait SendEmailConnector extends HttpErrorFunctions {
   def requestEmail(
     EmailRequest: SendEmailRequest
   )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Boolean] = {
-    def errorMsg(status: String, ex: HttpException) = {
+    def errorMsg(status: String, ex: HttpException): Nothing = {
       logger.error(
-        s"[EmailErrorResponse][requestEmail] PNGRS_EMAIL_FAILURE [SendEmailConnector] [sendEmail] request to send email returned a $status - email not sent - reason = ${ex.getMessage}"
+        s"[EmailErrorResponse][requestEmail] PNGRS_EMAIL_FAILURE request to send email returned a $status - email not sent - reason = ${ex.getMessage}"
       )
       throw new EmailErrorResponse()
     }
 
-    http.post(url"$sendEmailURL").withBody(Json.toJson(EmailRequest)).execute[HttpResponse] map { r =>
+    http.post(url"$sendEmailURL").withBody(Json.toJson(EmailRequest)).execute[HttpResponse].map { r =>
       r.status match {
         case ACCEPTED =>
           logger.debug("[SendEmailConnector][sendEmail] request to email service was successful")
@@ -67,7 +68,6 @@ trait SendEmailConnector extends HttpErrorFunctions {
     } recover {
       case ex: HttpException => errorMsg(ex.responseCode.toString, ex)
       case ex: Throwable     => errorMsg("0", new HttpException(ex.getMessage, 0))
-      case _                 => errorMsg("0", new HttpException("An exception was thrown when calling the email service", 0))
     }
   }
 }

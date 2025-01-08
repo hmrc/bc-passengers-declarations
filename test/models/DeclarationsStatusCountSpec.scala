@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,52 @@
 
 package models
 
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.Json
+import play.api.libs.json.{JsResultException, JsValue, Json}
 
 class DeclarationsStatusCountSpec extends AnyWordSpec with Matchers {
 
-  "DeclarationStatusCount" must {
-    "deserialise" in {
-      val json = Json.obj("messageState" -> "pending-payment", "count" -> 1)
-      json.as[DeclarationsStatusCount] mustEqual DeclarationsStatusCount("pending-payment", 1)
+  "DeclarationStatusCount" when {
+    "deserialize from JSON" in {
+      val json: JsValue = Json.parse(
+        """
+          |{
+          |  "messageState": "pending-payment",
+          |  "count": 5
+          |}
+          |""".stripMargin
+      )
+      val statusCount   = json.as[DeclarationsStatusCount]
+      statusCount.messageState shouldBe "pending-payment"
+      statusCount.count        shouldBe 5
+    }
+
+    "handle missing fields" in {
+      val json: JsValue = Json.parse(
+        """
+          |{
+          |  "messageState": "paid"
+          |}
+          |""".stripMargin
+      )
+      assertThrows[JsResultException] {
+        json.as[DeclarationsStatusCount]
+      }
+    }
+
+    "handle invalid JSON" in {
+      val json: JsValue = Json.parse(
+        """
+          |{
+          |  "messageState": 123,
+          |  "count": "five"
+          |}
+          |""".stripMargin
+      )
+      assertThrows[JsResultException] {
+        json.as[DeclarationsStatusCount]
+      }
     }
 
     ".toDeclarationsStatus" must {
@@ -41,7 +77,7 @@ class DeclarationsStatusCountSpec extends AnyWordSpec with Matchers {
 
         val result = DeclarationsStatusCount.toDeclarationsStatus(exampleStatusCountList)
 
-        result mustEqual DeclarationsStatus(1, 0, 3, 1, 1)
+        result shouldBe DeclarationsStatus(1, 0, 3, 1, 1)
       }
     }
   }

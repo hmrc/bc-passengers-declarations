@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
@@ -69,7 +69,7 @@ class PaymentTimeoutWorkerSpec
         when(mockLockRepository.lock(outDated.chargeReference.value)).thenReturn(Future.successful(true))
         when(mockDeclarationsRepository.remove(outDated.chargeReference)).thenReturn(Future.successful(Some(outDated)))
 
-        await(paymentTimeoutWorker.tap.pull()) mustBe Some(outDated)
+        await(paymentTimeoutWorker.tap.pull()) shouldBe Some(outDated)
       }
 
     }

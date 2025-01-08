@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ trait BaseDeclarationWorker extends WorkerConfig {
   protected def getLock(declaration: Declaration)(implicit ec: ExecutionContext): Future[(Boolean, Declaration)] =
     lockRepository.lock(declaration.chargeReference.value).map(_ -> declaration)
 
-  protected def lockSuccessful(data: (Boolean, Declaration)): List[Declaration]                                  =
+  protected def lockSuccessful(data: (Boolean, Declaration)): List[Declaration] =
     data match {
       case (hasLock, declaration) =>
         if (hasLock) {

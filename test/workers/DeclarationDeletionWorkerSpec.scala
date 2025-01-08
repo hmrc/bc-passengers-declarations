@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.mockito.Mockito
 import org.mockito.Mockito.when
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
@@ -91,8 +91,8 @@ class DeclarationDeletionWorkerSpec extends AnyWordSpec with Matchers with Guice
         when(mockDeclarationsRepository.remove(queuedDeclaration.chargeReference))
           .thenReturn(Future.successful(Some(queuedDeclaration)))
 
-        //It is setup to remove all declarations found in a single pull() but will only return the first declaration it deletes
-        await(declarationDeletionWorker.tap.pull()) mustBe Some(invalidDeclaration)
+        // It is setup to remove all declarations found in a single pull() but will only return the first declaration it deletes
+        await(declarationDeletionWorker.tap.pull()) shouldBe Some(invalidDeclaration)
       }
     }
   }

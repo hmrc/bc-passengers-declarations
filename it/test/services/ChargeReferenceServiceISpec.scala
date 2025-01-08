@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package services
 
 import helpers.IntegrationSpecCommonBase
 import models.ChargeRefJsons.ChargeRefJson
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers._
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import org.mongodb.scala.SingleObservableFuture
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -59,10 +59,10 @@ class ChargeReferenceServiceISpec
 
       running(app) {
 
-        val first  = repository.nextChargeReference().futureValue
-        val second = repository.nextChargeReference().futureValue
+        val first  = repository.asInstanceOf[SequentialChargeReferenceService].nextChargeReference().futureValue
+        val second = repository.asInstanceOf[SequentialChargeReferenceService].nextChargeReference().futureValue
 
-        (second.value - first.value) mustEqual 1
+        (second.value - first.value) shouldBe 1
       }
     }
 
@@ -75,7 +75,7 @@ class ChargeReferenceServiceISpec
 
       running(app) {
 
-        repository.nextChargeReference().futureValue
+        repository.asInstanceOf[SequentialChargeReferenceService].nextChargeReference().futureValue
       }
     }
   }

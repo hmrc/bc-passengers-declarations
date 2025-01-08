@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ object ChargeRefJson {
 
     import play.api.libs.functional.syntax._
     ((__ \ "_id").read[String] and
-      (__ \ "chargeReference").read[Int])(ChargeRefJson.apply _)
+      (__ \ "chargeReference").read[Int])(ChargeRefJson.apply)
   }
 
   implicit lazy val writes: OWrites[ChargeRefJson] = {
@@ -44,7 +44,7 @@ object ChargeRefJson {
     (
       (__ \ "_id").write[String] and
         (__ \ "chargeReference").write[Int]
-    )(unlift(ChargeRefJson.unapply))
+    )(o => Tuple.fromProductTyped(o))
   }
 
   implicit val format: OFormat[ChargeRefJson] = OFormat(

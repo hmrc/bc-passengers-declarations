@@ -1,12 +1,12 @@
 import uk.gov.hmrc.DefaultBuildSettings
 
-ThisBuild / scalaVersion := "2.13.14"
+ThisBuild / scalaVersion := "3.5.2"
 ThisBuild / majorVersion := 0
 
 lazy val microservice = Project("bc-passengers-declarations", file("."))
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
-  .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
-  .settings(CodeCoverageSettings.settings)
+  .disablePlugins(JUnitXmlReportPlugin) // Required to prevent https://github.com/scalatest/scalatest/issues/1427
+  .settings(CodeCoverageSettings())
   .settings(
     PlayKeys.playDefaultPort := 9073,
     libraryDependencies ++= AppDependencies(),

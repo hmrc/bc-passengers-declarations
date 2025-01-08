@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.mockito.Mockito
 import org.mockito.Mockito.{reset, when}
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
@@ -90,7 +90,7 @@ class AmendmentSubmissionWorkerSpec
           .thenReturn(Future.successful(amendment))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
-        await(amendmentSubmissionWorker.tap.pull()) mustBe Some((amendment, SubmissionResponse.Submitted))
+        await(amendmentSubmissionWorker.tap.pull()) shouldBe Some((amendment, SubmissionResponse.Submitted))
 
         when(mockLockRepository.lock(queuedAmendment.chargeReference.value)).thenReturn(Future.successful(true))
         when(mockHodConnector.submit(queuedAmendment, isAmendment = true))
@@ -99,7 +99,7 @@ class AmendmentSubmissionWorkerSpec
           .thenReturn(Future.successful(queuedAmendment))
         when(mockLockRepository.release(queuedAmendment.chargeReference.value)).thenReturn(Future.unit)
 
-        await(amendmentSubmissionWorker.tap.pull()) mustBe Some((queuedAmendment, SubmissionResponse.Submitted))
+        await(amendmentSubmissionWorker.tap.pull()) shouldBe Some((queuedAmendment, SubmissionResponse.Submitted))
 
       }
 
@@ -112,7 +112,7 @@ class AmendmentSubmissionWorkerSpec
           .thenReturn(Future.successful(SubmissionResponse.Error))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
-        await(amendmentSubmissionWorker.tap.pull()) mustBe Some((amendment, SubmissionResponse.Error))
+        await(amendmentSubmissionWorker.tap.pull()) shouldBe Some((amendment, SubmissionResponse.Error))
 
       }
 
@@ -125,7 +125,7 @@ class AmendmentSubmissionWorkerSpec
           .thenReturn(Future.successful(SubmissionResponse.ParsingException))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
-        await(amendmentSubmissionWorker.tap.pull()) mustBe Some((amendment, SubmissionResponse.ParsingException))
+        await(amendmentSubmissionWorker.tap.pull()) shouldBe Some((amendment, SubmissionResponse.ParsingException))
 
       }
 
@@ -140,7 +140,7 @@ class AmendmentSubmissionWorkerSpec
           .thenReturn(Future.successful(amendment))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
-        await(amendmentSubmissionWorker.tap.pull()) mustBe Some((amendment, SubmissionResponse.Failed))
+        await(amendmentSubmissionWorker.tap.pull()) shouldBe Some((amendment, SubmissionResponse.Failed))
 
       }
     }
