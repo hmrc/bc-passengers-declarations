@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package repositories
 import helpers.IntegrationSpecCommonBase
 import models.Lock
 import org.mongodb.scala.Document
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.test.Helpers._
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import org.mongodb.scala.ObservableFuture
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -35,18 +35,18 @@ class LockRepositoryISpec extends IntegrationSpecCommonBase with DefaultPlayMong
 
     "must provide a lock for an id when that id is not already locked" in {
 
-      val result = await(repository.lock(1))
+      val result = await(repository.asInstanceOf[LockRepository].lock(1))
 
-      result mustEqual true
+      result shouldBe true
     }
 
     "must not provide a lock for an id when that id is already locked" in {
 
-      repository.lock(0).futureValue
+      repository.asInstanceOf[LockRepository].lock(0).futureValue
 
-      val result = await(repository.lock(0))
+      val result = await(repository.asInstanceOf[LockRepository].lock(0))
 
-      result mustEqual false
+      result shouldBe false
     }
 
     "must ensure indices" in {
@@ -55,30 +55,30 @@ class LockRepositoryISpec extends IntegrationSpecCommonBase with DefaultPlayMong
 
       indices.map { doc =>
         doc.toJson() match {
-          case json if json.contains("lastUpdated") => json.contains("locks-index") mustEqual true
-          case _                                    => doc.toJson().contains("_id") mustEqual true
+          case json if json.contains("lastUpdated") => json.contains("locks-index") shouldBe true
+          case _                                    => doc.toJson().contains("_id") shouldBe true
         }
       }
     }
 
     "must return the lock status for an id" in {
 
-      await(repository.isLocked(0)) mustEqual false
+      await(repository.asInstanceOf[LockRepository].isLocked(0)) shouldBe false
 
-      await(repository.lock(0))
+      await(repository.asInstanceOf[LockRepository].lock(0))
 
-      await(repository.isLocked(0)) mustEqual true
+      await(repository.asInstanceOf[LockRepository].isLocked(0)) shouldBe true
     }
 
     "must release a lock" in {
 
-      await(repository.lock(0))
+      await(repository.asInstanceOf[LockRepository].lock(0))
 
-      await(repository.isLocked(0)) mustEqual true
+      await(repository.asInstanceOf[LockRepository].isLocked(0)) shouldBe true
 
-      await(repository.release(0))
+      await(repository.asInstanceOf[LockRepository].release(0))
 
-      await(repository.isLocked(0)) mustEqual false
+      await(repository.asInstanceOf[LockRepository].isLocked(0)) shouldBe false
     }
   }
 }

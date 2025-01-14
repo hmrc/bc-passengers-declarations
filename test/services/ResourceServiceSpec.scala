@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package services
 
 import com.fasterxml.jackson.core.JsonParseException
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
@@ -33,25 +33,25 @@ class ResourceServiceSpec extends AnyWordSpec with Matchers with GuiceOneAppPerS
     "foo" -> "bar"
   )
 
-  "ResourceService" must {
+  "ResourceService" when {
     "return the contents of a file as a string" in {
-      resourceService.getFile("test.txt") mustEqual "foo = bar"
+      resourceService.getFile("test.txt") shouldBe "foo = bar"
     }
 
     "return the contents of a file as json" in {
-      resourceService.getJson("test.json") mustEqual json
+      resourceService.getJson("test.json") shouldBe json
     }
 
     "throw an exception when a file can't be found" in {
 
-      an[IOException] mustBe thrownBy {
+      an[IOException] shouldBe thrownBy {
         resourceService.getFile("non-existant.txt")
       }
     }
 
     "throw an exception when a file can't be parsed as json" in {
 
-      a[JsonParseException] mustBe thrownBy {
+      a[JsonParseException] shouldBe thrownBy {
         resourceService.getJson("test.txt")
       }
     }

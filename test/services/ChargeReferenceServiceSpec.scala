@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import helpers.MongoTestUtils.givenAnExistingDocument
 import models.ChargeRefJsons.ChargeRefJson
 import models.ChargeReference
 import org.mongodb.scala.MongoCollection
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
@@ -45,7 +45,7 @@ class ChargeReferenceServiceSpec
       "calculates the next ChargeReference id based on the last charge reference recorded" in {
         givenAnExistingDocument(ChargeRefJson("counter", 2))
 
-        await(repository.nextChargeReference()) mustBe ChargeReference(3)
+        await(repository.nextChargeReference()) shouldBe ChargeReference(3)
       }
     }
   }

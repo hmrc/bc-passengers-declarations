@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito.{never, reset, times, verify, when}
 import org.mockito.Mockito
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -80,9 +80,9 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe ACCEPTED
-            headers(result) must contain("X-Correlation-ID" -> correlationId)
-            contentAsJson(result) mustBe declaration.data
+            status(result)        shouldBe ACCEPTED
+            headers(result)         should contain("X-Correlation-ID" -> correlationId)
+            contentAsJson(result) shouldBe declaration.data
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).insert(declarationData, correlationId, sentToEtmp = false)
@@ -105,7 +105,7 @@ class DeclarationControllerSpec
             val result = route(app, request).value
 
             whenReady(result.failed) {
-              _ mustBe an[Exception]
+              _ shouldBe an[Exception]
             }
           }
         }
@@ -124,8 +124,8 @@ class DeclarationControllerSpec
 
           val result = route(app, request).value
 
-          status(result) mustBe BAD_REQUEST
-          contentAsJson(result) mustEqual Json.obj(
+          status(result)        shouldBe BAD_REQUEST
+          contentAsJson(result) shouldBe Json.obj(
             "errors" -> Seq("Missing X-Correlation-ID header")
           )
         }
@@ -143,9 +143,9 @@ class DeclarationControllerSpec
 
           val result = route(app, request).value
 
-          status(result) mustBe BAD_REQUEST
-          headers(result) must contain("X-Correlation-ID" -> correlationId)
-          contentAsJson(result) mustEqual Json.obj(
+          status(result)        shouldBe BAD_REQUEST
+          headers(result)         should contain("X-Correlation-ID" -> correlationId)
+          contentAsJson(result) shouldBe Json.obj(
             "errors" -> Seq("foo")
           )
         }
@@ -175,9 +175,9 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe ACCEPTED
-            headers(result) must contain("X-Correlation-ID" -> correlationId)
-            contentAsJson(result) mustBe amendment.amendData.get
+            status(result)        shouldBe ACCEPTED
+            headers(result)         should contain("X-Correlation-ID" -> correlationId)
+            contentAsJson(result) shouldBe amendment.amendData.get
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1))
@@ -202,7 +202,7 @@ class DeclarationControllerSpec
             val result = route(app, request).value
 
             whenReady(result.failed) {
-              _ mustBe an[Exception]
+              _ shouldBe an[Exception]
             }
           }
         }
@@ -228,7 +228,7 @@ class DeclarationControllerSpec
             "simpleDeclarationRequest" -> invalidData("simpleDeclarationRequest")
           )
 
-          val request   = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
+          val request = FakeRequest(POST, routes.DeclarationController.submitAmendment().url)
             .withJsonBody(inputInvalidAmendmentData)
             .withHeaders("X-Correlation-ID" -> correlationId)
 
@@ -238,7 +238,7 @@ class DeclarationControllerSpec
             status(exception)
           }
 
-          result.getMessage mustBe "unable to extract charge reference:AAAAAAAAAAAAAA"
+          result.getMessage shouldBe "unable to extract charge reference:AAAAAAAAAAAAAA"
         }
 
         "return BAD_REQUEST when not supplied with a correlation id in the headers" in {
@@ -253,8 +253,8 @@ class DeclarationControllerSpec
 
           val result = route(app, request).value
 
-          status(result) mustBe BAD_REQUEST
-          contentAsJson(result) mustEqual Json.obj(
+          status(result)        shouldBe BAD_REQUEST
+          contentAsJson(result) shouldBe Json.obj(
             "errors" -> Seq("Missing X-Correlation-ID header")
           )
         }
@@ -267,11 +267,11 @@ class DeclarationControllerSpec
             .withJsonBody(requestBody)
             .withHeaders("X-Correlation-ID" -> correlationId)
 
-          val result  = route(app, request).value
+          val result = route(app, request).value
 
-          status(result) mustBe BAD_REQUEST
-          headers(result)                must contain("X-Correlation-ID" -> correlationId)
-          contentAsJson(result).toString must include(
+          status(result)               shouldBe BAD_REQUEST
+          headers(result)                should contain("X-Correlation-ID" -> correlationId)
+          contentAsJson(result).toString should include(
             "object has too few properties (found 0 but schema requires at least 1)"
           )
         }
@@ -293,7 +293,7 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe LOCKED
+            status(result) shouldBe LOCKED
             verify(lockRepository, never).release(chargeReferenceNumber)
           }
         }
@@ -314,7 +314,7 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe CONFLICT
+            status(result) shouldBe CONFLICT
             verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
@@ -335,7 +335,7 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
             verify(declarationsRepository, never).setState(eqTo(chargeReference), any())
             verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
@@ -384,7 +384,7 @@ class DeclarationControllerSpec
             val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
             val result  = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).get(chargeReference)
@@ -413,7 +413,7 @@ class DeclarationControllerSpec
             val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
             val result  = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).get(chargeReference)
@@ -442,7 +442,7 @@ class DeclarationControllerSpec
             val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
             val result  = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).get(chargeReference)
@@ -466,7 +466,7 @@ class DeclarationControllerSpec
           val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
           val result  = route(app, request).value
 
-          status(result) mustBe NOT_FOUND
+          status(result) shouldBe NOT_FOUND
 
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(chargeReference)
@@ -480,7 +480,7 @@ class DeclarationControllerSpec
           val jsonPayload = Json.obj("reference" -> "XDDD0000000105", "status" -> "Successful")
           val request     = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
           val result      = route(app, request).value
-          status(result) mustBe BAD_REQUEST
+          status(result) shouldBe BAD_REQUEST
         }
       }
     }
@@ -507,7 +507,7 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe CONFLICT
+            status(result) shouldBe CONFLICT
             verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
         }
@@ -528,7 +528,7 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
             verify(declarationsRepository, never()).setAmendState(eqTo(chargeReference), any())
             verify(lockRepository, times(1)).release(chargeReferenceNumber)
           }
@@ -577,7 +577,7 @@ class DeclarationControllerSpec
             val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
             val result  = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).get(chargeReference)
@@ -607,7 +607,7 @@ class DeclarationControllerSpec
             val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
             val result  = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).get(chargeReference)
@@ -637,7 +637,7 @@ class DeclarationControllerSpec
             val request = FakeRequest(POST, routes.DeclarationController.update().url).withJsonBody(jsonPayload)
             val result  = route(app, request).value
 
-            status(result) mustBe ACCEPTED
+            status(result) shouldBe ACCEPTED
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).get(chargeReference)
@@ -679,8 +679,8 @@ class DeclarationControllerSpec
 
             val result = route(app, request).value
 
-            status(result) mustBe OK
-            contentAsJson(result) mustBe Json.toJsObject(declarationResponse)
+            status(result)        shouldBe OK
+            contentAsJson(result) shouldBe Json.toJsObject(declarationResponse)
 
             whenReady(result) { _ =>
               verify(declarationsRepository, times(1)).get(input)
@@ -702,7 +702,7 @@ class DeclarationControllerSpec
             val result = route(app, request).value
 
             whenReady(result.failed) {
-              _ mustBe an[Exception]
+              _ shouldBe an[Exception]
             }
           }
         }
@@ -738,7 +738,7 @@ class DeclarationControllerSpec
 
           val result = route(app, request).value
 
-          status(result) mustBe BAD_REQUEST
+          status(result) shouldBe BAD_REQUEST
         }
       }
 
@@ -756,7 +756,7 @@ class DeclarationControllerSpec
 
           val result = route(app, request).value
 
-          status(result) mustBe NOT_FOUND
+          status(result) shouldBe NOT_FOUND
 
           whenReady(result) { _ =>
             verify(declarationsRepository, times(1)).get(input)

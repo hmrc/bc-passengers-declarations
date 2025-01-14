@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package workers
 
-import com.github.tomakehurst.wiremock.client.WireMock.{any => _}
+import com.github.tomakehurst.wiremock.client.WireMock.any as _
 import com.typesafe.config.ConfigFactory
 import helpers.IntegrationSpecCommonBase
 import metrics.MetricsOperator
@@ -24,16 +24,16 @@ import models.declarations.{Declaration, State}
 import models.{ChargeReference, DeclarationsStatus}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.{JsPath, Json, Reads}
-import play.api.test.Helpers._
-import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import play.api.test.Helpers.*
+import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import utils.WireMockHelper
+import org.mongodb.scala.SingleObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -67,7 +67,7 @@ class MetricsWorkerISpec
       (JsPath \ "counters" \ "payment-failed-counter" \ "count").read[Int] and
       (JsPath \ "counters" \ "payment-cancelled-counter" \ "count").read[Int] and
       (JsPath \ "counters" \ "failed-submission-counter" \ "count").read[Int]
-  )(DeclarationsStatus.apply _)
+  )(DeclarationsStatus.apply)
 
   "A metrics worker" should {
 
@@ -154,12 +154,12 @@ class MetricsWorkerISpec
         val metricsOperator = app.injector.instanceOf[MetricsOperator]
 
         val worker = new MetricsWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
           metricsOperator
         )
 
-        worker.tap.pull().futureValue mustBe Some(DeclarationsStatus(1, 1, 1, 1, 1))
+        worker.tap.pull().futureValue shouldBe Some(DeclarationsStatus(1, 1, 1, 1, 1))
 
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package connectors
 
 import helpers.BaseSpec
 import models.SendEmailRequest
-import org.mockito.ArgumentMatchers._
+import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.{mock, when}
-import play.api.test.Helpers._
-import uk.gov.hmrc.http._
+import play.api.libs.json.JsValue
+import play.api.libs.ws.BodyWritable
+import play.api.test.Helpers.*
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.http.HttpResponse
 
@@ -40,7 +42,7 @@ class SendEmailConnectorSpec extends BaseSpec {
 
     }
 
-    when(mockRequestBuilder.withBody(any())(any(), any(), any()))
+    when(mockRequestBuilder.withBody(any())(using any[BodyWritable[JsValue]], any(), any()))
       .thenReturn(mockRequestBuilder)
 
   }
@@ -73,10 +75,9 @@ class SendEmailConnectorSpec extends BaseSpec {
 
   "requestEmail" must {
     "return true when a request to send a new email is successful" in new Setup {
-      val response: HttpResponse =
-        HttpResponse(ACCEPTED, "")
+      val response: HttpResponse = HttpResponse(ACCEPTED, "")
 
-      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
         .thenReturn(Future(response))
 
       when(
@@ -86,10 +87,23 @@ class SendEmailConnectorSpec extends BaseSpec {
       await(connector.requestEmail(emailRequest)) shouldBe true
     }
 
+    "return false when a request to send a new email is successful but not ACCEPTED" in new Setup {
+      val response: HttpResponse = HttpResponse(OK, "")
+
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future(response))
+
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(connector.requestEmail(emailRequest)) shouldBe false
+    }
+
     "fail the future when the service cannot be found" in new Setup {
       val response = new NotFoundException("error")
 
-      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
         .thenReturn(Future.failed(response))
 
       when(
@@ -102,7 +116,7 @@ class SendEmailConnectorSpec extends BaseSpec {
     "fail the future when we send a bad request" in new Setup {
       val response = new BadRequestException("error")
 
-      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
         .thenReturn(Future.failed(response))
 
       when(
@@ -115,7 +129,7 @@ class SendEmailConnectorSpec extends BaseSpec {
     "fail the future when EVS returns an internal server error" in new Setup {
       val response = new InternalServerException("error")
 
-      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
         .thenReturn(Future.failed(response))
 
       when(
@@ -128,7 +142,7 @@ class SendEmailConnectorSpec extends BaseSpec {
     "fail the future when EVS returns an upstream error" in new Setup {
       val response = new BadGatewayException("error")
 
-      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
         .thenReturn(Future.failed(response))
 
       when(
@@ -141,7 +155,7 @@ class SendEmailConnectorSpec extends BaseSpec {
     "fail the future when EVS returns another HTTP exception e.g 501" in new Setup {
       val response = new NotImplementedException("error")
 
-      when(mockRequestBuilder.execute(any[HttpReads[HttpResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
         .thenReturn(Future.failed(response))
 
       when(

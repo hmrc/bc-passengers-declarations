@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import helpers.MongoTestUtils.givenAnExistingDocument
 import models.Lock
 import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import org.mongodb.scala.ObservableFuture
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -47,21 +48,20 @@ class LockRepositorySpec
 
   "LockRepository" when {
     ".lock" in {
-      await(repository.lock(1)) mustBe true
+      await(repository.lock(1)) shouldBe true
     }
 
     ".release" must {
       "find a lock document and removes it from the database" in {
         givenAnExistingDocument(Lock(1))
 
-        await(repository.release(1)) mustBe ()
+        await(repository.release(1)) shouldBe ()
 
-        repository.collection.find(Filters.equal("_id", 1)).toFuture().futureValue mustBe Seq.empty[Lock]
+        repository.collection.find(Filters.equal("_id", 1)).toFuture().futureValue `shouldBe` Seq.empty[Lock]
       }
 
-      "find no matching lock documents" in {
-        val result: Unit = await(repository.release(1))
-        result mustBe None.orNull.asInstanceOf[Seq[Lock]]
+      "find no matching lock documents, throws no exception" in {
+        await(repository.release(1))
       }
     }
 
@@ -69,11 +69,11 @@ class LockRepositorySpec
       "return true when a lock document is found" in {
         givenAnExistingDocument(Lock(1))
 
-        await(repository.isLocked(1)) mustBe true
+        await(repository.isLocked(1)) shouldBe true
       }
 
       "return false when no document found" in {
-        await(repository.isLocked(1)) mustBe false
+        await(repository.isLocked(1)) shouldBe false
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package models
 
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.Configuration
 
 class ServiceSpec extends AnyWordSpec with Matchers {
 
-  "Service" must {
+  "Service" when {
     "be read from config" in {
 
       val config = Configuration(
@@ -33,7 +33,7 @@ class ServiceSpec extends AnyWordSpec with Matchers {
 
       val service = config.get[Service]("service")
 
-      service mustEqual Service(
+      service shouldBe Service(
         host = "localhost",
         port = "443",
         protocol = "https"
@@ -48,7 +48,7 @@ class ServiceSpec extends AnyWordSpec with Matchers {
         protocol = "https"
       )
 
-      service.baseUrl mustEqual "https://localhost:443"
+      service.baseUrl shouldBe "https://localhost:443"
     }
 
     "return its base url through implicit conversion to a string" in {
@@ -59,7 +59,7 @@ class ServiceSpec extends AnyWordSpec with Matchers {
         protocol = "https"
       )
 
-      service mustEqual "https://localhost:443"
+      service shouldBe "https://localhost:443"
     }
   }
 }

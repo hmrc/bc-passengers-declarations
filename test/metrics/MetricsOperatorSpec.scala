@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package metrics
 
 import com.codahale.metrics.Timer
 import com.codahale.metrics.Timer.Context
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.play.bootstrap.metrics.MetricsImpl
@@ -28,56 +28,56 @@ class MetricsOperatorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerS
   val metrics: MetricsImpl             = app.injector.instanceOf[MetricsImpl]
   val metricsOperator: MetricsOperator = new MetricsOperator(metrics)
 
-  "MetricsOperator" must {
+  "MetricsOperator" when {
     ".startTimer" in {
-      metricsOperator.startTimer() mustBe a[Timer.Context]
-      metricsOperator.registry.getTimers.get("submission-timer") mustBe a[Timer]
+      metricsOperator.startTimer()                               shouldBe a[Timer.Context]
+      metricsOperator.registry.getTimers.get("submission-timer") shouldBe a[Timer]
     }
 
     ".stopTimer" in {
       val context: Context  = metricsOperator.registry.timer("test").time()
       val elapsedTime: Long = metricsOperator.stopTimer(context)
 
-      elapsedTime.toInt must be > 0
+      elapsedTime.toInt should be > 0
     }
 
     ".setCounter" must {
       "set a counter up in metrics" in {
-        metricsOperator.setCounter("test")(1) mustBe ()
-        metricsOperator.registry.counter("test").getCount mustBe 1
+        metricsOperator.setCounter("test")(1)             shouldBe ()
+        metricsOperator.registry.counter("test").getCount shouldBe 1
       }
 
       "reset the counter when the same counter is accessed" in {
-        metricsOperator.setCounter("test")(1) mustBe ()
-        metricsOperator.registry.counter("test").getCount mustBe 1
-        metricsOperator.setCounter("test")(3) mustBe ()
-        metricsOperator.registry.counter("test").getCount mustBe 3
+        metricsOperator.setCounter("test")(1)             shouldBe ()
+        metricsOperator.registry.counter("test").getCount shouldBe 1
+        metricsOperator.setCounter("test")(3)             shouldBe ()
+        metricsOperator.registry.counter("test").getCount shouldBe 3
       }
     }
 
     "setPendingPaymentCounter" in {
-      metricsOperator.setPendingPaymentCounter(1) mustBe ()
-      metricsOperator.registry.counter("pending-payment-counter").getCount mustBe 1
+      metricsOperator.setPendingPaymentCounter(1)                          shouldBe ()
+      metricsOperator.registry.counter("pending-payment-counter").getCount shouldBe 1
     }
 
     "setPaymentCompleteCounter" in {
-      metricsOperator.setPaymentCompleteCounter(1) mustBe ()
-      metricsOperator.registry.counter("payment-complete-counter").getCount mustBe 1
+      metricsOperator.setPaymentCompleteCounter(1)                          shouldBe ()
+      metricsOperator.registry.counter("payment-complete-counter").getCount shouldBe 1
     }
 
     "setPaymentFailedCounter" in {
-      metricsOperator.setPaymentFailedCounter(1) mustBe ()
-      metricsOperator.registry.counter("payment-failed-counter").getCount mustBe 1
+      metricsOperator.setPaymentFailedCounter(1)                          shouldBe ()
+      metricsOperator.registry.counter("payment-failed-counter").getCount shouldBe 1
     }
 
     "setPaymentCancelledCounter" in {
-      metricsOperator.setPaymentCancelledCounter(1) mustBe ()
-      metricsOperator.registry.counter("payment-cancelled-counter").getCount mustBe 1
+      metricsOperator.setPaymentCancelledCounter(1)                          shouldBe ()
+      metricsOperator.registry.counter("payment-cancelled-counter").getCount shouldBe 1
     }
 
     "setFailedSubmissionCounter" in {
-      metricsOperator.setFailedSubmissionCounter(1) mustBe ()
-      metricsOperator.registry.counter("failed-submission-counter").getCount mustBe 1
+      metricsOperator.setFailedSubmissionCounter(1)                          shouldBe ()
+      metricsOperator.registry.counter("failed-submission-counter").getCount shouldBe 1
     }
   }
 

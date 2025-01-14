@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.apache.pekko.stream.scaladsl.Sink
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.mongodb.scala.MongoCollection
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
@@ -95,7 +95,7 @@ class DeclarationsRepositorySpec
 
         await(
           repository.insert(inputData, correlationId, sentToEtmp = true)
-        ).toOption.get must beEquivalentTo(expected)
+        ).toOption.get should beEquivalentTo(expected)
 
       }
 
@@ -113,7 +113,7 @@ class DeclarationsRepositorySpec
 
         await(
           repository.insert(invalidInputData, correlationId, sentToEtmp = true)
-        ).left.toOption.get.head mustBe "object has missing required properties ([\"receiptDate\",\"requestParameters\"])"
+        ).left.toOption.get.head shouldBe "object has missing required properties ([\"receiptDate\",\"requestParameters\"])"
       }
     }
 
@@ -127,7 +127,7 @@ class DeclarationsRepositorySpec
         )
         val unpaidAmendment     = amendment.copy(state = State.PendingPayment)
 
-        await(repository.insertAmendment(inputData, correlationId, chargeReference)) must beEquivalentTo(
+        await(repository.insertAmendment(inputData, correlationId, chargeReference)) should beEquivalentTo(
           unpaidAmendment
         )
       }
@@ -137,7 +137,7 @@ class DeclarationsRepositorySpec
       "by ChargeReference" must {
         "return a declaration" in {
           givenAnExistingDocument(declaration)
-          await(repository.get(chargeReference)).get mustBe declaration
+          await(repository.get(chargeReference)).get shouldBe declaration
         }
       }
 
@@ -165,14 +165,14 @@ class DeclarationsRepositorySpec
           val previousDeclaration =
             PreviousDeclarationRequest(userInformation("lastName").as[String], chargeReference.toString)
 
-          await(repository.get(previousDeclaration)).get mustBe declarationResponse
+          await(repository.get(previousDeclaration)).get shouldBe declarationResponse
         }
       }
 
       "return None when no matching declaration is found" in {
         val previousDeclaration = PreviousDeclarationRequest("otherLastName", chargeReference.toString)
 
-        await(repository.get(previousDeclaration)) mustBe None
+        await(repository.get(previousDeclaration)) shouldBe None
       }
     }
 
@@ -180,7 +180,7 @@ class DeclarationsRepositorySpec
       "delete an entry from mongodb" in {
         givenAnExistingDocument(declaration)
 
-        await(repository.remove(chargeReference)).get mustBe declaration
+        await(repository.remove(chargeReference)).get shouldBe declaration
       }
     }
 
@@ -190,7 +190,7 @@ class DeclarationsRepositorySpec
 
         val updatedDeclaration = declaration.copy(state = State.Paid)
 
-        await(repository.setState(chargeReference, State.Paid)) must beEquivalentTo(updatedDeclaration)
+        await(repository.setState(chargeReference, State.Paid)) should beEquivalentTo(updatedDeclaration)
       }
     }
 
@@ -200,7 +200,7 @@ class DeclarationsRepositorySpec
 
         val updatedAmendment: Declaration = amendment.copy(amendState = Some(State.Paid))
 
-        await(repository.setAmendState(chargeReference, State.Paid)) must beEquivalentTo(updatedAmendment)
+        await(repository.setAmendState(chargeReference, State.Paid)) should beEquivalentTo(updatedAmendment)
       }
     }
 
@@ -210,7 +210,7 @@ class DeclarationsRepositorySpec
 
         val updatedDeclaration: Declaration = declaration.copy(sentToEtmp = true)
 
-        await(repository.setSentToEtmp(chargeReference, sentToEtmp = true)) must beEquivalentTo(
+        await(repository.setSentToEtmp(chargeReference, sentToEtmp = true)) should beEquivalentTo(
           updatedDeclaration
         )
       }
@@ -222,7 +222,7 @@ class DeclarationsRepositorySpec
 
         val updatedAmendment: Declaration = amendment.copy(amendSentToEtmp = Some(true))
 
-        await(repository.setAmendSentToEtmp(chargeReference, amendSentToEtmp = true)) must beEquivalentTo(
+        await(repository.setAmendSentToEtmp(chargeReference, amendSentToEtmp = true)) should beEquivalentTo(
           updatedAmendment
         )
       }
@@ -239,7 +239,7 @@ class DeclarationsRepositorySpec
         givenExistingDocuments(List(paid, pending, cancelled, failed))
 
         val result = await(repository.unpaidDeclarations.runWith(Sink.seq))
-        result must contain theSameElementsAs Seq(pending, cancelled, failed)
+        result should contain theSameElementsAs Seq(pending, cancelled, failed)
 
       }
     }
@@ -256,7 +256,7 @@ class DeclarationsRepositorySpec
         givenExistingDocuments(List(paid, previouslyUnpaid, pending, cancelled, failed))
 
         val result = await(repository.unpaidAmendments.runWith(Sink.seq))
-        result must contain theSameElementsAs Seq(pending, cancelled, failed)
+        result should contain theSameElementsAs Seq(pending, cancelled, failed)
 
       }
     }
@@ -270,7 +270,7 @@ class DeclarationsRepositorySpec
         givenExistingDocuments(List(sentToEtmp, notSentToEtmp))
 
         val result = await(repository.paidDeclarationsForEtmp.runWith(Sink.seq))
-        result must contain theSameElementsAs Seq(notSentToEtmp)
+        result should contain theSameElementsAs Seq(notSentToEtmp)
 
       }
     }
@@ -302,7 +302,7 @@ class DeclarationsRepositorySpec
 
         val result = await(repository.paidAmendmentsForEtmp.runWith(Sink.seq))
 
-        result must contain theSameElementsAs Seq(amendNotSentToEtmp)
+        result should contain theSameElementsAs Seq(amendNotSentToEtmp)
 
       }
     }
@@ -333,7 +333,7 @@ class DeclarationsRepositorySpec
 
         val result = await(repository.paidDeclarationsForDeletion.runWith(Sink.seq))
 
-        result must contain theSameElementsAs Seq(declarationSentToEtmp, amendSentToEtmp)
+        result should contain theSameElementsAs Seq(declarationSentToEtmp, amendSentToEtmp)
 
       }
     }
@@ -346,7 +346,7 @@ class DeclarationsRepositorySpec
 
         val result = await(repository.failedDeclarations.runWith(Sink.seq))
 
-        result must contain theSameElementsAs Seq(submissionFailed)
+        result should contain theSameElementsAs Seq(submissionFailed)
       }
     }
 
@@ -358,7 +358,7 @@ class DeclarationsRepositorySpec
 
         val result = await(repository.failedAmendments.runWith(Sink.seq))
 
-        result must contain theSameElementsAs Seq(submissionFailed)
+        result should contain theSameElementsAs Seq(submissionFailed)
       }
     }
 
@@ -373,7 +373,7 @@ class DeclarationsRepositorySpec
 
         val result = await(repository.metricsCount.runWith(Sink.seq))
 
-        result.head mustBe DeclarationsStatus(1, 1, 0, 0, 0)
+        result.head shouldBe DeclarationsStatus(1, 1, 0, 0, 0)
       }
 
       "return a DeclarationStatus counting negative outcomes" in {
@@ -381,7 +381,7 @@ class DeclarationsRepositorySpec
 
         val result = await(repository.metricsCount.runWith(Sink.seq))
 
-        result.head mustBe DeclarationsStatus(0, 0, 1, 1, 1)
+        result.head shouldBe DeclarationsStatus(0, 0, 1, 1, 1)
       }
 
     }

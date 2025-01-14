@@ -61,7 +61,7 @@ On subsequent starts of the application:
 > The `DeclarationSubmissionWorker` attempts to submit the declaration to MDG again.
 
 The idea here is that in order for any `Failed` declaration to be
-successfully processed there must be a code change.
+successfully processed there should be a code change.
 
 If a fix is put into the code to compensate for the failure then that will require an application
 restart which will allow these records to be processed again.

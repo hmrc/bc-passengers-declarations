@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ import models.ChargeReference
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
-import play.api.test.Helpers._
-import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import play.api.test.Helpers.*
+import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import org.mongodb.scala.SingleObservableFuture
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
@@ -150,13 +150,13 @@ class DeclarationDeletionWorkerISpec
         await(lockRepository.lock(0))
 
         val worker = new DeclarationDeletionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
 
         val declaration = worker.tap.pull().futureValue.get
-        declaration.chargeReference.value mustEqual 1
+        declaration.chargeReference.value shouldBe 1
       }
     }
 
@@ -239,7 +239,7 @@ class DeclarationDeletionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val worker = new DeclarationDeletionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
@@ -247,11 +247,11 @@ class DeclarationDeletionWorkerISpec
         worker.tap.pull().futureValue
         worker.tap.pull().futureValue
 
-        lockRepository.isLocked(0).futureValue mustEqual true
-        lockRepository.isLocked(1).futureValue mustEqual false
-        lockRepository.isLocked(2).futureValue mustEqual false
-        lockRepository.isLocked(3).futureValue mustEqual true
-        lockRepository.isLocked(4).futureValue mustEqual false
+        lockRepository.isLocked(0).futureValue shouldBe true
+        lockRepository.isLocked(1).futureValue shouldBe false
+        lockRepository.isLocked(2).futureValue shouldBe false
+        lockRepository.isLocked(3).futureValue shouldBe true
+        lockRepository.isLocked(4).futureValue shouldBe false
       }
     }
 
@@ -321,7 +321,7 @@ class DeclarationDeletionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val worker = new DeclarationDeletionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )

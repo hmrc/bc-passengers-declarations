@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,14 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.mongodb.scala.Document
 import org.scalatest.Inside.inside
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.Helpers._
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -608,15 +609,22 @@ class DeclarationsRepositoryISpec
 
       running(app) {
 
-        val document = repository.insert(inputData, correlationId, sentToEtmp = false).futureValue.toOption.get
+        val document = repository
+          .asInstanceOf[DeclarationsRepository]
+          .insert(inputData, correlationId, sentToEtmp = false)
+          .futureValue
+          .toOption
+          .get
 
         inside(document) { case Declaration(id, _, None, false, None, cid, None, jd, data, None, _) =>
-          id mustBe document.chargeReference
-          cid mustBe correlationId
-          jd mustBe journeyData
+          id  shouldBe document.chargeReference
+          cid shouldBe correlationId
+          jd  shouldBe journeyData
 
-          repository.remove(document.chargeReference).futureValue
-          repository.get(document.chargeReference).futureValue mustNot be(defined)
+          repository.asInstanceOf[DeclarationsRepository].remove(document.chargeReference).futureValue
+          repository.asInstanceOf[DeclarationsRepository].get(document.chargeReference).futureValue shouldNot be(
+            defined
+          )
         }
       }
     }
@@ -627,8 +635,14 @@ class DeclarationsRepositoryISpec
       running(app) {
 
         val declarationDocument =
-          repository.insert(inputData, correlationId, sentToEtmp = false).futureValue.toOption.get
+          repository
+            .asInstanceOf[DeclarationsRepository]
+            .insert(inputData, correlationId, sentToEtmp = false)
+            .futureValue
+            .toOption
+            .get
         val amendmentDocument   = repository
+          .asInstanceOf[DeclarationsRepository]
           .insertAmendment(inputAmendmentData, amendCorrelationId, declarationDocument.chargeReference)
           .futureValue
         journeyData.deepMerge(Json.obj("amendmentCount" -> 1))
@@ -647,16 +661,18 @@ class DeclarationsRepositoryISpec
                 amendData,
                 _
               ) =>
-            id mustEqual amendmentDocument.chargeReference
-            amendState mustBe Some(State.PendingPayment)
-            amendSentToEtmp mustBe Some(false)
-            correlationIdFromDataBase.get mustEqual amendCorrelationId
-            jd mustEqual journeyData
-            amendData mustBe Some(actualAmendmentData)
+            id                            shouldBe amendmentDocument.chargeReference
+            amendState                    shouldBe Some(State.PendingPayment)
+            amendSentToEtmp               shouldBe Some(false)
+            correlationIdFromDataBase.get shouldBe amendCorrelationId
+            jd                            shouldBe journeyData
+            amendData                     shouldBe Some(actualAmendmentData)
         }
 
-        repository.remove(amendmentDocument.chargeReference).futureValue
-        repository.get(amendmentDocument.chargeReference).futureValue mustNot be(defined)
+        repository.asInstanceOf[DeclarationsRepository].remove(amendmentDocument.chargeReference).futureValue
+        repository.asInstanceOf[DeclarationsRepository].get(amendmentDocument.chargeReference).futureValue shouldNot be(
+          defined
+        )
       }
     }
 
@@ -669,14 +685,14 @@ class DeclarationsRepositoryISpec
 
         indices.map { doc =>
           doc.toJson() match {
-            case json if json.contains("lastUpdated") => json.contains("declarations-last-updated-index") mustEqual true
-            case json if json.contains("state")       => json.contains("declarations-state-index") mustEqual true
-            case json if json.contains("amendState")  => json.contains("declarations-amendState-index") mustEqual true
-            case _                                    => doc.toJson().contains("_id") mustEqual true
+            case json if json.contains("lastUpdated") => json.contains("declarations-last-updated-index") shouldBe true
+            case json if json.contains("state")       => json.contains("declarations-state-index")        shouldBe true
+            case json if json.contains("amendState")  => json.contains("declarations-amendState-index")   shouldBe true
+            case _                                    => doc.toJson().contains("_id")                     shouldBe true
           }
         }
 
-        indices.size mustBe 4
+        indices.size shouldBe 4
 
       }
     }
@@ -785,10 +801,14 @@ class DeclarationsRepositoryISpec
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
         val staleDeclarations =
-          repository.unpaidDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+          repository
+            .asInstanceOf[DeclarationsRepository]
+            .unpaidDeclarations
+            .runWith(Sink.collection[Declaration, List[Declaration]])
+            .futureValue
 
-        staleDeclarations.size mustEqual 5
-        staleDeclarations.map(_.chargeReference) must contain.allOf(
+        staleDeclarations.size                 shouldBe 5
+        staleDeclarations.map(_.chargeReference) should contain.allOf(
           ChargeReference(0),
           ChargeReference(1),
           ChargeReference(2),
@@ -900,10 +920,15 @@ class DeclarationsRepositoryISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val staleDeclarations =
-          await(repository.unpaidAmendments.runWith(Sink.collection[Declaration, List[Declaration]]))
+          await(
+            repository
+              .asInstanceOf[DeclarationsRepository]
+              .unpaidAmendments
+              .runWith(Sink.collection[Declaration, List[Declaration]])
+          )
 
-        staleDeclarations.size mustEqual 5
-        staleDeclarations.map(_.chargeReference) must contain.allOf(
+        staleDeclarations.size                 shouldBe 5
+        staleDeclarations.map(_.chargeReference) should contain.allOf(
           ChargeReference(0),
           ChargeReference(1),
           ChargeReference(2),
@@ -918,13 +943,16 @@ class DeclarationsRepositoryISpec
 
       running(app) {
 
-        val declaration = await(repository.insert(inputData, "testId", sentToEtmp = false)).toOption.get
+        val declaration = await(
+          repository.asInstanceOf[DeclarationsRepository].insert(inputData, "testId", sentToEtmp = false)
+        ).toOption.get
 
-        await(repository.setState(declaration.chargeReference, State.Paid))
+        await(repository.asInstanceOf[DeclarationsRepository].setState(declaration.chargeReference, State.Paid))
 
-        val updatedDeclaration: Declaration = repository.get(declaration.chargeReference).futureValue.get
+        val updatedDeclaration: Declaration =
+          repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue.get
 
-        updatedDeclaration.state mustEqual State.Paid
+        updatedDeclaration.state shouldBe State.Paid
       }
     }
 
@@ -933,15 +961,24 @@ class DeclarationsRepositoryISpec
 
       running(app) {
 
-        val declaration = repository.insert(inputData, correlationId, sentToEtmp = false).futureValue.toOption.get
+        val declaration = repository
+          .asInstanceOf[DeclarationsRepository]
+          .insert(inputData, correlationId, sentToEtmp = false)
+          .futureValue
+          .toOption
+          .get
         val amendment   =
-          repository.insertAmendment(inputAmendmentData, correlationId, declaration.chargeReference).futureValue
+          repository
+            .asInstanceOf[DeclarationsRepository]
+            .insertAmendment(inputAmendmentData, correlationId, declaration.chargeReference)
+            .futureValue
 
-        await(repository.setAmendState(amendment.chargeReference, State.Paid))
+        await(repository.asInstanceOf[DeclarationsRepository].setAmendState(amendment.chargeReference, State.Paid))
 
-        val updatedAmendment: Declaration = repository.get(declaration.chargeReference).futureValue.get
+        val updatedAmendment: Declaration =
+          repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue.get
 
-        updatedAmendment.amendState.get mustEqual State.Paid
+        updatedAmendment.amendState.get shouldBe State.Paid
       }
     }
 
@@ -1049,9 +1086,13 @@ class DeclarationsRepositoryISpec
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
         val paidDeclarations =
-          repository.paidDeclarationsForEtmp.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+          repository
+            .asInstanceOf[DeclarationsRepository]
+            .paidDeclarationsForEtmp
+            .runWith(Sink.collection[Declaration, List[Declaration]])
+            .futureValue
 
-        paidDeclarations.map(_.chargeReference) must contain.only(
+        paidDeclarations.map(_.chargeReference) should contain.only(
           ChargeReference(1),
           ChargeReference(3),
           ChargeReference(4),
@@ -1165,9 +1206,13 @@ class DeclarationsRepositoryISpec
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
         val paidDeclarations =
-          repository.paidAmendmentsForEtmp.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+          repository
+            .asInstanceOf[DeclarationsRepository]
+            .paidAmendmentsForEtmp
+            .runWith(Sink.collection[Declaration, List[Declaration]])
+            .futureValue
 
-        paidDeclarations.map(_.chargeReference) must contain.only(
+        paidDeclarations.map(_.chargeReference) should contain.only(
           ChargeReference(1),
           ChargeReference(3),
           ChargeReference(5)
@@ -1180,7 +1225,7 @@ class DeclarationsRepositoryISpec
 
       val input = PreviousDeclarationRequest("POTTER", ChargeReference(0).toString)
 
-      val resultCalculation      =
+      val resultCalculation =
         Json.obj("excise" -> "0.00", "customs" -> "12.50", "vat" -> "102.50", "allTax" -> "115.00")
 
       val resultLiabilityDetails = Json.obj(
@@ -1262,13 +1307,13 @@ class DeclarationsRepositoryISpec
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        val paidDeclaration = repository.get(input).futureValue
+        val paidDeclaration = repository.asInstanceOf[DeclarationsRepository].get(input).futureValue
 
-        paidDeclaration.get.isUKResident.get mustBe false
-        paidDeclaration.get.isPrivateTravel mustBe true
-        paidDeclaration.get.calculation mustBe resultCalculation
-        paidDeclaration.get.userInformation mustBe userInformation
-        paidDeclaration.get.liabilityDetails mustBe resultLiabilityDetails
+        paidDeclaration.get.isUKResident.get shouldBe false
+        paidDeclaration.get.isPrivateTravel  shouldBe true
+        paidDeclaration.get.calculation      shouldBe resultCalculation
+        paidDeclaration.get.userInformation  shouldBe userInformation
+        paidDeclaration.get.liabilityDetails shouldBe resultLiabilityDetails
       }
     }
 
@@ -1310,7 +1355,7 @@ class DeclarationsRepositoryISpec
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        repository.get(input).futureValue mustBe None
+        repository.asInstanceOf[DeclarationsRepository].get(input).futureValue shouldBe None
       }
     }
 
@@ -1318,7 +1363,7 @@ class DeclarationsRepositoryISpec
       val deltaCalculation =
         Some(Json.obj("excise" -> "10.00", "customs" -> "10.50", "vat" -> "10.50", "allTax" -> "31.00"))
 
-      val app              = builder.build()
+      val app = builder.build()
 
       val input = PreviousDeclarationRequest("POTTER", ChargeReference(0).toString)
 
@@ -1355,10 +1400,10 @@ class DeclarationsRepositoryISpec
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        val pendingAmendment = await(repository.get(input))
+        val pendingAmendment = await(repository.asInstanceOf[DeclarationsRepository].get(input))
 
-        pendingAmendment.get.amendState.get mustBe "pending-payment"
-        pendingAmendment.get.deltaCalculation mustBe deltaCalculation
+        pendingAmendment.get.amendState.get   shouldBe "pending-payment"
+        pendingAmendment.get.deltaCalculation shouldBe deltaCalculation
       }
     }
 
@@ -1420,10 +1465,14 @@ class DeclarationsRepositoryISpec
         implicit val mat: Materializer = app.injector.instanceOf[Materializer]
 
         val failedDeclarations =
-          repository.failedDeclarations.runWith(Sink.collection[Declaration, List[Declaration]]).futureValue
+          repository
+            .asInstanceOf[DeclarationsRepository]
+            .failedDeclarations
+            .runWith(Sink.collection[Declaration, List[Declaration]])
+            .futureValue
 
-        failedDeclarations.size mustEqual 2
-        failedDeclarations.map(_.chargeReference) must contain.only(ChargeReference(0), ChargeReference(2))
+        failedDeclarations.size                 shouldBe 2
+        failedDeclarations.map(_.chargeReference) should contain.only(ChargeReference(0), ChargeReference(2))
       }
     }
 
@@ -1433,9 +1482,15 @@ class DeclarationsRepositoryISpec
 
       running(app) {
 
-        val errors = repository.insert(Json.obj(), correlationId, sentToEtmp = false).futureValue.swap.toOption.get
+        val errors = repository
+          .asInstanceOf[DeclarationsRepository]
+          .insert(Json.obj(), correlationId, sentToEtmp = false)
+          .futureValue
+          .swap
+          .toOption
+          .get
 
-        errors must contain("""object has missing required properties (["receiptDate","requestParameters"])""")
+        errors should contain("""object has missing required properties (["receiptDate","requestParameters"])""")
       }
     }
 
@@ -1614,10 +1669,12 @@ class DeclarationsRepositoryISpec
 
         await(repository.collection.insertMany(declarations).toFuture())
 
-        repository.metricsCount
+        repository
+          .asInstanceOf[DeclarationsRepository]
+          .metricsCount
           .runWith(Sink.collection[DeclarationsStatus, List[DeclarationsStatus]])
           .futureValue
-          .head mustBe DeclarationsStatus(
+          .head shouldBe DeclarationsStatus(
           pendingPaymentCount = 3,
           paymentCompleteCount = 2,
           paymentFailedCount = 5,

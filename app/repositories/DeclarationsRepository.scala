@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 import services.{ChargeReferenceService, ValidationService, Validator}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.duration.DurationInt
@@ -70,7 +72,7 @@ class DefaultDeclarationsRepository @Inject() (
     correlationId: String,
     sentToEtmp: Boolean
   ): Future[Either[List[String], Declaration]] =
-    chargeReferenceService.nextChargeReference().flatMap { id: ChargeReference =>
+    chargeReferenceService.nextChargeReference().flatMap { id =>
       val json             = data deepMerge id
       val validationErrors = validator("request").validate(json)
 
@@ -296,7 +298,7 @@ class DefaultDeclarationsRepository @Inject() (
       collection.find(equal("state", "submission-failed"))
     }
 
-  override def failedAmendments: Source[Declaration, NotUsed]             =
+  override def failedAmendments: Source[Declaration, NotUsed] =
     Source.fromPublisher {
       collection.find(equal("amendState", Codecs.toBson("submission-failed")))
     }

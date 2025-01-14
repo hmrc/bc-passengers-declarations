@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import models.ChargeReference
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.test.Helpers._
-import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import play.api.test.Helpers.*
+import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import org.mongodb.scala.SingleObservableFuture
+import org.mongodb.scala.ObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -140,7 +141,7 @@ class AmendmentPaymentTimeoutWorkerISpec
       await(repository.collection.insertMany(declarations).toFuture())
 
       val worker = new AmendmentPaymentTimeoutWorker(
-        repository,
+        repository.asInstanceOf[DeclarationsRepository],
         lockRepository,
         Configuration(ConfigFactory.load(System.getProperty("config.resource")))
       )
@@ -154,8 +155,8 @@ class AmendmentPaymentTimeoutWorkerISpec
       )
 
       staleDeclarations
-        .map(_.chargeReference)           must contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
-      staleDeclarations.map(_.amendState) must contain.allOf(
+        .map(_.chargeReference)           should contain.allOf(ChargeReference(0), ChargeReference(1), ChargeReference(2))
+      staleDeclarations.map(_.amendState) should contain.allOf(
         Some(State.PendingPayment),
         Some(State.PaymentFailed),
         Some(State.PaymentCancelled)
@@ -167,7 +168,7 @@ class AmendmentPaymentTimeoutWorkerISpec
         TestLoggerAppender.queue.dequeue()
       )
 
-      logEvents.map(_.getMessage) must contain.allOf(
+      logEvents.map(_.getMessage) should contain.allOf(
         "[AmendmentPaymentTimeoutWorker][tap] Declaration 2 is stale, deleting",
         "[AmendmentPaymentTimeoutWorker][tap] Declaration 1 is stale, deleting",
         "[AmendmentPaymentTimeoutWorker][tap] Declaration 0 is stale, deleting"
@@ -175,7 +176,7 @@ class AmendmentPaymentTimeoutWorkerISpec
 
       val remaining = await(repository.collection.find().toFuture().map(_.toList))
 
-      remaining mustEqual declarations.filter(_.chargeReference.value > 2)
+      remaining shouldBe declarations.filter(_.chargeReference.value > 2)
     }
 
     "not log locked stale records" in {
@@ -234,13 +235,13 @@ class AmendmentPaymentTimeoutWorkerISpec
         await(lockRepository.lock(0))
 
         val worker = new AmendmentPaymentTimeoutWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
 
         val declaration = await(worker.tap.pull()).get
-        declaration.chargeReference.value mustEqual 1
+        declaration.chargeReference.value shouldBe 1
 
       }
     }
@@ -298,7 +299,7 @@ class AmendmentPaymentTimeoutWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val worker = new AmendmentPaymentTimeoutWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           Configuration(ConfigFactory.load(System.getProperty("config.resource")))
         )
@@ -306,9 +307,9 @@ class AmendmentPaymentTimeoutWorkerISpec
         await(worker.tap.pull())
         await(worker.tap.pull())
 
-        await(lockRepository.isLocked(0)) mustEqual true
-        await(lockRepository.isLocked(1)) mustEqual true
-        await(lockRepository.isLocked(2)) mustEqual false
+        await(lockRepository.isLocked(0)) shouldBe true
+        await(lockRepository.isLocked(1)) shouldBe true
+        await(lockRepository.isLocked(2)) shouldBe false
       }
     }
   }

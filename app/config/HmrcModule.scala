@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import services.{ChargeReferenceService, SequentialChargeReferenceService}
 import workers._
 
 class HmrcModule extends Module {
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] =
+  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[?]] =
     Seq(
       bind[DeclarationsRepository].to[DefaultDeclarationsRepository].eagerly(),
       bind[ChargeReferenceService].to[SequentialChargeReferenceService].eagerly(),

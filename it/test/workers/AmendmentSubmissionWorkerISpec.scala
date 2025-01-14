@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package workers
 
-import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
+import com.github.tomakehurst.wiremock.client.WireMock.{any as _, *}
 import com.typesafe.config.ConfigFactory
 import connectors.HODConnector
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, SubmissionResponse}
 import org.apache.pekko.stream.Materializer
+import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.Eventually.eventually
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
-import play.api.test.Helpers._
-import repositories.{DefaultDeclarationsRepository, DefaultLockRepository}
+import play.api.test.Helpers.*
+import repositories.{DeclarationsRepository, DefaultDeclarationsRepository, DefaultLockRepository}
 import services.{ChargeReferenceService, ValidationService}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -379,7 +379,7 @@ class AmendmentSubmissionWorkerISpec
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -388,9 +388,9 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, response) = worker.tap.pull().futureValue.get
-        declaration.chargeReference mustEqual ChargeReference(3)
-        declaration.amendCorrelationId.get mustBe amendmentCorrelationId
-        response mustEqual SubmissionResponse.Submitted
+        declaration.chargeReference        shouldBe ChargeReference(3)
+        declaration.amendCorrelationId.get shouldBe amendmentCorrelationId
+        response                           shouldBe SubmissionResponse.Submitted
       }
     }
 
@@ -470,7 +470,7 @@ class AmendmentSubmissionWorkerISpec
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -488,7 +488,7 @@ class AmendmentSubmissionWorkerISpec
 
         val endTime = LocalDateTime.now(ZoneOffset.UTC)
 
-        ChronoUnit.MILLIS.between(startTime, endTime) must be > 2000L
+        ChronoUnit.MILLIS.between(startTime, endTime) should be > 2000L
       }
     }
 
@@ -544,7 +544,7 @@ class AmendmentSubmissionWorkerISpec
         lockRepository.lock(1)
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -553,7 +553,7 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, _) = worker.tap.pull().futureValue.get
-        declaration.chargeReference mustEqual ChargeReference(2)
+        declaration.chargeReference shouldBe ChargeReference(2)
       }
     }
 
@@ -595,7 +595,7 @@ class AmendmentSubmissionWorkerISpec
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -604,7 +604,7 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, _) = worker.tap.pull().futureValue.get
-        declaration.chargeReference mustEqual ChargeReference(1)
+        declaration.chargeReference shouldBe ChargeReference(1)
       }
     }
 
@@ -672,7 +672,7 @@ class AmendmentSubmissionWorkerISpec
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -681,9 +681,9 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result mustEqual SubmissionResponse.ParsingException
+        result shouldBe SubmissionResponse.ParsingException
 
-        repository.get(declaration.chargeReference).futureValue must be(defined)
+        repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
 
       }
     }
@@ -752,7 +752,7 @@ class AmendmentSubmissionWorkerISpec
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -761,9 +761,15 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result mustEqual SubmissionResponse.Failed
+        result shouldBe SubmissionResponse.Failed
 
-        repository.get(declaration.chargeReference).futureValue.get.amendState.get mustBe State.SubmissionFailed
+        repository
+          .asInstanceOf[DeclarationsRepository]
+          .get(declaration.chargeReference)
+          .futureValue
+          .get
+          .amendState
+          .get shouldBe State.SubmissionFailed
 
       }
     }
@@ -813,7 +819,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -908,7 +914,7 @@ class AmendmentSubmissionWorkerISpec
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
         val worker = new AmendmentSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -922,12 +928,12 @@ class AmendmentSubmissionWorkerISpec
         val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
 
         eventually {
-          server.requestsWereSent(times = 1, auditRequest) mustEqual true
-          server.requestsWereSent(times = 1, desRequest) mustEqual true
+          server.requestsWereSent(times = 1, auditRequest) shouldBe true
+          server.requestsWereSent(times = 1, desRequest)   shouldBe true
         }
 
-        result mustEqual SubmissionResponse.Submitted
-        repository.get(declaration.chargeReference).futureValue must be(defined)
+        result                                                                                     shouldBe SubmissionResponse.Submitted
+        repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
       }
     }
   }

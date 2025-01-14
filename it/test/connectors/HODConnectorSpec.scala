@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import helpers.Constants
 import models.SubmissionResponse
 import models.declarations.Etmp
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
@@ -65,7 +65,7 @@ class HODConnectorSpec
 
   private lazy val connector: HODConnector = inject[HODConnector]
 
-  "HODConnector" must {
+  "HODConnector" when {
     "call the HOD when declaration is submitted" in {
 
       server.stubFor(
@@ -73,7 +73,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
     }
 
     "fall back to a SubmissionResponse.Error when the downstream call errors while submitting declaration" in {
@@ -83,7 +83,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE))
       )
 
-      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Error
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Error
     }
 
     "fail fast while the circuit breaker is open when declaration is submitted" in {
@@ -94,11 +94,11 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Error
-      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Error
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Error
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Error
 
       Thread.sleep(2000)
-      await(connector.submit(declaration, isAmendment = false)) mustBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
     }
 
     "call the HOD when amendment is submitted" in {
@@ -108,7 +108,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Submitted
+      await(connector.submit(amendment, isAmendment = true)) shouldBe SubmissionResponse.Submitted
     }
 
     "throw an exception when amendment is submitted but contains no correlation id" in {
@@ -119,14 +119,14 @@ class HODConnectorSpec
         connector.submit(amendmentWithNoAmendmentCorrelationId, isAmendment = true)
       }
 
-      result.getMessage mustBe "AmendCorrelation Id is empty"
+      result.getMessage shouldBe "AmendCorrelation Id is empty"
     }
 
     "fall back to a SubmissionResponse.ParsingException when the declaration data is not complete" in {
 
       val missingDataDeclaration = declaration.copy(data = Json.obj())
 
-      await(connector.submit(missingDataDeclaration, isAmendment = false)) mustBe SubmissionResponse.ParsingException
+      await(connector.submit(missingDataDeclaration, isAmendment = false)) shouldBe SubmissionResponse.ParsingException
     }
 
     "fall back to a SubmissionResponse.ParsingException when the amendment data is not complete" in {
@@ -136,7 +136,7 @@ class HODConnectorSpec
       await(
         connector
           .submit(missingAmendmentDataDeclaration, isAmendment = true)
-      ) mustBe SubmissionResponse.ParsingException
+      ) shouldBe SubmissionResponse.ParsingException
     }
 
     "fall back to a SubmissionResponse.Error when the downstream call errors in amendments journey" in {
@@ -146,7 +146,7 @@ class HODConnectorSpec
           .willReturn(aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE))
       )
 
-      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Error
+      await(connector.submit(amendment, isAmendment = true)) shouldBe SubmissionResponse.Error
     }
 
     "fail fast while the circuit breaker is open in amendments journey" in {
@@ -157,11 +157,11 @@ class HODConnectorSpec
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
-      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Error
-      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Error
+      await(connector.submit(amendment, isAmendment = true)) shouldBe SubmissionResponse.Error
+      await(connector.submit(amendment, isAmendment = true)) shouldBe SubmissionResponse.Error
 
       Thread.sleep(2000)
-      await(connector.submit(amendment, isAmendment = true)) mustBe SubmissionResponse.Submitted
+      await(connector.submit(amendment, isAmendment = true)) shouldBe SubmissionResponse.Submitted
     }
   }
 }

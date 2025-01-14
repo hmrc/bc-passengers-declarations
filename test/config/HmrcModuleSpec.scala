@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package config
 
 import org.apache.pekko.pattern.CircuitBreaker
 import org.mockito.Mockito
-import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.inject.Binding
 import play.api.{Configuration, Environment}
@@ -31,16 +31,16 @@ class HmrcModuleSpec extends AnyWordSpec with Matchers {
   private val mockConfiguration: Configuration = Mockito.mock(classOf[Configuration])
   private val mockEnvironment: Environment     = Mockito.mock(classOf[Environment])
 
-  private val bindings: Seq[Binding[_]] = new HmrcModule().bindings(mockEnvironment, mockConfiguration)
+  private val bindings: Seq[Binding[?]] = new HmrcModule().bindings(mockEnvironment, mockConfiguration)
 
   "HmrcModule" when {
     ".bindings" must {
-      def test(scenario: String, clazz: Class[_]): Unit =
+      def test(scenario: String, clazz: Class[?]): Unit =
         s"bind the $scenario eagerly" in {
-          bindings.filter(binding => binding.key.clazz == clazz).head.eager mustBe true
+          bindings.filter(binding => binding.key.clazz == clazz).head.eager shouldBe true
         }
 
-      val input: Seq[(String, Class[_])] = Seq(
+      val input: Seq[(String, Class[?])] = Seq(
         ("DeclarationsRepository", classOf[DeclarationsRepository]),
         ("ChargeReferenceService", classOf[ChargeReferenceService]),
         ("LockRepository", classOf[LockRepository]),
@@ -53,10 +53,10 @@ class HmrcModuleSpec extends AnyWordSpec with Matchers {
         ("AmendmentFailedSubmissionWorker", classOf[AmendmentFailedSubmissionWorker]),
         ("MetricsWorker", classOf[MetricsWorker])
       )
-      input.foreach(args => (test _).tupled(args))
+      input.foreach(args => test.tupled(args))
 
       "not bind the CircuitBreaker eagerly" in {
-        bindings.filter(binding => binding.key.clazz == classOf[CircuitBreaker]).head.eager mustBe false
+        bindings.filter(binding => binding.key.clazz == classOf[CircuitBreaker]).head.eager shouldBe false
       }
     }
   }

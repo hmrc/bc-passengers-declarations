@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import models.{ChargeReference, SubmissionResponse}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.Eventually.eventually
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
@@ -37,6 +36,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import util.AuditingTools
 import utils.WireMockHelper
 import utils.WireMockUtils.WireMockServerImprovements
+import org.mongodb.scala.SingleObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -255,7 +255,7 @@ class DeclarationSubmissionWorkerISpec
         Future.sequence(services)
 
         val worker = new DeclarationSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -264,8 +264,8 @@ class DeclarationSubmissionWorkerISpec
         )
 
         val (declaration, response) = worker.tap.pull().futureValue.get
-        declaration.chargeReference mustEqual ChargeReference(2)
-        response mustEqual SubmissionResponse.Submitted
+        declaration.chargeReference shouldBe ChargeReference(2)
+        response                    shouldBe SubmissionResponse.Submitted
       }
     }
 
@@ -325,7 +325,7 @@ class DeclarationSubmissionWorkerISpec
         Future.sequence(services)
 
         val worker = new DeclarationSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -334,7 +334,7 @@ class DeclarationSubmissionWorkerISpec
         )
 
         val (declaration, _) = worker.tap.pull().futureValue.get
-        declaration.chargeReference mustEqual ChargeReference(2)
+        declaration.chargeReference shouldBe ChargeReference(2)
       }
     }
 
@@ -412,7 +412,7 @@ class DeclarationSubmissionWorkerISpec
         Future.sequence(services)
 
         val worker = new DeclarationSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -445,10 +445,10 @@ class DeclarationSubmissionWorkerISpec
           postRequestedFor(urlEqualTo("/write/audit")).withRequestBody(equalToJson(expectedJsonBody, true, true))
 
         eventually {
-          server.requestsWereSent(times = 1, request) mustEqual true
+          server.requestsWereSent(times = 1, request) shouldBe true
         }
 
-        repository.get(declaration.chargeReference).futureValue must be(defined)
+        repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
       }
     }
 
@@ -520,7 +520,7 @@ class DeclarationSubmissionWorkerISpec
         Future.sequence(services)
 
         val worker = new DeclarationSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -529,9 +529,9 @@ class DeclarationSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result mustEqual SubmissionResponse.ParsingException
+        result shouldBe SubmissionResponse.ParsingException
 
-        repository.get(declaration.chargeReference).futureValue must be(defined)
+        repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
       }
     }
 
@@ -603,7 +603,7 @@ class DeclarationSubmissionWorkerISpec
         Future.sequence(services)
 
         val worker = new DeclarationSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -612,9 +612,14 @@ class DeclarationSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result mustEqual SubmissionResponse.Failed
+        result shouldBe SubmissionResponse.Failed
 
-        repository.get(declaration.chargeReference).futureValue.get.state mustEqual State.SubmissionFailed
+        repository
+          .asInstanceOf[DeclarationsRepository]
+          .get(declaration.chargeReference)
+          .futureValue
+          .get
+          .state shouldBe State.SubmissionFailed
       }
     }
 
@@ -691,7 +696,7 @@ class DeclarationSubmissionWorkerISpec
         Future.sequence(services)
 
         val worker = new DeclarationSubmissionWorker(
-          repository,
+          repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
           Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
@@ -705,13 +710,13 @@ class DeclarationSubmissionWorkerISpec
         val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
 
         eventually {
-          server.requestsWereSent(times = 1, auditRequest) mustEqual true
-          server.requestsWereSent(times = 1, desRequest) mustEqual true
+          server.requestsWereSent(times = 1, auditRequest) shouldBe true
+          server.requestsWereSent(times = 1, desRequest)   shouldBe true
         }
 
-        result mustEqual SubmissionResponse.Submitted
+        result shouldBe SubmissionResponse.Submitted
 
-        repository.get(declaration.chargeReference).futureValue must be(defined)
+        repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
       }
     }
   }
