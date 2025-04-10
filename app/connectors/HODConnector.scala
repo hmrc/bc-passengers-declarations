@@ -107,4 +107,57 @@ class HODConnector @Inject() (
       .withCircuitBreaker(call)
       .fallbackTo(Future.successful(SubmissionResponse.Error))
   }
+
+  implicit val hc: HeaderCarrier = {
+
+    def geCorrelationId(declaration: Declaration, isAmendment: Boolean): String =
+      if (isAmendment) declaration.amendCorrelationId.getOrElse(throw new Exception(s"AmendCorrelation Id is empty"))
+      else declaration.correlationId
+
+    HeaderCarrier()
+      .withExtraHeaders(
+        HeaderNames.ACCEPT        -> ContentTypes.JSON,
+        HeaderNames.DATE          -> now,
+        HeaderNames.AUTHORIZATION -> s"Bearer $bearerToken",
+        CORRELATION_ID            -> "correlationID",
+        FORWARDED_HOST            -> MDTP
+      )
+  }
+
+  def getRefinedData(dataOrAmendData: JsObject): JsObject =
+    dataOrAmendData.validate(Etmp.formats) match {
+      case exception: JsError =>
+        logger.error(
+          s"[HODConnector][submit] PNGRS_DES_SUBMISSION_FAILURE There is problem with parsing declaration, " +
+            s"Parsing failed for this ChargeReference :  ${}, " +
+            s"CorrelationId :  ${}, Exception : $exception"
+        )
+        JsObject.empty
+      case _                  => Json.toJsObject(dataOrAmendData.as[Etmp])
+    }
+
+  def call(declaration: Declaration, isAmendment: Boolean): Future[SubmissionResponse] =
+    if (isAmendment) {
+      getRefinedData(declaration.amendData.get) match {
+        case returnedJsObject if returnedJsObject.value.isEmpty =>
+          Future.successful(SubmissionResponse.ParsingException)
+        case returnedJsObject                                   =>
+          httpClientV2
+            .post(url"$declarationFullUrl")
+            .withBody(returnedJsObject)
+            .execute[SubmissionResponse]
+            .filter(_ != SubmissionResponse.Error)
+      }
+    } else {
+      getRefinedData(declaration.data) match {
+        case returnedJsObject if returnedJsObject.value.isEmpty =>
+          Future.successful(SubmissionResponse.ParsingException)
+        case returnedJsObject                                   =>
+          httpClientV2
+            .post(url"$declarationFullUrl")
+            .withBody(returnedJsObject)
+            .execute[SubmissionResponse]
+            .filter(_ != SubmissionResponse.Error)
+      }
+    }
 }
