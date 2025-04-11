@@ -17,70 +17,58 @@
 package connectors
 
 import helpers.{BaseSpec, Constants}
-import models.{ChargeReference, Service, SubmissionResponse}
-import models.declarations.{Declaration, Etmp, State}
-import org.apache.pekko.pattern.CircuitBreaker
+import models.{ChargeReference, SubmissionResponse}
+import models.declarations.State
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{mock, when}
-import org.playframework.cachecontrol.HttpDate
-import org.scalatest.matchers.must.Matchers.mustBe
-import play.api.{Application, Configuration}
-import play.api.http.{ContentTypes, HeaderNames}
+import org.scalatest.matchers.should.Matchers.shouldBe
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.inject.*
 import play.api.libs.ws.BodyWritable
-import play.api.test.Helpers.{ACCEPT, CONTENT_TYPE, DATE, NO_CONTENT, await, defaultAwaitTimeout}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, StringContextOps}
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
-import java.net.URL
-import java.time.temporal.ChronoUnit
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class HODConnectorSpec extends BaseSpec with Constants {
 
   private trait Setup {
-    implicit val mockHttpClientV2: HttpClientV2         = mock(classOf[HttpClientV2])
-    implicit val mockRequestBuilder: RequestBuilder     = mock(classOf[RequestBuilder])
-    implicit val mockRequestBuilderBody: RequestBuilder = mock(classOf[RequestBuilder])
-    implicit val mockConfig: Configuration              = mock(classOf[Configuration])
-    implicit val mockCircuitBreaker: CircuitBreaker     = mock(classOf[CircuitBreaker])
-    private val baseUrl                                 = mockConfig.get[Service]("microservice.services.des")
-    val declarationFullUrl                              = "http://localhost:9074/eclarations/passengerdeclaration/v1"
-    private val bearerToken                             = "bearerToken1"
+    val mockHttpClientV2: HttpClientV2     = mock(classOf[HttpClientV2])
+    val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
 
-    implicit val hc: HeaderCarrier       = HeaderCarrier()
-      .withExtraHeaders(
-        HeaderNames.ACCEPT        -> ContentTypes.JSON,
-        HeaderNames.DATE          -> HttpDate.now.toString,
-        HeaderNames.AUTHORIZATION -> s"Bearer $bearerToken",
-        "X-Correlation-ID"        -> correlationId,
-        "X-Forwarded-Host"        -> "MDTP"
+    lazy val fakeApp: Application = new GuiceApplicationBuilder()
+      .overrides(
+        bind[HttpClientV2].toInstance(mockHttpClientV2),
+        bind[RequestBuilder].toInstance(mockRequestBuilder)
       )
-    implicit val connector: HODConnector = new HODConnector(mockHttpClientV2, mockConfig, mockCircuitBreaker)
+      .build()
+
+    val connector: HODConnector = fakeApp.injector.instanceOf[HODConnector]
+
+    when(mockRequestBuilder.withBody(any())(using any[BodyWritable[JsValue]], any(), any()))
+      .thenReturn(mockRequestBuilder)
 
   }
 
   "submit" should {
     "return a submitted response when a new declaration is submitted successfully" in new Setup {
       val response: SubmissionResponse = SubmissionResponse.Submitted
-      when(
-        mockHttpClientV2.post(ArgumentMatchers.eq(url"$declarationFullUrl"))(any())
-      ).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.withBody(any())(using any[BodyWritable[JsValue]], any(), any()))
-        .thenReturn(mockRequestBuilder)
+
       when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
         .thenReturn(Future(response))
 
-      println(connector.call(declaration, false))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
 
-      connector.submit(
-        declaration,
-        isAmendment = false
-      ) shouldBe response
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
     }
 
     "return a submitted response if an amended declaration is submitted" in new Setup {
@@ -89,25 +77,47 @@ class HODConnectorSpec extends BaseSpec with Constants {
 
       when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
         .thenReturn(Future(response))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(
+        connector.submit(
+          declaration.copy(amendCorrelationId = Some("amendCorrectionId"), amendData = Some(amendmentData)),
+          isAmendment = true
+        )
+      ) shouldBe response
+    }
+
+    "return an error if in the new declaration journey and the declaration data is empty" in new Setup {
+
+      val response: SubmissionResponse = SubmissionResponse.Error
+
+      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(
+        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false)
+      ) shouldBe response
+    }
+
+    "return an error if in the amendment journey and amendment data is empty" in new Setup {
+
+      val response: SubmissionResponse = SubmissionResponse.Error
+
+      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
 
       await(
         connector.submit(declaration.copy(amendCorrelationId = Some("amendCorrectionId")), isAmendment = true)
       ) shouldBe response
     }
-
-//    "return an error if the declaration data is empty" in new Setup{
-//
-//      val response: SubmissionResponse = SubmissionResponse.Error
-//
-//      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
-//        .thenReturn(Future(response))
-//
-//      when(
-//        mockHttpClientV2.post(any())(any())
-//      ).thenReturn(mockRequestBuilder)
-//
-//      await(connector.submit(Declaration(ChargeReference(0), State.SubmissionFailed, None, false, None, "", None, None, None, None, None), isAmendment = false)) shouldBe response
-//    }
 
   }
 }

@@ -54,18 +54,22 @@ trait SendEmailConnector extends HttpErrorFunctions {
       throw new EmailErrorResponse()
     }
 
-    http.post(url"$sendEmailURL").withBody(Json.toJson(EmailRequest)).execute[HttpResponse].map { r =>
-      r.status match {
-        case ACCEPTED =>
-          logger.debug("[SendEmailConnector][sendEmail] request to email service was successful")
-          true
-        case _        =>
-          logger.error(
-            s"[SendEmailConnector][sendEmail] PNGRS_EMAIL_FAILURE request to email service was unsuccessful with ${r.status}"
-          )
-          false
-      }
-    } recover {
+    http
+      .post(url"$sendEmailURL")
+      .withBody(Json.toJson(EmailRequest))
+      .execute[HttpResponse]
+      .map { r =>
+        r.status match {
+          case ACCEPTED =>
+            logger.debug("[SendEmailConnector][sendEmail] request to email service was successful")
+            true
+          case _        =>
+            logger.error(
+              s"[SendEmailConnector][sendEmail] PNGRS_EMAIL_FAILURE request to email service was unsuccessful with ${r.status}"
+            )
+            false
+        }
+      } recover {
       case ex: HttpException => errorMsg(ex.responseCode.toString, ex)
       case ex: Throwable     => errorMsg("0", new HttpException(ex.getMessage, 0))
     }
