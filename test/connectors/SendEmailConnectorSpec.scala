@@ -165,5 +165,18 @@ class SendEmailConnectorSpec extends BaseSpec {
       intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
     }
 
+    "fail the future when EVS returns a Throwable exception" in new Setup {
+      val response = new Throwable("error")
+
+      when(mockRequestBuilder.execute(using any[HttpReads[HttpResponse]], any()))
+        .thenReturn(Future.failed(response))
+
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      intercept[EmailErrorResponse](await(connector.requestEmail(emailRequest)))
+    }
+
   }
 }

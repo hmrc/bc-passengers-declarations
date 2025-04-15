@@ -34,7 +34,7 @@ import play.api.test.Helpers.{await, _}
 import play.api.test.Injecting
 import utils.WireMockHelper
 
-class HODConnectorSpec
+class HODConnectorISpec
     extends AnyWordSpec
     with Matchers
     with GuiceOneAppPerSuite
