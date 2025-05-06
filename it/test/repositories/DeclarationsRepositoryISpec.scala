@@ -685,14 +685,16 @@ class DeclarationsRepositoryISpec
 
         indices.map { doc =>
           doc.toJson() match {
-            case json if json.contains("lastUpdated") => json.contains("declarations-last-updated-index") shouldBe true
-            case json if json.contains("state")       => json.contains("declarations-state-index")        shouldBe true
-            case json if json.contains("amendState")  => json.contains("declarations-amendState-index")   shouldBe true
-            case _                                    => doc.toJson().contains("_id")                     shouldBe true
+            case json if json.contains("state")           => json.contains("declarations-state-index")      shouldBe true
+            case json if json.contains("amendState")      => json.contains("declarations-amendState-index") shouldBe true
+            case json if json.contains("sentToEtmp")      => json.contains("declarations-sentToEtmp-index") shouldBe true
+            case json if json.contains("amendSentToEtmp") =>
+              json.contains("declarations-amendSentToEtmp-index") shouldBe true
+            case _                                        => doc.toJson().contains("_id")                   shouldBe true
           }
         }
 
-        indices.size shouldBe 4
+        indices.size shouldBe 5
 
       }
     }
