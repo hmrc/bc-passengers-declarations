@@ -25,7 +25,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
 import org.mongodb.scala.model.Aggregates.group
 import org.mongodb.scala.model.Filters.*
-import org.mongodb.scala.model.Indexes.{ascending, compoundIndex}
+import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.*
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsObject, Json}
