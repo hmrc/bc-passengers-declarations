@@ -18,15 +18,15 @@ package repositories
 
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.client.model.Accumulators.{first, sum}
-import models._
+import models.*
 import models.declarations.{Declaration, State}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
-import org.mongodb.scala.model.Aggregates.group
-import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.Aggregates.{`match`, group}
+import org.mongodb.scala.model.Filters.*
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsObject, Json}
 import services.{ChargeReferenceService, ValidationService, Validator}
@@ -51,10 +51,12 @@ class DefaultDeclarationsRepository @Inject() (
       mongoComponent = mongoComponent,
       domainFormat = Declaration.format,
       indexes = Seq(
-        IndexModel(ascending("lastUpdated"), IndexOptions().name("declarations-last-updated-index")),
         IndexModel(ascending("state"), IndexOptions().name("declarations-state-index")),
-        IndexModel(ascending("amendState"), IndexOptions().name("declarations-amendState-index"))
-      )
+        IndexModel(ascending("amendState"), IndexOptions().name("declarations-amendState-index")),
+        IndexModel(ascending("sentToEtmp"), IndexOptions().name("declarations-sentToEtmp-index")),
+        IndexModel(ascending("amendSentToEtmp"), IndexOptions().name("declarations-amendSentToEtmp-index"))
+      ),
+      replaceIndexes = true // drop and recreate again
     )
     with DeclarationsRepository {
 
@@ -306,7 +308,9 @@ class DefaultDeclarationsRepository @Inject() (
   override def metricsCount: Source[DeclarationsStatus, NotUsed] = {
 
     def declarationsStatusCount: Future[List[DeclarationsStatusCount]] = collection
-      .aggregate[BsonValue](List(group("$state", first("messageState", "$state"), sum("count", 1))))
+      .aggregate[BsonValue](
+        List(`match`(exists("state", true)), group("$state", first("messageState", "$state"), sum("count", 1)))
+      )
       .toFuture()
       .map(_.toList.map(Codecs.fromBson[DeclarationsStatusCount]))
 
