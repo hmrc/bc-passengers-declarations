@@ -372,7 +372,7 @@ class DeclarationsRepositorySpec
         givenExistingDocuments(List(declaration, paid))
 
         val result = await(repository.metricsCount.runWith(Sink.seq))
-
+        println(repository)
         result.head shouldBe DeclarationsStatus(1, 1, 0, 0, 0)
       }
 
@@ -380,7 +380,7 @@ class DeclarationsRepositorySpec
         givenExistingDocuments(List(paymentFailed, cancelled, failed))
 
         val result = await(repository.metricsCount.runWith(Sink.seq))
-
+        println(result)
         result.head shouldBe DeclarationsStatus(0, 0, 1, 1, 1)
       }
 
