@@ -7,3 +7,4 @@ test-repositories:
   - bc-passengers-performance-tests
   - bc-passengers-acceptance-tests
   - bc-passengers-declarations-performance-tests
+  - bc-passengers-stride-acceptance-tests
