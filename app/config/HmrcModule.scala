@@ -37,6 +37,7 @@ class HmrcModule extends Module {
       bind[DeclarationDeletionWorker].toSelf.eagerly(),
       bind[FailedSubmissionWorker].toSelf.eagerly(),
       bind[AmendmentFailedSubmissionWorker].toSelf.eagerly(),
-      bind[MetricsWorker].toSelf.eagerly()
+      bind[MetricsWorker].toSelf.eagerly(),
+      bind[LockCleanupScheduler].toSelf.eagerly()
     )
 }
