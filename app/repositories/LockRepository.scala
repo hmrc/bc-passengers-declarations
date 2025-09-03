@@ -38,9 +38,9 @@ class DefaultLockRepository @Inject() (
       domainFormat = Lock.formats,
       indexes = Seq(
         IndexModel(
-          ascending("lastUpdated"),
+          ascending("lastUpdatedDate"),
           IndexOptions()
-            .name("locks-index")
+            .name("locks-index-2")
             .expireAfter(300, TimeUnit.SECONDS)
         )
       )

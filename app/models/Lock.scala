@@ -16,12 +16,18 @@
 
 package models
 
-import play.api.libs.json.{Json, OFormat, OWrites, Reads}
+import play.api.libs.json.*
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
-final case class Lock(_id: Int, lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC))
+final case class Lock(
+  _id: Int,
+  lastUpdated: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+  lastUpdatedDate: Option[Instant] = Some(Instant.now())
+)
 
 object Lock {
-  implicit val formats: OFormat[Lock] = Json.format
+  implicit val InstantFormats: Format[Instant] = MongoJavatimeFormats.instantFormat
+  implicit val formats: OFormat[Lock]          = Json.format
 }
