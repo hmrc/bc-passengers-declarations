@@ -16,7 +16,7 @@
 
 package workers
 
-import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.actor.ActorSystem
 import scala.concurrent.duration._
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -26,26 +26,24 @@ import repositories.LockRepository
 import play.api.Logger
 
 @Singleton
-class LockCleanupScheduler @Inject()(
-                                      lockRepository: LockRepository,
-                                      actorSystem: ActorSystem
-                                    )(implicit ec: ExecutionContext) {
+class LockCleanupScheduler @Inject() (
+  lockRepository: LockRepository,
+  actorSystem: ActorSystem
+)(implicit ec: ExecutionContext) {
 
   private val ttlSeconds: Long = 300
-  private var cancellable: Option[Cancellable] = None
 
   private val logger = Logger(this.getClass)
 
-  private def cleanup(): Unit = {
+  private def cleanup(): Unit =
     lockRepository.removeLegacyLocksOlderThanTtl(ttlSeconds).onComplete {
       case Success(deletedCount) =>
-        logger.info(s"[LockCleanupScheduler][cancellable] LockCleanupScheduler: Removed $deletedCount legacy locks older than TTL.")
-      case Failure(ex) =>
-        logger.info(s"[LockCleanupScheduler][cancellable] LockCleanupScheduler: Error during cleanup: ${ex.getMessage}")
+        logger.info(
+          s"[LockCleanupScheduler][cleanup] LockCleanupScheduler: Removed $deletedCount legacy locks older than TTL."
+        )
+      case Failure(ex)           =>
+        logger.info(s"[LockCleanupScheduler][cleanup] LockCleanupScheduler: Error during cleanup: ${ex.getMessage}")
     }
-  }
 
-  cancellable = Some(actorSystem.scheduler.scheduleOnce(
-    6.minutes
-  ) { cleanup() })
+  actorSystem.scheduler.scheduleOnce(6.minutes)(cleanup())
 }
