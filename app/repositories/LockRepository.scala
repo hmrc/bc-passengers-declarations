@@ -18,6 +18,7 @@ package repositories
 
 import javax.inject.{Inject, Singleton}
 import models.Lock
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.mongodb.scala.model.Indexes.ascending
@@ -25,6 +26,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import org.mongodb.scala.SingleObservableFuture
 
+import java.time.{LocalDateTime, ZoneOffset}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -38,9 +40,9 @@ class DefaultLockRepository @Inject() (
       domainFormat = Lock.formats,
       indexes = Seq(
         IndexModel(
-          ascending("lastUpdated"),
+          ascending("lastUpdatedDate"),
           IndexOptions()
-            .name("locks-index")
+            .name("locks-index-2")
             .expireAfter(300, TimeUnit.SECONDS)
         )
       )
@@ -63,6 +65,16 @@ class DefaultLockRepository @Inject() (
       case locks if locks != null => true
       case _                      => false
     }
+
+  override def removeLegacyLocksOlderThanTtl(ttlSeconds: Long = 300): Future[Long] = {
+
+    val threshold = LocalDateTime.now(ZoneOffset.UTC).minusSeconds(ttlSeconds)
+    val filter    = Filters.and(
+      Filters.exists("lastUpdatedDate", exists = false),
+      Filters.lt("lastUpdated", threshold)
+    )
+    collection.deleteMany(filter).toFuture().map(_.getDeletedCount)
+  }
 }
 
 trait LockRepository {
@@ -71,4 +83,5 @@ trait LockRepository {
   def lock(id: Int): Future[Boolean]
   def release(id: Int): Future[Unit]
   def isLocked(id: Int): Future[Boolean]
+  def removeLegacyLocksOlderThanTtl(ttlSeconds: Long): Future[Long]
 }

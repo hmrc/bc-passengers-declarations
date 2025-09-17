@@ -55,8 +55,8 @@ class LockRepositoryISpec extends IntegrationSpecCommonBase with DefaultPlayMong
 
       indices.map { doc =>
         doc.toJson() match {
-          case json if json.contains("lastUpdated") => json.contains("locks-index") shouldBe true
-          case _                                    => doc.toJson().contains("_id") shouldBe true
+          case json if json.contains("lastUpdatedDate") => json.contains("locks-index-2") shouldBe true
+          case _                                        => doc.toJson().contains("_id")   shouldBe true
         }
       }
     }
