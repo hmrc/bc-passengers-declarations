@@ -51,6 +51,7 @@ class DeclarationSubmissionWorker @Inject() (
     durationValueFromConfig("workers.declaration-submission-worker.throttle.per", config)
   private val parallelism: Int             = config.get[Int]("workers.declaration-submission-worker.parallelism")
   private val elements: Int                = config.get[Int]("workers.declaration-submission-worker.throttle.elements")
+  private val isUsingCMA                   = config.get[Boolean]("microservice.services.des-cma.enabled")
 
   val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] = {
 
@@ -64,7 +65,7 @@ class DeclarationSubmissionWorker @Inject() (
       .mapConcat(lockSuccessful)
       .mapAsync(parallelism) { declaration =>
         for {
-          result <- hodConnector.submit(declaration, isAmendment = false)
+          result <- hodConnector.submit(declaration, isAmendment = false, cma = isUsingCMA)
           _      <- result match {
                       case SubmissionResponse.Submitted        =>
                         auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration.data))

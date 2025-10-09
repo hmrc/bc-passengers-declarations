@@ -100,14 +100,14 @@ case class SimpleDeclarationRequest(
 )
 
 case class RequestCommon(
-  receiptDate: String,
-  acknowledgementReference: String,
+  receiptDate: String, // same
+  acknowledgementReference: String, // same
   requestParameters: List[RequestParameters]
 )
 
 case class RequestParameters(
-  paramName: String,
-  paramValue: String
+  paramName: String, // same
+  paramValue: String // same
 )
 
 case class RequestDetail(
@@ -120,22 +120,22 @@ case class RequestDetail(
   declarationOther: Option[DeclarationOther],
   liabilityDetails: LiabilityDetails,
   amendmentLiabilityDetails: Option[AmendmentLiabilityDetails]
-)
+) // same
 
 case class CustomerReference(
   idType: String,
   idValue: String,
   ukResident: Boolean
-)
+) // same
 
 case class PersonalDetails(
   firstName: String,
   lastName: String
-)
+) // same
 
 case class ContactDetails(
   emailAddress: Option[String]
-)
+) // same
 
 case class DeclarationHeader(
   messageTypes: MessageTypes,
@@ -145,18 +145,18 @@ case class DeclarationHeader(
   timeOfEntry: Option[String],
   travellingFrom: String,
   onwardTravelGBNI: String
-)
+) //same
 
 case class MessageTypes(
   messageType: String
-)
+) //same
 
 case class DeclarationTobacco(
   totalExciseTobacco: Option[String],
   totalCustomsTobacco: Option[String],
   totalVATTobacco: Option[String],
   declarationItemTobacco: Option[List[DeclarationItemTobacco]]
-)
+) // same
 
 case class DeclarationItemTobacco(
   commodityDescription: Option[String],
@@ -176,14 +176,14 @@ case class DeclarationItemTobacco(
   ukExcisePaid: Option[Boolean],
   euCustomsRelief: Option[Boolean],
   madeIn: Option[String]
-)
+) // same
 
 case class DeclarationAlcohol(
   totalExciseAlcohol: Option[String],
   totalCustomsAlcohol: Option[String],
   totalVATAlcohol: Option[String],
   declarationItemAlcohol: Option[List[DeclarationItemAlcohol]]
-)
+) // same
 
 case class DeclarationItemAlcohol(
   commodityDescription: Option[String],
@@ -202,14 +202,14 @@ case class DeclarationItemAlcohol(
   ukExcisePaid: Option[Boolean],
   euCustomsRelief: Option[Boolean],
   madeIn: Option[String]
-)
+) // same
 
 case class DeclarationOther(
   totalExciseOther: Option[String],
   totalCustomsOther: Option[String],
   totalVATOther: Option[String],
   declarationItemOther: Option[List[DeclarationItemOther]]
-)
+) //same
 
 case class DeclarationItemOther(
   commodityDescription: Option[String],
@@ -228,18 +228,18 @@ case class DeclarationItemOther(
   uccRelief: Option[Boolean],
   euCustomsRelief: Option[Boolean],
   madeIn: Option[String]
-)
+) // same
 
 case class LiabilityDetails(
   totalExciseGBP: Option[String],
   totalCustomsGBP: Option[String],
   totalVATGBP: Option[String],
   grandTotalGBP: String
-)
+) // same
 
 case class AmendmentLiabilityDetails(
   additionalExciseGBP: Option[String],
   additionalCustomsGBP: Option[String],
   additionalVATGBP: Option[String],
   additionalTotalGBP: Option[String]
-)
+) //same

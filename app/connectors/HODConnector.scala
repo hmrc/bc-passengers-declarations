@@ -42,13 +42,16 @@ class HODConnector @Inject() (
   private val baseUrl            = config.get[Service]("microservice.services.des")
   private val declarationFullUrl = s"$baseUrl/declarations/passengerdeclaration/v1"
 
+  private val cmaBaseUrl            = config.get[Service]("microservice.services.des-cma")
+  private val cmaDeclarationFullUrl = s"$cmaBaseUrl/declarations/simpledeclaration/v1"
+
   private val bearerToken = config.get[String]("microservice.services.des.bearer-token")
 
   private val CORRELATION_ID: String = "X-Correlation-ID"
   private val FORWARDED_HOST: String = "X-Forwarded-Host"
   private val MDTP: String           = "MDTP"
 
-  def submit(declaration: Declaration, isAmendment: Boolean): Future[SubmissionResponse] = {
+  def submit(declaration: Declaration, isAmendment: Boolean, cma: Boolean): Future[SubmissionResponse] = {
 
     implicit val hc: HeaderCarrier = {
 
@@ -79,27 +82,53 @@ class HODConnector @Inject() (
       }
 
     def call: Future[SubmissionResponse] =
-      if (isAmendment) {
-        getRefinedData(declaration.amendData.get) match {
-          case returnedJsObject if returnedJsObject.value.isEmpty =>
-            Future.successful(SubmissionResponse.ParsingException)
-          case returnedJsObject                                   =>
-            httpClientV2
-              .post(url"$declarationFullUrl")
-              .withBody(returnedJsObject)
-              .execute[SubmissionResponse]
-              .filter(_ != SubmissionResponse.Error)
+      if (cma) {
+        if (isAmendment) {
+          getRefinedData(declaration.amendData.get) match {
+            case returnedJsObject if returnedJsObject.value.isEmpty =>
+              Future.successful(SubmissionResponse.ParsingException)
+            case returnedJsObject                                   =>
+              httpClientV2
+                .post(url"$cmaDeclarationFullUrl")
+                .withBody(returnedJsObject)
+                .execute[SubmissionResponse]
+                .filter(_ != SubmissionResponse.Error)
+          }
+        } else {
+          getRefinedData(declaration.data) match {
+            case returnedJsObject if returnedJsObject.value.isEmpty =>
+              Future.successful(SubmissionResponse.ParsingException)
+            case returnedJsObject                                   =>
+              httpClientV2
+                .post(url"$cmaDeclarationFullUrl")
+                .withBody(returnedJsObject)
+                .execute[SubmissionResponse]
+                .filter(_ != SubmissionResponse.Error)
+          }
         }
       } else {
-        getRefinedData(declaration.data) match {
-          case returnedJsObject if returnedJsObject.value.isEmpty =>
-            Future.successful(SubmissionResponse.ParsingException)
-          case returnedJsObject                                   =>
-            httpClientV2
-              .post(url"$declarationFullUrl")
-              .withBody(returnedJsObject)
-              .execute[SubmissionResponse]
-              .filter(_ != SubmissionResponse.Error)
+        if (isAmendment) {
+          getRefinedData(declaration.amendData.get) match {
+            case returnedJsObject if returnedJsObject.value.isEmpty =>
+              Future.successful(SubmissionResponse.ParsingException)
+            case returnedJsObject                                   =>
+              httpClientV2
+                .post(url"$declarationFullUrl")
+                .withBody(returnedJsObject)
+                .execute[SubmissionResponse]
+                .filter(_ != SubmissionResponse.Error)
+          }
+        } else {
+          getRefinedData(declaration.data) match {
+            case returnedJsObject if returnedJsObject.value.isEmpty =>
+              Future.successful(SubmissionResponse.ParsingException)
+            case returnedJsObject                                   =>
+              httpClientV2
+                .post(url"$declarationFullUrl")
+                .withBody(returnedJsObject)
+                .execute[SubmissionResponse]
+                .filter(_ != SubmissionResponse.Error)
+          }
         }
       }
 
