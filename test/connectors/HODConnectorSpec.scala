@@ -68,7 +68,20 @@ class HODConnectorSpec extends BaseSpec with Constants {
         mockHttpClientV2.post(any())(any())
       ).thenReturn(mockRequestBuilder)
 
-      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false, cma = false)) shouldBe SubmissionResponse.Submitted
+    }
+
+    "return a submitted response when a new declaration is submitted successfully and CMA is enabled" in new Setup {
+      val response: SubmissionResponse = SubmissionResponse.Submitted
+
+      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+        .thenReturn(Future(response))
+
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(connector.submit(declaration, isAmendment = false, cma = true)) shouldBe SubmissionResponse.Submitted
     }
 
     "return a submitted response if an amended declaration is submitted" in new Setup {
@@ -84,7 +97,27 @@ class HODConnectorSpec extends BaseSpec with Constants {
       await(
         connector.submit(
           declaration.copy(amendCorrelationId = Some("amendCorrectionId"), amendData = Some(amendmentData)),
-          isAmendment = true
+          isAmendment = true,
+          cma = false
+        )
+      ) shouldBe response
+    }
+
+    "return a submitted response if an amended declaration is submitted and CMA is enabled" in new Setup {
+
+      val response: SubmissionResponse = SubmissionResponse.Submitted
+
+      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(
+        connector.submit(
+          declaration.copy(amendCorrelationId = Some("amendCorrectionId"), amendData = Some(amendmentData)),
+          isAmendment = true,
+          cma = true
         )
       ) shouldBe response
     }
@@ -100,7 +133,22 @@ class HODConnectorSpec extends BaseSpec with Constants {
       ).thenReturn(mockRequestBuilder)
 
       await(
-        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false)
+        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false, cma = false)
+      ) shouldBe response
+    }
+
+    "return an error if in the new declaration journey with CMA enabled and the declaration data is empty" in new Setup {
+
+      val response: SubmissionResponse = SubmissionResponse.Error
+
+      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(
+        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false, cma = true)
       ) shouldBe response
     }
 
@@ -115,7 +163,28 @@ class HODConnectorSpec extends BaseSpec with Constants {
       ).thenReturn(mockRequestBuilder)
 
       await(
-        connector.submit(declaration.copy(amendCorrelationId = Some("amendCorrectionId")), isAmendment = true)
+        connector
+          .submit(declaration.copy(amendCorrelationId = Some("amendCorrectionId")), isAmendment = true, cma = false)
+      ) shouldBe response
+    }
+
+    "return an error if in the amendment journey and amendment data is empty and CMA is enabled" in new Setup {
+
+      val response: SubmissionResponse = SubmissionResponse.Error
+
+      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(
+        connector
+          .submit(
+            declaration.copy(amendCorrelationId = Some("amendCorrectionId"), amendData = None),
+            isAmendment = true,
+            cma = true
+          )
       ) shouldBe response
     }
 
