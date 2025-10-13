@@ -84,7 +84,7 @@ class AmendmentSubmissionWorkerSpec
         when(mockDeclarationsRepository.paidAmendmentsForEtmp).thenReturn(Source(Vector(amendment, queuedAmendment)))
 
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(amendment, isAmendment = true, cma = false))
+        when(mockHodConnector.submit(amendment, isAmendment = true))
           .thenReturn(Future.successful(SubmissionResponse.Submitted))
         when(mockDeclarationsRepository.setAmendSentToEtmp(amendment.chargeReference, amendSentToEtmp = true))
           .thenReturn(Future.successful(amendment))
@@ -93,7 +93,7 @@ class AmendmentSubmissionWorkerSpec
         await(amendmentSubmissionWorker.tap.pull()) shouldBe Some((amendment, SubmissionResponse.Submitted))
 
         when(mockLockRepository.lock(queuedAmendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(queuedAmendment, isAmendment = true, cma = false))
+        when(mockHodConnector.submit(queuedAmendment, isAmendment = true))
           .thenReturn(Future.successful(SubmissionResponse.Submitted))
         when(mockDeclarationsRepository.setAmendSentToEtmp(queuedAmendment.chargeReference, amendSentToEtmp = true))
           .thenReturn(Future.successful(queuedAmendment))
@@ -108,7 +108,7 @@ class AmendmentSubmissionWorkerSpec
         when(mockDeclarationsRepository.paidAmendmentsForEtmp).thenReturn(Source(Vector(amendment)))
 
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(amendment, isAmendment = true, cma = false))
+        when(mockHodConnector.submit(amendment, isAmendment = true))
           .thenReturn(Future.successful(SubmissionResponse.Error))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
@@ -121,7 +121,7 @@ class AmendmentSubmissionWorkerSpec
         when(mockDeclarationsRepository.paidAmendmentsForEtmp).thenReturn(Source(Vector(amendment)))
 
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(amendment, isAmendment = true, cma = false))
+        when(mockHodConnector.submit(amendment, isAmendment = true))
           .thenReturn(Future.successful(SubmissionResponse.ParsingException))
         when(mockLockRepository.release(amendment.chargeReference.value)).thenReturn(Future.unit)
 
@@ -134,7 +134,7 @@ class AmendmentSubmissionWorkerSpec
         when(mockDeclarationsRepository.paidAmendmentsForEtmp).thenReturn(Source(Vector(amendment)))
 
         when(mockLockRepository.lock(amendment.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(amendment, isAmendment = true, cma = false))
+        when(mockHodConnector.submit(amendment, isAmendment = true))
           .thenReturn(Future.successful(SubmissionResponse.Failed))
         when(mockDeclarationsRepository.setAmendState(amendment.chargeReference, State.SubmissionFailed))
           .thenReturn(Future.successful(amendment))

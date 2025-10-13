@@ -612,6 +612,8 @@ class DeclarationSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
+
+        println(await(hODConnector.submit(declaration, false)))
         result shouldBe SubmissionResponse.Failed
 
         repository

@@ -16,15 +16,17 @@
 
 package connectors
 
+import com.typesafe.config.{Config, ConfigFactory}
 import helpers.{BaseSpec, Constants}
 import models.{ChargeReference, SubmissionResponse}
 import models.declarations.State
+import org.apache.pekko.pattern.CircuitBreaker
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{mock, when}
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.Application
+import play.api.{Application, Configuration}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.inject.*
@@ -68,7 +70,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
         mockHttpClientV2.post(any())(any())
       ).thenReturn(mockRequestBuilder)
 
-      await(connector.submit(declaration, isAmendment = false, cma = false)) shouldBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
     }
 
     "return a submitted response when a new declaration is submitted successfully and CMA is enabled" in new Setup {
@@ -81,7 +83,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
         mockHttpClientV2.post(any())(any())
       ).thenReturn(mockRequestBuilder)
 
-      await(connector.submit(declaration, isAmendment = false, cma = true)) shouldBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
     }
 
     "return a submitted response if an amended declaration is submitted" in new Setup {
@@ -97,8 +99,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
       await(
         connector.submit(
           declaration.copy(amendCorrelationId = Some("amendCorrectionId"), amendData = Some(amendmentData)),
-          isAmendment = true,
-          cma = false
+          isAmendment = true
         )
       ) shouldBe response
     }
@@ -116,8 +117,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
       await(
         connector.submit(
           declaration.copy(amendCorrelationId = Some("amendCorrectionId"), amendData = Some(amendmentData)),
-          isAmendment = true,
-          cma = true
+          isAmendment = true
         )
       ) shouldBe response
     }
@@ -133,13 +133,15 @@ class HODConnectorSpec extends BaseSpec with Constants {
       ).thenReturn(mockRequestBuilder)
 
       await(
-        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false, cma = false)
+        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false)
       ) shouldBe response
     }
 
     "return an error if in the new declaration journey with CMA enabled and the declaration data is empty" in new Setup {
 
       val response: SubmissionResponse = SubmissionResponse.Error
+
+      val cma: Config = ConfigFactory.parseString("microservice.services.des-cma.enabled = true")
 
       when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
         .thenReturn(Future(response))
@@ -148,7 +150,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
       ).thenReturn(mockRequestBuilder)
 
       await(
-        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false, cma = true)
+        connector.submit(declaration.copy(journeyData = Json.obj()), isAmendment = false)
       ) shouldBe response
     }
 
@@ -164,13 +166,15 @@ class HODConnectorSpec extends BaseSpec with Constants {
 
       await(
         connector
-          .submit(declaration.copy(amendCorrelationId = Some("amendCorrectionId")), isAmendment = true, cma = false)
+          .submit(declaration.copy(amendCorrelationId = Some("amendCorrectionId")), isAmendment = true)
       ) shouldBe response
     }
 
     "return an error if in the amendment journey and amendment data is empty and CMA is enabled" in new Setup {
 
       val response: SubmissionResponse = SubmissionResponse.Error
+
+      val cma: Config = ConfigFactory.parseString("microservice.services.des-cma.enabled = true")
 
       when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
         .thenReturn(Future(response))
@@ -182,8 +186,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
         connector
           .submit(
             declaration.copy(amendCorrelationId = Some("amendCorrectionId"), amendData = None),
-            isAmendment = true,
-            cma = true
+            isAmendment = true
           )
       ) shouldBe response
     }

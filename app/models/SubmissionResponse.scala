@@ -39,7 +39,7 @@ object SubmissionResponse {
             Submitted
           case BAD_REQUEST =>
             // Added DDCE-7264 handling: capture DES detail for permanent failures.
-            val detail = (response.json \ "errorDetail" \ "sourceFaultDetail").asOpt[String].getOrElse("n/a")
+            val detail = (response.json \ "errorDetail" \ "sourceFaultDetail" \ "detail").asOpt[String].getOrElse("n/a")
             logger.error(
               s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}; detail=$detail"
             )

@@ -45,13 +45,15 @@ class HODConnector @Inject() (
   private val cmaBaseUrl            = config.get[Service]("microservice.services.des-cma")
   private val cmaDeclarationFullUrl = s"$cmaBaseUrl/declarations/simpledeclaration/v1"
 
+  lazy val isUsingCMA: Boolean = config.get[Boolean]("microservice.services.des-cma.enabled")
+
   private val bearerToken = config.get[String]("microservice.services.des.bearer-token")
 
   private val CORRELATION_ID: String = "X-Correlation-ID"
   private val FORWARDED_HOST: String = "X-Forwarded-Host"
   private val MDTP: String           = "MDTP"
 
-  def submit(declaration: Declaration, isAmendment: Boolean, cma: Boolean): Future[SubmissionResponse] = {
+  def submit(declaration: Declaration, isAmendment: Boolean): Future[SubmissionResponse] = {
 
     implicit val hc: HeaderCarrier = {
 
@@ -82,7 +84,7 @@ class HODConnector @Inject() (
       }
 
     def call: Future[SubmissionResponse] =
-      if (cma) {
+      if (isUsingCMA) {
         if (isAmendment) {
           getRefinedData(declaration.amendData.get) match {
             case returnedJsObject if returnedJsObject.value.isEmpty =>

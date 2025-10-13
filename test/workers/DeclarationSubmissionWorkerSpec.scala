@@ -82,7 +82,7 @@ class DeclarationSubmissionWorkerSpec
         )
 
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(declaration, isAmendment = false, cma = false))
+        when(mockHodConnector.submit(declaration, isAmendment = false))
           .thenReturn(Future.successful(SubmissionResponse.Submitted))
         when(mockDeclarationsRepository.setSentToEtmp(declaration.chargeReference, sentToEtmp = true))
           .thenReturn(Future.successful(declaration))
@@ -91,7 +91,7 @@ class DeclarationSubmissionWorkerSpec
         await(declarationSubmissionWorker.tap.pull()) shouldBe Some((declaration, SubmissionResponse.Submitted))
 
         when(mockLockRepository.lock(queuedDeclaration.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(queuedDeclaration, isAmendment = false, cma = false))
+        when(mockHodConnector.submit(queuedDeclaration, isAmendment = false))
           .thenReturn(Future.successful(SubmissionResponse.Submitted))
         when(mockDeclarationsRepository.setSentToEtmp(queuedDeclaration.chargeReference, sentToEtmp = true))
           .thenReturn(Future.successful(queuedDeclaration))
@@ -106,7 +106,7 @@ class DeclarationSubmissionWorkerSpec
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
 
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(declaration, isAmendment = false, cma = false))
+        when(mockHodConnector.submit(declaration, isAmendment = false))
           .thenReturn(Future.successful(SubmissionResponse.Error))
         when(mockLockRepository.release(declaration.chargeReference.value)).thenReturn(Future.unit)
 
@@ -119,7 +119,7 @@ class DeclarationSubmissionWorkerSpec
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
 
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(declaration, isAmendment = false, cma = false))
+        when(mockHodConnector.submit(declaration, isAmendment = false))
           .thenReturn(Future.successful(SubmissionResponse.ParsingException))
         when(mockLockRepository.release(declaration.chargeReference.value)).thenReturn(Future.unit)
 
@@ -132,7 +132,7 @@ class DeclarationSubmissionWorkerSpec
         when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
 
         when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(declaration, isAmendment = false, cma = false))
+        when(mockHodConnector.submit(declaration, isAmendment = false))
           .thenReturn(Future.successful(SubmissionResponse.Failed))
         when(mockDeclarationsRepository.setState(declaration.chargeReference, State.SubmissionFailed))
           .thenReturn(Future.successful(declaration))
@@ -164,7 +164,7 @@ class DeclarationSubmissionWorkerSpec
           .thenThrow(new RuntimeException("Test Exception"))
 
         when(mockLockRepository.lock(queuedDeclaration.chargeReference.value)).thenReturn(Future.successful(true))
-        when(mockHodConnector.submit(queuedDeclaration, isAmendment = false, cma = false))
+        when(mockHodConnector.submit(queuedDeclaration, isAmendment = false))
           .thenReturn(Future.successful(SubmissionResponse.Submitted))
         when(mockDeclarationsRepository.setSentToEtmp(queuedDeclaration.chargeReference, sentToEtmp = true))
           .thenReturn(Future.successful(queuedDeclaration))
