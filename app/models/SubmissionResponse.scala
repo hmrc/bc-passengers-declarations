@@ -35,10 +35,13 @@ object SubmissionResponse {
       override def read(method: String, url: String, response: HttpResponse): SubmissionResponse =
         response.status match {
           case NO_CONTENT  =>
+            // Added DDCE-7264 handling: keep success path explicit.
             Submitted
           case BAD_REQUEST =>
+            // Added DDCE-7264 handling: capture DES detail for permanent failures.
+            val detail = (response.json \ "errorDetail" \ "sourceFaultDetail").asOpt[String].getOrElse("n/a")
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] BAD Request is received from DES (EIS), Response Code from EIS is : ${response.status}"
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}; detail=$detail"
             )
             Failed
           case _           =>
