@@ -59,6 +59,25 @@ class HODConnectorSpec extends BaseSpec with Constants {
 
   }
 
+  private trait CMASetup {
+    val mockHttpClientV2: HttpClientV2     = mock(classOf[HttpClientV2])
+    val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
+
+    lazy val fakeApp: Application = new GuiceApplicationBuilder()
+      .configure("feature.isUsingCMA" -> true)
+      .overrides(
+        bind[HttpClientV2].toInstance(mockHttpClientV2),
+        bind[RequestBuilder].toInstance(mockRequestBuilder)
+      )
+      .build()
+
+    val connector: HODConnector = fakeApp.injector.instanceOf[HODConnector]
+
+    when(mockRequestBuilder.withBody(any())(using any[BodyWritable[JsValue]], any(), any()))
+      .thenReturn(mockRequestBuilder)
+
+  }
+
   "submit" should {
     "return a submitted response when a new declaration is submitted successfully" in new Setup {
       val response: SubmissionResponse = SubmissionResponse.Submitted
@@ -73,7 +92,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
       await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
     }
 
-    "return a submitted response when a new declaration is submitted successfully and CMA is enabled" in new Setup {
+    "return a submitted response when a new declaration is submitted successfully and CMA is enabled" in new CMASetup {
       val response: SubmissionResponse = SubmissionResponse.Submitted
 
       when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
@@ -104,7 +123,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
       ) shouldBe response
     }
 
-    "return a submitted response if an amended declaration is submitted and CMA is enabled" in new Setup {
+    "return a submitted response if an amended declaration is submitted and CMA is enabled" in new CMASetup {
 
       val response: SubmissionResponse = SubmissionResponse.Submitted
 
@@ -137,7 +156,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
       ) shouldBe response
     }
 
-    "return an error if in the new declaration journey with CMA enabled and the declaration data is empty" in new Setup {
+    "return an error if in the new declaration journey with CMA enabled and the declaration data is empty" in new CMASetup {
 
       val response: SubmissionResponse = SubmissionResponse.Error
 
@@ -170,7 +189,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
       ) shouldBe response
     }
 
-    "return an error if in the amendment journey and amendment data is empty and CMA is enabled" in new Setup {
+    "return an error if in the amendment journey and amendment data is empty and CMA is enabled" in new CMASetup {
 
       val response: SubmissionResponse = SubmissionResponse.Error
 
