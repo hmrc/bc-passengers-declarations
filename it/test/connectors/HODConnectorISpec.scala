@@ -47,6 +47,7 @@ class HODConnectorISpec
   override lazy val app: Application =
     new GuiceApplicationBuilder()
       .configure(
+        "feature.isUsingCMA"                                      -> false,
         "microservice.services.des.port"                          -> server.port(),
         "microservice.services.des.circuit-breaker.max-failures"  -> 1,
         "microservice.services.des.circuit-breaker.reset-timeout" -> "1 second"

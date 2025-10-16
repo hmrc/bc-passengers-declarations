@@ -17,7 +17,8 @@
 package models
 
 import play.api.i18n.Lang.logger.logger
-import play.api.http.Status._
+import play.api.http.Status.*
+import play.api.libs.json.{JsArray, JsResult, JsValue}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 sealed trait SubmissionResponse
@@ -39,9 +40,10 @@ object SubmissionResponse {
             Submitted
           case BAD_REQUEST =>
             // Added DDCE-7264 handling: capture DES detail for permanent failures.
-            val detail = (response.json \ "errorDetail" \ "sourceFaultDetail" \ "detail").asOpt[String].getOrElse("n/a")
+            val detailOpt = (response.json \ "errorDetail" \ "sourceFaultDetail" \ "detail").asOpt[JsArray]
+            val detailStr = detailOpt.map(_.toString).getOrElse("No detail found")
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}; detail=$detail"
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}; detail="
             )
             Failed
           case _           =>

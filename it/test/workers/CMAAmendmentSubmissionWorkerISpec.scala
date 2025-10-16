@@ -42,7 +42,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AmendmentSubmissionWorkerISpec
+class CMAAmendmentSubmissionWorkerISpec
     extends IntegrationSpecCommonBase
     with WireMockHelper
     with DefaultPlayMongoRepositorySupport[Declaration] {
@@ -62,9 +62,9 @@ class AmendmentSubmissionWorkerISpec
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
-      "feature.isUsingCMA"                           -> false,
+      "feature.isUsingCMA" -> true,
       "workers.amendment-submission-worker.interval" -> "1 second",
-      "microservice.services.des.port"               -> server.port(),
+      "microservice.services.des.cma.port"               -> server.port(),
       "auditing.consumer.baseUri.port"               -> server.port(),
       "auditing.enabled"                             -> "true"
     )
@@ -306,7 +306,7 @@ class AmendmentSubmissionWorkerISpec
     "must submit paid amendments" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -397,7 +397,7 @@ class AmendmentSubmissionWorkerISpec
 
     "must throttle submissions" in {
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -496,7 +496,7 @@ class AmendmentSubmissionWorkerISpec
     "must not process locked records" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -561,7 +561,7 @@ class AmendmentSubmissionWorkerISpec
     "must lock records when processing them" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -612,7 +612,7 @@ class AmendmentSubmissionWorkerISpec
     "must not remove errored declarations from mongo" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
       )
 
@@ -692,7 +692,7 @@ class AmendmentSubmissionWorkerISpec
     "must set the state of failed amended declarations to failed" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(BAD_REQUEST))
       )
 
@@ -836,7 +836,7 @@ class AmendmentSubmissionWorkerISpec
     "must only make one request to the HOD" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -926,7 +926,7 @@ class AmendmentSubmissionWorkerISpec
         val (declaration, result) = worker.tap.pull().futureValue.get
 
         val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
-        val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/simpledeclaration/v1"))
 
         eventually {
           server.requestsWereSent(times = 1, auditRequest) shouldBe true

@@ -28,9 +28,21 @@ import scala.concurrent.duration.FiniteDuration
 class DesCircuitBreakerProvider @Inject() (config: Configuration)(implicit ec: ExecutionContext, sys: ActorSystem)
     extends Provider[CircuitBreaker] {
 
-  private val maxFailures  = config.get[Int]("microservice.services.des.circuit-breaker.max-failures")
-  private val callTimeout  = config.get[FiniteDuration]("microservice.services.des.circuit-breaker.call-timeout")
-  private val resetTimeout = config.get[FiniteDuration]("microservice.services.des.circuit-breaker.reset-timeout")
+  lazy val isUsingCMA: Boolean = config.get[Boolean]("feature.isUsingCMA")
+
+  private val (maxFailures, callTimeout, resetTimeout) = if (isUsingCMA) {
+    (
+      config.get[Int]("microservice.services.des.cma.circuit-breaker.max-failures"),
+      config.get[FiniteDuration]("microservice.services.des.cma.circuit-breaker.call-timeout"),
+      config.get[FiniteDuration]("microservice.services.des.cma.circuit-breaker.reset-timeout")
+    )
+  } else {
+    (
+      config.get[Int]("microservice.services.des.circuit-breaker.max-failures"),
+      config.get[FiniteDuration]("microservice.services.des.circuit-breaker.call-timeout"),
+      config.get[FiniteDuration]("microservice.services.des.circuit-breaker.reset-timeout")
+    )
+  }
 
   override def get(): CircuitBreaker =
     new CircuitBreaker(

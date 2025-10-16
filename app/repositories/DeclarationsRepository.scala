@@ -32,8 +32,6 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 import services.{ChargeReferenceService, ValidationService, Validator}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import org.mongodb.scala.SingleObservableFuture
-import org.mongodb.scala.ObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.duration.DurationInt

@@ -36,7 +36,7 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
 
     "set to a Failed response from a BAD_REQUEST HttpResponse" in {
       // Added DDCE-7264 test: confirm permanent failure bucket with detail payload.
-      val body   = Json.obj("errorDetail" -> Json.obj("sourceFaultDetail" -> "fieldName"))
+      val body   = Json.obj("errorDetail" -> Json.obj("sourceFaultDetail" -> Json.obj("detail" -> Json.arr())))
       val result = reads.read("POST", "/", HttpResponse.apply(BAD_REQUEST, body, Map.empty))
 
       result shouldBe SubmissionResponse.Failed

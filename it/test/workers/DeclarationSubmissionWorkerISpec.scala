@@ -62,6 +62,7 @@ class DeclarationSubmissionWorkerISpec
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
+      "feature.isUsingCMA"                             -> false,
       "workers.declaration-submission-worker.interval" -> "1 second",
       "microservice.services.des.port"                 -> server.port(),
       "auditing.consumer.baseUri.port"                 -> server.port(),
@@ -613,7 +614,6 @@ class DeclarationSubmissionWorkerISpec
 
         val (declaration, result) = worker.tap.pull().futureValue.get
 
-        println(await(hODConnector.submit(declaration, false)))
         result shouldBe SubmissionResponse.Failed
 
         repository
