@@ -762,7 +762,6 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        println(result)
         result shouldBe SubmissionResponse.Failed
 
         repository

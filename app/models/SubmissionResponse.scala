@@ -18,7 +18,6 @@ package models
 
 import play.api.i18n.Lang.logger.logger
 import play.api.http.Status.*
-import play.api.libs.json.{JsArray, JsResult, JsValue}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 sealed trait SubmissionResponse
