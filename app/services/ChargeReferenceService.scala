@@ -23,7 +23,6 @@ import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.{FindOneAndUpdateOptions, ReturnDocument, Updates}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import org.mongodb.scala.SingleObservableFuture
 
 import scala.concurrent.{ExecutionContext, Future}
 

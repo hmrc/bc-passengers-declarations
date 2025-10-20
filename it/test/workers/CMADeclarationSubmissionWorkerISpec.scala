@@ -62,9 +62,9 @@ class CMADeclarationSubmissionWorkerISpec
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
-      "feature.isUsingCMA" -> true,
+      "feature.isUsingCMA"                             -> true,
       "workers.declaration-submission-worker.interval" -> "1 second",
-      "microservice.services.des.cma.port"                 -> server.port(),
+      "microservice.services.des.cma.port"             -> server.port(),
       "auditing.consumer.baseUri.port"                 -> server.port(),
       "auditing.enabled"                               -> "true"
     )
@@ -613,7 +613,7 @@ class CMADeclarationSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        
+
         result shouldBe SubmissionResponse.Failed
 
         repository

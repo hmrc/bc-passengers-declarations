@@ -35,18 +35,21 @@ object SubmissionResponse {
 
       override def read(method: String, url: String, response: HttpResponse): SubmissionResponse =
         response.status match {
-          case NO_CONTENT  =>
+          case NO_CONTENT            =>
             // Added DDCE-7264 handling: keep success path explicit.
             Submitted
-          case BAD_REQUEST =>
+          case BAD_REQUEST           =>
             // Added DDCE-7264 handling: capture DES detail for permanent failures.
-            val detailOpt = (response.json \ "errorDetail" \ "sourceFaultDetail" \ "detail").asOpt[JsArray]
-            val detailStr = detailOpt.map(_.toString).getOrElse("No detail found")
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}; detail="
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}"
             )
             Failed
-          case _           =>
+          case INTERNAL_SERVER_ERROR =>
+            logger.error(
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  internal server error from DES (EIS), status=${response.status}"
+            )
+            Error
+          case _                     =>
             logger.error(
               s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] call to DES (EIS) is failed, Response Code is : ${response.status}"
             )

@@ -47,7 +47,7 @@ class HODCMAConnectorISpec
   override lazy val app: Application =
     new GuiceApplicationBuilder()
       .configure(
-        "feature.isUsingCMA" -> true,
+        "feature.isUsingCMA"                                          -> true,
         "microservice.services.des.cma.port"                          -> server.port(),
         "microservice.services.des.cma.circuit-breaker.max-failures"  -> 1,
         "microservice.services.des.cma.circuit-breaker.reset-timeout" -> "1 second"

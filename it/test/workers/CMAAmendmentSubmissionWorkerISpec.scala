@@ -62,9 +62,9 @@ class CMAAmendmentSubmissionWorkerISpec
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
-      "feature.isUsingCMA" -> true,
+      "feature.isUsingCMA"                           -> true,
       "workers.amendment-submission-worker.interval" -> "1 second",
-      "microservice.services.des.cma.port"               -> server.port(),
+      "microservice.services.des.cma.port"           -> server.port(),
       "auditing.consumer.baseUri.port"               -> server.port(),
       "auditing.enabled"                             -> "true"
     )

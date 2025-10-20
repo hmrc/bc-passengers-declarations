@@ -43,7 +43,14 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
     }
 
     "set to an Error response from an INTERNAL_SERVER_ERROR HttpResponse" in {
-      val result = reads.read("POST", "/", HttpResponse.apply(INTERNAL_SERVER_ERROR, "internal server error"))
+      val body   = Json.obj("errorDetail" -> Json.obj("sourceFaultDetail" -> Json.obj("detail" -> Json.arr())))
+      val result = reads.read("POST", "/", HttpResponse.apply(INTERNAL_SERVER_ERROR, body, Map.empty))
+
+      result shouldBe SubmissionResponse.Error
+    }
+
+    "set to an Error response from any other error HttpResponse" in {
+      val result = reads.read("POST", "/", HttpResponse.apply(SERVICE_UNAVAILABLE, "service unavailable"))
 
       result shouldBe SubmissionResponse.Error
     }
