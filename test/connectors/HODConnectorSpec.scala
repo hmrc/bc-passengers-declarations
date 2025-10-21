@@ -20,13 +20,12 @@ import com.typesafe.config.{Config, ConfigFactory}
 import helpers.{BaseSpec, Constants}
 import models.{ChargeReference, SubmissionResponse}
 import models.declarations.State
-import org.apache.pekko.pattern.CircuitBreaker
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{mock, when}
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.{Application, Configuration}
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.inject.*

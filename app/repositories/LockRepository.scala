@@ -24,7 +24,6 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.mongodb.scala.model.Indexes.ascending
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import org.mongodb.scala.SingleObservableFuture
 
 import java.time.{LocalDateTime, ZoneOffset}
 import java.util.concurrent.TimeUnit
