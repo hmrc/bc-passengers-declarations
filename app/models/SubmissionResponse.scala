@@ -20,7 +20,9 @@ import play.api.i18n.Lang.logger.logger
 import play.api.http.Status.*
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
-sealed trait SubmissionResponse
+sealed trait Response
+sealed trait SubmissionResponse extends Response
+sealed trait CMASubmissionResponse extends Response
 
 object SubmissionResponse {
 
@@ -34,18 +36,44 @@ object SubmissionResponse {
 
       override def read(method: String, url: String, response: HttpResponse): SubmissionResponse =
         response.status match {
+          case NO_CONTENT  =>
+            Submitted
+          case BAD_REQUEST =>
+            logger.error(
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] BAD Request is received from DES (EIS), Response Code from EIS is : ${response.status}"
+            )
+            Failed
+          case _           =>
+            logger.error(
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] call to DES (EIS) is failed, Response Code is : ${response.status}"
+            )
+            Error
+        }
+    }
+}
+
+object CMASubmissionResponse {
+
+  case object Submitted extends CMASubmissionResponse
+  case object Failed extends CMASubmissionResponse
+  case object Error extends CMASubmissionResponse
+  case object ParsingException extends CMASubmissionResponse
+
+  implicit lazy val httpReads: HttpReads[CMASubmissionResponse] =
+    new HttpReads[CMASubmissionResponse] {
+
+      override def read(method: String, url: String, response: HttpResponse): CMASubmissionResponse =
+        response.status match {
           case NO_CONTENT            =>
-            // Added DDCE-7264 handling: keep success path explicit.
             Submitted
           case BAD_REQUEST           =>
-            // Added DDCE-7264 handling: capture DES detail for permanent failures.
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}"
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}. Body: ${response.body}"
             )
             Failed
           case INTERNAL_SERVER_ERROR =>
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  internal server error from DES (EIS), status=${response.status}"
+              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  internal server error from DES (EIS), status=${response.status}. Body: ${response.body}"
             )
             Error
           case _                     =>

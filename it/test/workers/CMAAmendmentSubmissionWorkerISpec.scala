@@ -21,7 +21,7 @@ import com.typesafe.config.ConfigFactory
 import connectors.HODConnector
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
-import models.{ChargeReference, SubmissionResponse}
+import models.{CMASubmissionResponse, ChargeReference}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
@@ -391,7 +391,7 @@ class CMAAmendmentSubmissionWorkerISpec
         val (declaration, response) = worker.tap.pull().futureValue.get
         declaration.chargeReference        shouldBe ChargeReference(3)
         declaration.amendCorrelationId.get shouldBe amendmentCorrelationId
-        response                           shouldBe SubmissionResponse.Submitted
+        response                           shouldBe CMASubmissionResponse.Submitted
       }
     }
 
@@ -682,7 +682,7 @@ class CMAAmendmentSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result shouldBe SubmissionResponse.ParsingException
+        result shouldBe CMASubmissionResponse.ParsingException
 
         repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
 
@@ -762,7 +762,7 @@ class CMAAmendmentSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result shouldBe SubmissionResponse.Failed
+        result shouldBe CMASubmissionResponse.Failed
 
         repository
           .asInstanceOf[DeclarationsRepository]
@@ -933,7 +933,7 @@ class CMAAmendmentSubmissionWorkerISpec
           server.requestsWereSent(times = 1, desRequest)   shouldBe true
         }
 
-        result                                                                                     shouldBe SubmissionResponse.Submitted
+        result                                                                                     shouldBe CMASubmissionResponse.Submitted
         repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
       }
     }

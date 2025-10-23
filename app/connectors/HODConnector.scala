@@ -19,7 +19,7 @@ package connectors
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, Etmp}
-import models.{Service, SubmissionResponse}
+import models.{CMASubmissionResponse, Response, Service, SubmissionResponse}
 import org.apache.pekko.pattern.CircuitBreaker
 import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
@@ -53,7 +53,7 @@ class HODConnector @Inject() (
   private val FORWARDED_HOST: String = "X-Forwarded-Host"
   private val MDTP: String           = "MDTP"
 
-  def submit(declaration: Declaration, isAmendment: Boolean): Future[SubmissionResponse] = {
+  def submit(declaration: Declaration, isAmendment: Boolean): Future[Response] = {
 
     implicit val hc: HeaderCarrier = {
 
@@ -83,29 +83,29 @@ class HODConnector @Inject() (
         case _                  => Json.toJsObject(dataOrAmendData.as[Etmp])
       }
 
-    def call: Future[SubmissionResponse] =
+    def call: Future[Response] =
       if (isUsingCMA) {
         if (isAmendment) {
           getRefinedData(declaration.amendData.get) match {
             case returnedJsObject if returnedJsObject.value.isEmpty =>
-              Future.successful(SubmissionResponse.ParsingException)
+              Future.successful(CMASubmissionResponse.ParsingException)
             case returnedJsObject                                   =>
               httpClientV2
                 .post(url"$cmaDeclarationFullUrl")
                 .withBody(returnedJsObject)
-                .execute[SubmissionResponse]
-                .filter(_ != SubmissionResponse.Error)
+                .execute[CMASubmissionResponse]
+                .filter(_ != CMASubmissionResponse.Error)
           }
         } else {
           getRefinedData(declaration.data) match {
             case returnedJsObject if returnedJsObject.value.isEmpty =>
-              Future.successful(SubmissionResponse.ParsingException)
+              Future.successful(CMASubmissionResponse.ParsingException)
             case returnedJsObject                                   =>
               httpClientV2
                 .post(url"$cmaDeclarationFullUrl")
                 .withBody(returnedJsObject)
-                .execute[SubmissionResponse]
-                .filter(_ != SubmissionResponse.Error)
+                .execute[CMASubmissionResponse]
+                .filter(_ != CMASubmissionResponse.Error)
           }
         }
       } else {
@@ -134,8 +134,15 @@ class HODConnector @Inject() (
         }
       }
 
-    circuitBreaker
-      .withCircuitBreaker(call)
-      .fallbackTo(Future.successful(SubmissionResponse.Error))
+    if (isUsingCMA) {
+      circuitBreaker
+        .withCircuitBreaker(call)
+        .fallbackTo(Future.successful(CMASubmissionResponse.Error))
+    } else {
+      circuitBreaker
+        .withCircuitBreaker(call)
+        .fallbackTo(Future.successful(SubmissionResponse.Error))
+    }
+
   }
 }

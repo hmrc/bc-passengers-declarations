@@ -90,14 +90,6 @@ object AmendmentLiabilityDetails {
   implicit val formats: OFormat[AmendmentLiabilityDetails] = Json.format
 }
 
-object ErrorDetail {
-  implicit val formats: OFormat[ErrorDetail] = Json.format
-}
-
-object Detail {
-  implicit val formats: OFormat[Detail] = Json.format
-}
-
 case class Etmp(
   simpleDeclarationRequest: SimpleDeclarationRequest
 )
@@ -250,17 +242,4 @@ case class AmendmentLiabilityDetails(
   additionalCustomsGBP: Option[String],
   additionalVATGBP: Option[String],
   additionalTotalGBP: Option[String]
-)
-
-case class ErrorDetail(
-  correlationId: String,
-  errorCode: String,
-  errorMessage: String,
-  source: Option[String],
-  sourceFaultDetail: Option[Detail],
-  timestamp: String
-)
-
-case class Detail(
-  detail: List[String]
 )

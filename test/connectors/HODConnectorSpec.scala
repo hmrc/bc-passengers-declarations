@@ -18,7 +18,7 @@ package connectors
 
 import com.typesafe.config.{Config, ConfigFactory}
 import helpers.{BaseSpec, Constants}
-import models.{ChargeReference, SubmissionResponse}
+import models.{CMASubmissionResponse, ChargeReference, SubmissionResponse}
 import models.declarations.State
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
@@ -45,6 +45,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
     val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
 
     lazy val fakeApp: Application = new GuiceApplicationBuilder()
+      .configure("feature.isUsingCMA" -> false)
       .overrides(
         bind[HttpClientV2].toInstance(mockHttpClientV2),
         bind[RequestBuilder].toInstance(mockRequestBuilder)
@@ -92,16 +93,16 @@ class HODConnectorSpec extends BaseSpec with Constants {
     }
 
     "return a submitted response when a new declaration is submitted successfully and CMA is enabled" in new CMASetup {
-      val response: SubmissionResponse = SubmissionResponse.Submitted
+      val response: CMASubmissionResponse = CMASubmissionResponse.Submitted
 
-      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[CMASubmissionResponse]], any()))
         .thenReturn(Future(response))
 
       when(
         mockHttpClientV2.post(any())(any())
       ).thenReturn(mockRequestBuilder)
 
-      await(connector.submit(declaration, isAmendment = false)) shouldBe SubmissionResponse.Submitted
+      await(connector.submit(declaration, isAmendment = false)) shouldBe CMASubmissionResponse.Submitted
     }
 
     "return a submitted response if an amended declaration is submitted" in new Setup {
@@ -124,9 +125,9 @@ class HODConnectorSpec extends BaseSpec with Constants {
 
     "return a submitted response if an amended declaration is submitted and CMA is enabled" in new CMASetup {
 
-      val response: SubmissionResponse = SubmissionResponse.Submitted
+      val response: CMASubmissionResponse = CMASubmissionResponse.Submitted
 
-      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[CMASubmissionResponse]], any()))
         .thenReturn(Future(response))
       when(
         mockHttpClientV2.post(any())(any())
@@ -157,11 +158,9 @@ class HODConnectorSpec extends BaseSpec with Constants {
 
     "return an error if in the new declaration journey with CMA enabled and the declaration data is empty" in new CMASetup {
 
-      val response: SubmissionResponse = SubmissionResponse.Error
+      val response: CMASubmissionResponse = CMASubmissionResponse.Error
 
-      val cma: Config = ConfigFactory.parseString("microservice.services.des-cma.enabled = true")
-
-      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[CMASubmissionResponse]], any()))
         .thenReturn(Future(response))
       when(
         mockHttpClientV2.post(any())(any())
@@ -190,11 +189,9 @@ class HODConnectorSpec extends BaseSpec with Constants {
 
     "return an error if in the amendment journey and amendment data is empty and CMA is enabled" in new CMASetup {
 
-      val response: SubmissionResponse = SubmissionResponse.Error
+      val response: CMASubmissionResponse = CMASubmissionResponse.Error
 
-      val cma: Config = ConfigFactory.parseString("microservice.services.des-cma.enabled = true")
-
-      when(mockRequestBuilder.execute(using any[HttpReads[SubmissionResponse]], any()))
+      when(mockRequestBuilder.execute(using any[HttpReads[CMASubmissionResponse]], any()))
         .thenReturn(Future(response))
       when(
         mockHttpClientV2.post(any())(any())
