@@ -21,7 +21,7 @@ import com.typesafe.config.ConfigFactory
 import connectors.HODConnector
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
-import models.{ChargeReference, SubmissionResponse}
+import models.{CMASubmissionResponse, ChargeReference}
 import org.apache.pekko.stream.Materializer
 import org.mongodb.scala.SingleObservableFuture
 import org.mongodb.scala.model.Filters
@@ -42,7 +42,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AmendmentSubmissionWorkerISpec
+class CMAAmendmentSubmissionWorkerISpec
     extends IntegrationSpecCommonBase
     with WireMockHelper
     with DefaultPlayMongoRepositorySupport[Declaration] {
@@ -62,9 +62,9 @@ class AmendmentSubmissionWorkerISpec
 
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
-      "feature.isUsingCMA"                           -> false,
+      "feature.isUsingCMA"                           -> true,
       "workers.amendment-submission-worker.interval" -> "1 second",
-      "microservice.services.des.port"               -> server.port(),
+      "microservice.services.des.cma.port"           -> server.port(),
       "auditing.consumer.baseUri.port"               -> server.port(),
       "auditing.enabled"                             -> "true"
     )
@@ -306,7 +306,7 @@ class AmendmentSubmissionWorkerISpec
     "must submit paid amendments" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -391,13 +391,13 @@ class AmendmentSubmissionWorkerISpec
         val (declaration, response) = worker.tap.pull().futureValue.get
         declaration.chargeReference        shouldBe ChargeReference(3)
         declaration.amendCorrelationId.get shouldBe amendmentCorrelationId
-        response                           shouldBe SubmissionResponse.Submitted
+        response                           shouldBe CMASubmissionResponse.Submitted
       }
     }
 
     "must throttle submissions" in {
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -496,7 +496,7 @@ class AmendmentSubmissionWorkerISpec
     "must not process locked records" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -561,7 +561,7 @@ class AmendmentSubmissionWorkerISpec
     "must lock records when processing them" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -612,7 +612,7 @@ class AmendmentSubmissionWorkerISpec
     "must not remove errored declarations from mongo" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
       )
 
@@ -682,7 +682,7 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result shouldBe SubmissionResponse.ParsingException
+        result shouldBe CMASubmissionResponse.ParsingException
 
         repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
 
@@ -692,7 +692,7 @@ class AmendmentSubmissionWorkerISpec
     "must set the state of failed amended declarations to failed" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(BAD_REQUEST))
       )
 
@@ -762,7 +762,7 @@ class AmendmentSubmissionWorkerISpec
         )
 
         val (declaration, result) = worker.tap.pull().futureValue.get
-        result shouldBe SubmissionResponse.Failed
+        result shouldBe CMASubmissionResponse.Failed
 
         repository
           .asInstanceOf[DeclarationsRepository]
@@ -836,7 +836,7 @@ class AmendmentSubmissionWorkerISpec
     "must only make one request to the HOD" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -926,14 +926,14 @@ class AmendmentSubmissionWorkerISpec
         val (declaration, result) = worker.tap.pull().futureValue.get
 
         val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
-        val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/passengerdeclaration/v1"))
+        val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/simpledeclaration/v1"))
 
         eventually {
           server.requestsWereSent(times = 1, auditRequest) shouldBe true
           server.requestsWereSent(times = 1, desRequest)   shouldBe true
         }
 
-        result                                                                                     shouldBe SubmissionResponse.Submitted
+        result                                                                                     shouldBe CMASubmissionResponse.Submitted
         repository.asInstanceOf[DeclarationsRepository].get(declaration.chargeReference).futureValue should be(defined)
       }
     }

@@ -47,6 +47,7 @@ class HODConnectorISpec
   override lazy val app: Application =
     new GuiceApplicationBuilder()
       .configure(
+        "feature.isUsingCMA"                                      -> false,
         "microservice.services.des.port"                          -> server.port(),
         "microservice.services.des.circuit-breaker.max-failures"  -> 1,
         "microservice.services.des.circuit-breaker.reset-timeout" -> "1 second"
@@ -126,7 +127,9 @@ class HODConnectorISpec
 
       val missingDataDeclaration = declaration.copy(data = Json.obj())
 
-      await(connector.submit(missingDataDeclaration, isAmendment = false)) shouldBe SubmissionResponse.ParsingException
+      await(
+        connector.submit(missingDataDeclaration, isAmendment = false)
+      ) shouldBe SubmissionResponse.ParsingException
     }
 
     "fall back to a SubmissionResponse.ParsingException when the amendment data is not complete" in {

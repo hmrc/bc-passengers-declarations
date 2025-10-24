@@ -17,7 +17,7 @@
 package workers
 
 import connectors.HODConnector
-import models.SubmissionResponse
+import models.{CMASubmissionResponse, Response, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import org.apache.pekko.stream.{ActorAttributes, Materializer}
@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import util.AuditingTools
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -52,7 +52,7 @@ class DeclarationSubmissionWorker @Inject() (
   private val parallelism: Int             = config.get[Int]("workers.declaration-submission-worker.parallelism")
   private val elements: Int                = config.get[Int]("workers.declaration-submission-worker.throttle.elements")
 
-  val tap: SinkQueueWithCancel[(Declaration, SubmissionResponse)] = {
+  val tap: SinkQueueWithCancel[(Declaration, Response)] = {
 
     logger.info("[DeclarationSubmissionWorker][tap] Declaration submission worker started")
 
@@ -66,19 +66,19 @@ class DeclarationSubmissionWorker @Inject() (
         for {
           result <- hodConnector.submit(declaration, isAmendment = false)
           _      <- result match {
-                      case SubmissionResponse.Submitted        =>
+                      case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted               =>
                         auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration.data))
                         declarationsRepository.setSentToEtmp(declaration.chargeReference, sentToEtmp = true)
-                      case SubmissionResponse.Error            =>
+                      case SubmissionResponse.Error | CMASubmissionResponse.Error                       =>
                         logger.error(
                           s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
                              |ChargeReference:  ${declaration.chargeReference},
                              |CorrelationId:  ${declaration.correlationId}""".stripMargin.replace("\n", " ")
                         )
                         Future.successful(())
-                      case SubmissionResponse.ParsingException =>
+                      case SubmissionResponse.ParsingException | CMASubmissionResponse.ParsingException =>
                         Future.successful(())
-                      case SubmissionResponse.Failed           =>
+                      case SubmissionResponse.Failed | CMASubmissionResponse.Failed                     =>
                         logger.error(
                           s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS).
                              |ChargeReference:  ${declaration.chargeReference},
