@@ -24,7 +24,8 @@ import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 class SubmissionResponseSpec extends AnyWordSpec with Matchers {
 
-  private val reads: HttpReads[SubmissionResponse] = implicitly[HttpReads[SubmissionResponse]]
+  private val reads: HttpReads[SubmissionResponse]       = implicitly[HttpReads[SubmissionResponse]]
+  private val cmaReads: HttpReads[CMASubmissionResponse] = implicitly[HttpReads[CMASubmissionResponse]]
 
   "SubmissionResponse" when {
     "set to a Submitted response from a NO_CONTENT HttpResponse" in {
@@ -53,6 +54,38 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
       val result = reads.read("POST", "/", HttpResponse.apply(SERVICE_UNAVAILABLE, "service unavailable"))
 
       result shouldBe SubmissionResponse.Error
+    }
+
+    "CMASubmissionResponse" when {
+      "set to a Submitted response from a NO_CONTENT HttpResponse" in {
+        // Mirrors the DES success test but checks the CMA reader path.
+        val result = cmaReads.read("POST", "/", HttpResponse.apply(NO_CONTENT, ""))
+
+        result shouldBe CMASubmissionResponse.Submitted
+      }
+
+      "set to a Failed response from a BAD_REQUEST HttpResponse" in {
+        // Confirms CMA treats DES bad request payloads as a permanent failure.
+        val body   = Json.obj("errorDetail" -> Json.obj("sourceFaultDetail" -> Json.obj("detail" -> Json.arr())))
+        val result = cmaReads.read("POST", "/", HttpResponse.apply(BAD_REQUEST, body, Map.empty))
+
+        result shouldBe CMASubmissionResponse.Failed
+      }
+
+      "set to an Error response from an INTERNAL_SERVER_ERROR HttpResponse" in {
+        // Exercises the explicit Internal Server Error branch introduced for CMA.
+        val body   = Json.obj("errorDetail" -> Json.obj("sourceFaultDetail" -> Json.obj("detail" -> Json.arr())))
+        val result = cmaReads.read("POST", "/", HttpResponse.apply(INTERNAL_SERVER_ERROR, body, Map.empty))
+
+        result shouldBe CMASubmissionResponse.Error
+      }
+
+      "set to an Error response from any other error HttpResponse" in {
+        // Catch-all for CMA errors outside the explicit cases above.
+        val result = cmaReads.read("POST", "/", HttpResponse.apply(SERVICE_UNAVAILABLE, "service unavailable"))
+
+        result shouldBe CMASubmissionResponse.Error
+      }
     }
   }
 }
