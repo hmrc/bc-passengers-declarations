@@ -306,7 +306,7 @@ class CMAAmendmentSubmissionWorkerISpec
     "must submit paid amendments" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        post(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -397,7 +397,7 @@ class CMAAmendmentSubmissionWorkerISpec
 
     "must throttle submissions" in {
       server.stubFor(
-        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        post(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -496,7 +496,7 @@ class CMAAmendmentSubmissionWorkerISpec
     "must not process locked records" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        post(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -561,7 +561,7 @@ class CMAAmendmentSubmissionWorkerISpec
     "must lock records when processing them" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        post(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -612,7 +612,7 @@ class CMAAmendmentSubmissionWorkerISpec
     "must not remove errored declarations from mongo" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        post(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR))
       )
 
@@ -692,7 +692,7 @@ class CMAAmendmentSubmissionWorkerISpec
     "must set the state of failed amended declarations to failed" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        post(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(BAD_REQUEST))
       )
 
@@ -836,7 +836,7 @@ class CMAAmendmentSubmissionWorkerISpec
     "must only make one request to the HOD" in {
 
       server.stubFor(
-        post(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        post(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
           .willReturn(aResponse().withStatus(NO_CONTENT))
       )
 
@@ -926,7 +926,7 @@ class CMAAmendmentSubmissionWorkerISpec
         val (declaration, result) = worker.tap.pull().futureValue.get
 
         val auditRequest = postRequestedFor(urlEqualTo("/write/audit/merged"))
-        val desRequest   = postRequestedFor(urlPathEqualTo("/declarations/simpledeclaration/v1"))
+        val desRequest   = postRequestedFor(urlPathEqualTo("/passengers/declarations/simpledeclaration/v1"))
 
         eventually {
           server.requestsWereSent(times = 1, auditRequest) shouldBe true
