@@ -43,7 +43,7 @@ class HODConnector @Inject() (
   private val declarationFullUrl = s"$baseUrl/declarations/passengerdeclaration/v1"
 
   private val cmaBaseUrl            = config.get[Service]("microservice.services.des.cma")
-  private val cmaDeclarationFullUrl = s"$cmaBaseUrl/declarations/simpledeclaration/v1"
+  private val cmaDeclarationFullUrl = s"$cmaBaseUrl/passengers/declarations/simpledeclaration/v1"
 
   private lazy val isUsingCMA: Boolean = config.get[Boolean]("feature.isUsingCMA")
 

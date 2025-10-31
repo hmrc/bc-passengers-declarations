@@ -55,7 +55,7 @@ class HODCMAConnectorISpec
       .build()
 
   private def stubCall(data: JsObject = declarationData): MappingBuilder =
-    post(urlEqualTo("/declarations/simpledeclaration/v1"))
+    post(urlEqualTo("/passengers/declarations/simpledeclaration/v1"))
       .withHeader(CONTENT_TYPE, matching(ContentTypes.JSON))
       .withHeader(ACCEPT, matching(ContentTypes.JSON))
       .withHeader("X-Correlation-ID", matching(correlationId))
