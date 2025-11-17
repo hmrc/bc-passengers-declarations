@@ -16,6 +16,8 @@
 
 package util
 
+import models.DeclarationResponse
+
 import javax.inject.{Inject, Named, Singleton}
 import models.declarations.Etmp
 import play.api.libs.json.{JsObject, Json}
@@ -26,11 +28,22 @@ class AuditingTools @Inject() (
   @Named("appName") val appName: String
 ) {
 
-  def buildDeclarationSubmittedDataEvent(data: JsObject): ExtendedDataEvent =
+  def buildDeclarationSubmittedDataEvent(data: JsObject): ExtendedDataEvent = {
+    val base: JsObject                = Json.toJsObject(data.as[Etmp])
+    val isPrivateOpt: Option[Boolean] =
+      (data \ "isPrivateTravel").asOpt[Boolean] orElse
+        data.asOpt[DeclarationResponse].map(_.isPrivateTravel)
+
+    val detail: JsObject = isPrivateOpt match {
+      case Some(flag) => base ++ Json.obj("isPrivateTravel" -> flag)
+      case None       => base
+    }
+
     ExtendedDataEvent(
       auditSource = appName,
       auditType = "passengerdeclaration",
       tags = Map("transactionName" -> "passengerdeclarationsubmitted"),
-      detail = Json.toJsObject(data.as[Etmp])
+      detail = detail
     )
+  }
 }

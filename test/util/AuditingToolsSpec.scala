@@ -32,8 +32,15 @@ class AuditingToolsSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
 
       val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration.data)
 
+      val baseDetail     = Json.toJsObject(declarationData.as[Etmp])
+      val isPrivateOpt   = (declaration.data \ "journeyData" \ "privateCraft").asOpt[Boolean]
+      val expectedDetail = isPrivateOpt match {
+        case Some(flag) => baseDetail ++ Json.obj("isPrivateTravel" -> flag)
+        case None       => baseDetail
+      }
+
       declarationEvent.tags        shouldBe Map("transactionName" -> "passengerdeclarationsubmitted")
-      declarationEvent.detail      shouldBe Json.toJsObject(declarationData.as[Etmp])
+      declarationEvent.detail      shouldBe expectedDetail
       declarationEvent.auditSource shouldBe "bc-passengers-declarations"
     }
   }
