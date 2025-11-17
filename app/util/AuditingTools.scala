@@ -28,13 +28,10 @@ class AuditingTools @Inject() (
   @Named("appName") val appName: String
 ) {
 
-  def buildDeclarationSubmittedDataEvent(data: JsObject): ExtendedDataEvent = {
-    val base: JsObject                = Json.toJsObject(data.as[Etmp])
-    val isPrivateOpt: Option[Boolean] =
-      (data \ "isPrivateTravel").asOpt[Boolean] orElse
-        data.asOpt[DeclarationResponse].map(_.isPrivateTravel)
+  def buildDeclarationSubmittedDataEvent(data: JsObject, journeyData: JsObject): ExtendedDataEvent = {
+    val base: JsObject = Json.toJsObject(data.as[Etmp])
 
-    val detail: JsObject = isPrivateOpt match {
+    val detail: JsObject = (journeyData \ "privateCraft").asOpt[Boolean] match {
       case Some(flag) => base ++ Json.obj("isPrivateTravel" -> flag)
       case None       => base
     }

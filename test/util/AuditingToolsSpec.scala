@@ -30,10 +30,11 @@ class AuditingToolsSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
   "buildDeclarationDataEvent" when {
     "produce the expected output when supplied a declaration" in {
 
-      val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration.data)
+      val declarationEvent = auditingTools.buildDeclarationSubmittedDataEvent(declaration.data, declaration.journeyData)
 
-      val baseDetail     = Json.toJsObject(declarationData.as[Etmp])
-      val isPrivateOpt   = (declaration.data \ "journeyData" \ "privateCraft").asOpt[Boolean]
+      val baseDetail   = Json.toJsObject(declarationData.as[Etmp])
+      val isPrivateOpt = (declaration.journeyData \ "privateCraft").asOpt[Boolean]
+
       val expectedDetail = isPrivateOpt match {
         case Some(flag) => baseDetail ++ Json.obj("isPrivateTravel" -> flag)
         case None       => baseDetail
