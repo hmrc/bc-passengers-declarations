@@ -16,7 +16,6 @@
 
 package util
 
-import models.DeclarationResponse
 
 import javax.inject.{Inject, Named, Singleton}
 import models.declarations.Etmp
