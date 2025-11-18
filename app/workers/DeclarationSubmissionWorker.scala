@@ -67,7 +67,9 @@ class DeclarationSubmissionWorker @Inject() (
           result <- hodConnector.submit(declaration, isAmendment = false)
           _      <- result match {
                       case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted               =>
-                        auditConnector.sendExtendedEvent(auditingTools.buildDeclarationSubmittedDataEvent(declaration.data))
+                        auditConnector.sendExtendedEvent(
+                          auditingTools.buildDeclarationSubmittedDataEvent(declaration.data, declaration.journeyData)
+                        )
                         declarationsRepository.setSentToEtmp(declaration.chargeReference, sentToEtmp = true)
                       case SubmissionResponse.Error | CMASubmissionResponse.Error                       =>
                         logger.error(

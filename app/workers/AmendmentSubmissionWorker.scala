@@ -66,7 +66,8 @@ class AmendmentSubmissionWorker @Inject() (
           _      <- result match {
                       case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted               =>
                         auditConnector.sendExtendedEvent(
-                          auditingTools.buildDeclarationSubmittedDataEvent(declaration.amendData.get)
+                          auditingTools
+                            .buildDeclarationSubmittedDataEvent(declaration.amendData.get, declaration.journeyData)
                         )
                         declarationsRepository.setAmendSentToEtmp(declaration.chargeReference, amendSentToEtmp = true)
                       case SubmissionResponse.Error | CMASubmissionResponse.Error                       =>
