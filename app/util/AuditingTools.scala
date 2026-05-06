@@ -16,7 +16,6 @@
 
 package util
 
-
 import javax.inject.{Inject, Named, Singleton}
 import models.declarations.Etmp
 import play.api.libs.json.{JsObject, Json}
