@@ -16,22 +16,23 @@
 
 package services
 
-import com.github.fge.jackson.JsonLoader
-import com.github.fge.jsonschema.main.{JsonSchema, JsonSchemaFactory}
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
+import com.networknt.schema.{Schema, SchemaRegistry, SpecificationVersion}
 import play.api.Configuration
 import play.api.libs.json.{JsValue, Json}
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
-class Validator(schema: JsonSchema) {
+class Validator(schema: Schema) {
 
   def validate(jsValue: JsValue): List[String] = {
 
-    val json   = JsonLoader.fromString(Json.stringify(jsValue))
+    val mapper = new ObjectMapper()
+    val json   = mapper.readTree(Json.stringify(jsValue))
     val result = schema.validate(json)
 
-    if (result.isSuccess) {
+    if (result.isEmpty) {
       List.empty
     } else {
       result.iterator.asScala.toList.map {
@@ -43,12 +44,15 @@ class Validator(schema: JsonSchema) {
 
 class ValidationService @Inject() (resourceService: ResourceService, config: Configuration) {
 
-  private val factory = JsonSchemaFactory.byDefault()
+  private val schemaMapper: ObjectMapper = new ObjectMapper()
+
+  private val schemaRegistry: SchemaRegistry =
+    SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_4)
 
   def get(schemaName: String): Validator = {
 
-    val schemaJson = JsonLoader.fromString(resourceService.getFile(s"schemas/$schemaName"))
-    val schema     = factory.getJsonSchema(schemaJson)
+    val schemaJson = schemaMapper.readTree(resourceService.getFile(s"schemas/$schemaName"))
+    val schema     = schemaRegistry.getSchema(schemaJson)
 
     new Validator(schema)
   }

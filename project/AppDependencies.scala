@@ -7,7 +7,7 @@ object AppDependencies {
 
   private val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                  %% "bootstrap-backend-play-30" % bootstrapPlayVersion,
-    ("com.github.java-json-tools"   % "json-schema-validator"     % "2.2.14").exclude("org.mozilla", "rhino"),
+    "com.networknt"                 % "json-schema-validator"     % "2.0.1" exclude ("com.fasterxml.jackson.core", "jackson-databind"),
     "org.mozilla"                   % "rhino"                     % "1.7.15.1",
     "uk.gov.hmrc.mongo"            %% "hmrc-mongo-play-30"        % hmrcMongoVersion,
     "com.fasterxml.jackson.module" %% "jackson-module-scala"      % "2.20.1"

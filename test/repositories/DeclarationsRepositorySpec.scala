@@ -113,7 +113,7 @@ class DeclarationsRepositorySpec
 
         await(
           repository.insert(invalidInputData, correlationId, sentToEtmp = true)
-        ).left.toOption.get.head shouldBe "object has missing required properties ([\"receiptDate\",\"requestParameters\"])"
+        ).left.toOption.get.head shouldBe "required property 'receiptDate' not found"
       }
     }
 
