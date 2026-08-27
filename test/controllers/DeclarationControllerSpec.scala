@@ -272,7 +272,7 @@ class DeclarationControllerSpec
           status(result)               shouldBe BAD_REQUEST
           headers(result)                should contain("X-Correlation-ID" -> correlationId)
           contentAsJson(result).toString should include(
-            "object has too few properties (found 0 but schema requires at least 1)"
+            "{\"errors\":[\"must have at least 1 properties\",\"required property 'simpleDeclarationRequest' not found\"]}"
           )
         }
       }

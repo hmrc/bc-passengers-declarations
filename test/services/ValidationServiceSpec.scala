@@ -44,7 +44,7 @@ class ValidationServiceSpec extends AnyWordSpec with Matchers with GuiceOneAppPe
       val json = Json.obj()
 
       validator.validate(json) should contain(
-        """object has missing required properties (["simpleDeclarationRequest"])"""
+        """required property 'simpleDeclarationRequest' not found"""
       )
     }
   }

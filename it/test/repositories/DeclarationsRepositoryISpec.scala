@@ -1492,7 +1492,9 @@ class DeclarationsRepositoryISpec
           .toOption
           .get
 
-        errors should contain("""object has missing required properties (["receiptDate","requestParameters"])""")
+        errors should contain(
+          """required property 'receiptDate' not found""".stripMargin
+        )
       }
     }
 
