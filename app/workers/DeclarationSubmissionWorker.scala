@@ -17,7 +17,7 @@
 package workers
 
 import connectors.HODConnector
-import models.{CMASubmissionResponse, Response, SubmissionResponse}
+import models.{CMASubmissionResponse, HipSubmissionResponse, Response, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import org.apache.pekko.stream.{ActorAttributes, Materializer}
@@ -66,21 +66,23 @@ class DeclarationSubmissionWorker @Inject() (
         for {
           result <- hodConnector.submit(declaration, isAmendment = false)
           _      <- result match {
-                      case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted               =>
+                      case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted |
+                          HipSubmissionResponse.Submitted =>
                         auditConnector.sendExtendedEvent(
                           auditingTools.buildDeclarationSubmittedDataEvent(declaration.data, declaration.journeyData)
                         )
                         declarationsRepository.setSentToEtmp(declaration.chargeReference, sentToEtmp = true)
-                      case SubmissionResponse.Error | CMASubmissionResponse.Error                       =>
+                      case SubmissionResponse.Error | CMASubmissionResponse.Error | HipSubmissionResponse.Error    =>
                         logger.error(
                           s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
                              |ChargeReference:  ${declaration.chargeReference},
                              |CorrelationId:  ${declaration.correlationId}""".stripMargin.replace("\n", " ")
                         )
                         Future.successful(())
-                      case SubmissionResponse.ParsingException | CMASubmissionResponse.ParsingException =>
+                      case SubmissionResponse.ParsingException | CMASubmissionResponse.ParsingException |
+                          HipSubmissionResponse.ParsingException =>
                         Future.successful(())
-                      case SubmissionResponse.Failed | CMASubmissionResponse.Failed                     =>
+                      case SubmissionResponse.Failed | CMASubmissionResponse.Failed | HipSubmissionResponse.Failed =>
                         logger.error(
                           s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS).
                              |ChargeReference:  ${declaration.chargeReference},

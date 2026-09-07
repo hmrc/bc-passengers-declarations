@@ -26,6 +26,7 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
 
   private val reads: HttpReads[SubmissionResponse]       = implicitly[HttpReads[SubmissionResponse]]
   private val cmaReads: HttpReads[CMASubmissionResponse] = implicitly[HttpReads[CMASubmissionResponse]]
+  private val hipReads: HttpReads[HipSubmissionResponse] = implicitly[HttpReads[HipSubmissionResponse]]
 
   "SubmissionResponse" when {
     "set to a Submitted response from a NO_CONTENT HttpResponse" in {
@@ -85,6 +86,52 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
         val result = cmaReads.read("POST", "/", HttpResponse.apply(SERVICE_UNAVAILABLE, "service unavailable"))
 
         result shouldBe CMASubmissionResponse.Error
+      }
+    }
+
+    "HipSubmissionResponse" when {
+      "set to a Submitted response from a CREATED HttpResponse" in {
+        val body   = Json.obj("success" -> Json.obj("status" -> "OK", "processingDate" -> "2026-07-31T09:26:17Z"))
+        val result = hipReads.read("POST", "/", HttpResponse.apply(CREATED, body, Map.empty))
+
+        result shouldBe HipSubmissionResponse.Submitted
+      }
+
+      "set to a Failed response from an UNPROCESSABLE_ENTITY HttpResponse (ETMP business error)" in {
+        val body   = Json.obj(
+          "error" -> Json.obj(
+            "processingDate" -> "2026-07-31T09:26:17Z",
+            "code"           -> "004",
+            "text"           -> "Duplicate Submission"
+          )
+        )
+        val result = hipReads.read("POST", "/", HttpResponse.apply(UNPROCESSABLE_ENTITY, body, Map.empty))
+
+        result shouldBe HipSubmissionResponse.Failed
+      }
+
+      "set to an Error response from a BAD_REQUEST HttpResponse (system error)" in {
+        val body   = Json.obj(
+          "error" -> Json.obj("code" -> "400", "message" -> "Invalid request payload", "logId" -> "A" * 32)
+        )
+        val result = hipReads.read("POST", "/", HttpResponse.apply(BAD_REQUEST, body, Map.empty))
+
+        result shouldBe HipSubmissionResponse.Error
+      }
+
+      "set to an Error response from an INTERNAL_SERVER_ERROR HttpResponse (system error)" in {
+        val body   = Json.obj(
+          "error" -> Json.obj("code" -> "500", "message" -> "SAP PI system is currently unavailable", "logId" -> "B" * 32)
+        )
+        val result = hipReads.read("POST", "/", HttpResponse.apply(INTERNAL_SERVER_ERROR, body, Map.empty))
+
+        result shouldBe HipSubmissionResponse.Error
+      }
+
+      "set to an Error response from any other error HttpResponse" in {
+        val result = hipReads.read("POST", "/", HttpResponse.apply(SERVICE_UNAVAILABLE, "service unavailable"))
+
+        result shouldBe HipSubmissionResponse.Error
       }
     }
   }

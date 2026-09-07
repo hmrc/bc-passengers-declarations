@@ -18,11 +18,13 @@ package models
 
 import play.api.i18n.Lang.logger.logger
 import play.api.http.Status.*
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 
 sealed trait Response
 sealed trait SubmissionResponse extends Response
 sealed trait CMASubmissionResponse extends Response
+sealed trait HipSubmissionResponse extends Response
 
 object SubmissionResponse {
 
@@ -79,6 +81,43 @@ object CMASubmissionResponse {
           case _                     =>
             logger.error(
               s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] call to DES (EIS) is failed, Response Code is : ${response.status}"
+            )
+            Error
+        }
+    }
+}
+
+object HipSubmissionResponse {
+
+  case object Submitted extends HipSubmissionResponse
+  case object Failed extends HipSubmissionResponse
+  case object Error extends HipSubmissionResponse
+  case object ParsingException extends HipSubmissionResponse
+
+  implicit lazy val httpReads: HttpReads[HipSubmissionResponse] =
+    new HttpReads[HipSubmissionResponse] {
+      override def read(method: String, url: String, response: HttpResponse): HipSubmissionResponse =
+        response.status match {
+          case CREATED               =>
+            Submitted
+          case UNPROCESSABLE_ENTITY  =>
+            val errorCode = (Json.parse(response.body) \ "error" \ "code").asOpt[String].getOrElse("unknown")
+            val errorText = (Json.parse(response.body) \ "error" \ "text").asOpt[String].getOrElse(response.body)
+            logger.error(
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE ETMP rejected the passenger declaration, " +
+                s"code=$errorCode, text=$errorText"
+            )
+            Failed
+          case BAD_REQUEST | INTERNAL_SERVER_ERROR =>
+            logger.error(
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE system error from HIP, " +
+                s"status=${response.status}. Body: ${response.body}"
+            )
+            Error
+          case _                     =>
+            logger.error(
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE call to HIP failed, " +
+                s"Response Code is : ${response.status}"
             )
             Error
         }

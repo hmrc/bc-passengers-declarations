@@ -18,11 +18,11 @@ package connectors
 
 import com.typesafe.config.{Config, ConfigFactory}
 import helpers.{BaseSpec, Constants}
-import models.{CMASubmissionResponse, ChargeReference, SubmissionResponse}
+import models.{CMASubmissionResponse, ChargeReference, HipSubmissionResponse, SubmissionResponse}
 import models.declarations.State
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{mock, when}
+import org.mockito.Mockito.{mock, never, verify, when}
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.Application
@@ -45,7 +45,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
     val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
 
     lazy val fakeApp: Application = new GuiceApplicationBuilder()
-      .configure("feature.isUsingCMA" -> false)
+      .configure("feature.isUsingCMA" -> false, "feature.isUsingHip" -> false)
       .overrides(
         bind[HttpClientV2].toInstance(mockHttpClientV2),
         bind[RequestBuilder].toInstance(mockRequestBuilder)
@@ -64,7 +64,7 @@ class HODConnectorSpec extends BaseSpec with Constants {
     val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
 
     lazy val fakeApp: Application = new GuiceApplicationBuilder()
-      .configure("feature.isUsingCMA" -> true)
+      .configure("feature.isUsingCMA" -> true, "feature.isUsingHip" -> false)
       .overrides(
         bind[HttpClientV2].toInstance(mockHttpClientV2),
         bind[RequestBuilder].toInstance(mockRequestBuilder)
@@ -76,6 +76,24 @@ class HODConnectorSpec extends BaseSpec with Constants {
     when(mockRequestBuilder.withBody(any())(using any[BodyWritable[JsValue]], any(), any()))
       .thenReturn(mockRequestBuilder)
 
+  }
+
+  private trait HipSetup {
+    val mockHttpClientV2: HttpClientV2     = mock(classOf[HttpClientV2])
+    val mockRequestBuilder: RequestBuilder = mock(classOf[RequestBuilder])
+
+    lazy val fakeApp: Application = new GuiceApplicationBuilder()
+      .configure("feature.isUsingHip" -> true, "feature.isUsingCMA" -> false)
+      .overrides(
+        bind[HttpClientV2].toInstance(mockHttpClientV2),
+        bind[RequestBuilder].toInstance(mockRequestBuilder)
+      )
+      .build()
+
+    val connector: HODConnector = fakeApp.injector.instanceOf[HODConnector]
+
+    when(mockRequestBuilder.withBody(any())(using any[BodyWritable[JsValue]], any(), any()))
+      .thenReturn(mockRequestBuilder)
   }
 
   "submit" should {
@@ -204,6 +222,34 @@ class HODConnectorSpec extends BaseSpec with Constants {
             isAmendment = true
           )
       ) shouldBe response
+    }
+
+    "return a submitted response when a new declaration is submitted successfully and HIP is enabled" in new HipSetup {
+      val response: HipSubmissionResponse = HipSubmissionResponse.Submitted
+
+      when(mockRequestBuilder.execute(using any[HttpReads[HipSubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(
+        mockHttpClientV2.post(any())(any())
+      ).thenReturn(mockRequestBuilder)
+
+      await(connector.submit(declaration, isAmendment = false)) shouldBe HipSubmissionResponse.Submitted
+    }
+
+    "return a ParsingException, not throw, when HIP is enabled and travellingFrom has no EPID1778 mapping (e.g. Great Britain)" in new HipSetup {
+      val gbDeclaration = declaration.copy(data =
+        declarationData deepMerge Json.obj(
+          "simpleDeclarationRequest" -> Json.obj(
+            "requestDetail" -> Json.obj(
+              "declarationHeader" -> Json.obj("travellingFrom" -> "Great Britain")
+            )
+          )
+        )
+      )
+
+      await(connector.submit(gbDeclaration, isAmendment = false)) shouldBe HipSubmissionResponse.ParsingException
+
+      verify(mockHttpClientV2, never()).post(any())(any())
     }
 
   }
