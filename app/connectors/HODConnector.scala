@@ -19,7 +19,7 @@ package connectors
 import com.google.inject.name.Named
 import com.google.inject.{Inject, Singleton}
 import models.declarations.{Declaration, Etmp}
-import models.{CMASubmissionResponse, HipSubmissionResponse, Response, Service, SubmissionResponse}
+import models.{CMASubmissionResponse, Response, Service, SubmissionResponse}
 import org.apache.pekko.pattern.CircuitBreaker
 import play.api.Configuration
 import play.api.http.{ContentTypes, HeaderNames}
@@ -33,7 +33,6 @@ import java.time.{Instant, ZoneOffset}
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.util.Locale
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 @Singleton
 class HODConnector @Inject() (
@@ -49,13 +48,7 @@ class HODConnector @Inject() (
   private val cmaBaseUrl            = config.get[Service]("microservice.services.des.cma")
   private val cmaDeclarationFullUrl = s"$cmaBaseUrl/passengers/declarations/simpledeclaration/v1"
 
-  private val hipBaseUrl            = config.get[Service]("microservice.services.des.hip")
-  private val hipSubmissionUrl      = config.get[String]("microservice.services.des.hip.submissionUrl")
-  private val hipDeclarationFullUrl = s"$hipBaseUrl/$hipSubmissionUrl"
-  private val hipBearerToken        = config.get[String]("microservice.services.des.hip.bearer-token")
-
   private lazy val isUsingCMA: Boolean = config.get[Boolean]("feature.isUsingCMA")
-  private lazy val isUsingHip: Boolean = config.get[Boolean]("feature.isUsingHip")
 
   private val bearerToken    = config.get[String]("microservice.services.des.bearer-token")
   private val cmaBearerToken = config.get[String]("microservice.services.des.cma.bearer-token")
@@ -63,13 +56,6 @@ class HODConnector @Inject() (
   private val CORRELATION_ID: String = "X-Correlation-ID"
   private val FORWARDED_HOST: String = "X-Forwarded-Host"
   private val MDTP: String           = "MDTP"
-
-  private val HIP_CORRELATION_ID: String     = "correlationid"
-  private val HIP_MESSAGE_TYPE: String       = "X-Message-Type"
-  private val HIP_ORIGINATING_SYSTEM: String = "X-Originating-System"
-  private val HIP_RECEIPT_DATE: String       = "X-Receipt-Date"
-  private val HIP_REGIME_TYPE: String        = "X-Regime-Type"
-  private val HIP_TRANSMITTING_SYSTEM: String = "X-Transmitting-System"
 
   def submit(declaration: Declaration, isAmendment: Boolean): Future[Response] = {
 
@@ -79,20 +65,7 @@ class HODConnector @Inject() (
         if (isAmendment) declaration.amendCorrelationId.getOrElse(throw new Exception(s"AmendCorrelation Id is empty"))
         else declaration.correlationId
 
-      if (isUsingHip)
-        HeaderCarrier()
-          .withExtraHeaders(
-            HeaderNames.ACCEPT         -> ContentTypes.JSON,
-            HeaderNames.CONTENT_TYPE   -> ContentTypes.JSON,
-            HeaderNames.AUTHORIZATION  -> s"Bearer $hipBearerToken",
-            HIP_CORRELATION_ID         -> getCorrelationId(isAmendment),
-            HIP_MESSAGE_TYPE           -> (if (isAmendment) "DeclarationAmend" else "DeclarationCreate"),
-            HIP_ORIGINATING_SYSTEM     -> MDTP,
-            HIP_RECEIPT_DATE           -> Instant.now().toString,
-            HIP_REGIME_TYPE            -> "PNGR",
-            HIP_TRANSMITTING_SYSTEM    -> "HIP"
-          )
-      else if (isUsingCMA)
+      if (isUsingCMA)
 
         val CMANow = HODConnector.dateFormatter.format(Instant.now())
 
@@ -128,41 +101,8 @@ class HODConnector @Inject() (
         case _                  => Json.toJsObject(dataOrAmendData.as[Etmp])
       }
 
-    def getRefinedHipData(dataOrAmendData: JsObject): JsObject =
-      dataOrAmendData.validate(Etmp.formats) match {
-        case exception: JsError =>
-          logger.error(
-            s"[HODConnector][submit] PNGRS_DES_SUBMISSION_FAILURE There is problem with parsing declaration, " +
-              s"Parsing failed for this ChargeReference :  ${declaration.chargeReference}, " +
-              s"CorrelationId :  ${declaration.correlationId}, Exception : $exception"
-          )
-          JsObject.empty
-        case etmp                =>
-          try Json.toJsObject(EtmpHipTransformer.transform(etmp.get))
-          catch {
-            case NonFatal(e) =>
-              logger.error(
-                s"[HODConnector][submit] PNGRS_DES_SUBMISSION_FAILURE HIP transform failed for ChargeReference : " +
-                  s"${declaration.chargeReference}, CorrelationId : ${declaration.correlationId}, Exception : $e"
-              )
-              JsObject.empty
-          }
-      }
-
     def call: Future[Response] =
-      if (isUsingHip) {
-        val dataToSubmit = if (isAmendment) declaration.amendData.get else declaration.data
-        getRefinedHipData(dataToSubmit) match {
-          case returnedJsObject if returnedJsObject.value.isEmpty =>
-            Future.successful(HipSubmissionResponse.ParsingException)
-          case returnedJsObject                                   =>
-            httpClientV2
-              .post(url"$hipDeclarationFullUrl")
-              .withBody(returnedJsObject)
-              .execute[HipSubmissionResponse]
-              .filter(_ != HipSubmissionResponse.Error)
-        }
-      } else if (isUsingCMA) {
+      if (isUsingCMA) {
         if (isAmendment) {
           getRefinedData(declaration.amendData.get) match {
             case returnedJsObject if returnedJsObject.value.isEmpty =>
@@ -212,11 +152,7 @@ class HODConnector @Inject() (
         }
       }
 
-    if (isUsingHip) {
-      circuitBreaker
-        .withCircuitBreaker(call)
-        .fallbackTo(Future.successful(HipSubmissionResponse.Error))
-    } else if (isUsingCMA) {
+    if (isUsingCMA) {
       circuitBreaker
         .withCircuitBreaker(call)
         .fallbackTo(Future.successful(CMASubmissionResponse.Error))

@@ -34,8 +34,7 @@ object EtmpHipTransformer {
       declarationHeader = transformHeader(detail.declarationHeader),
       declarationTobacco = detail.declarationTobacco.map(transformTobacco),
       declarationAlcohol = detail.declarationAlcohol.map(transformAlcohol),
-      // bc-passengers-frontend does not send a vaping section yet - nothing to map from.
-      declarationVaping = None,
+      declarationVaping = detail.declarationVaping.map(transformVaping),
       declarationOther = detail.declarationOther.map(transformOther),
       liabilityDetails = transformLiability(detail.liabilityDetails),
       amendmentLiabilityDetails = detail.amendmentLiabilityDetails.map(transformAmendmentLiability)
@@ -56,8 +55,7 @@ object EtmpHipTransformer {
       case "NON_EU Only" => "ROW"
       case other         =>
         throw new IllegalArgumentException(
-          s"[EtmpHipTransformer] No EPID1778 travellingFrom mapping for inbound value '$other' - " +
-            "confirm the correct enum value with the HIP/ETMP team (see DDCE-9115) before proceeding."
+          s"[EtmpHipTransformer] No EPID1778 travellingFrom mapping for inbound value '$other'"
         )
     }
 
@@ -112,6 +110,34 @@ object EtmpHipTransformer {
 
   private def transformAlcoholItem(item: DeclarationItemAlcohol): HipDeclarationItemAlcohol =
     HipDeclarationItemAlcohol(
+      commodityDesc = item.commodityDescription,
+      volume = item.volume,
+      goodsValue = num(item.goodsValue),
+      valueCurrency = item.valueCurrency,
+      originCountry = item.originCountry,
+      exchangeRate = num(item.exchangeRate),
+      exchangeRateDate = item.exchangeRateDate,
+      goodsValueGbp = num(item.goodsValueGBP),
+      vatResClaimed = item.VATRESClaimed,
+      exciseGbp = num(item.exciseGBP),
+      customsGbp = num(item.customsGBP),
+      vatGbp = num(item.vatGBP),
+      ukVatPaid = item.ukVATPaid,
+      ukExcisePaid = item.ukExcisePaid,
+      euCustomsRelief = item.euCustomsRelief,
+      madeIn = item.madeIn
+    )
+
+  private def transformVaping(vaping: DeclarationVaping): HipDeclarationVaping =
+    HipDeclarationVaping(
+      declItemVaping = vaping.declarationItemVaping.map(_.map(transformVapingItem)),
+      totalExciseGbp = num(vaping.totalExciseVaping),
+      totalCustomsGbp = num(vaping.totalCustomsVaping),
+      totalVatGbp = num(vaping.totalVATVaping)
+    )
+
+  private def transformVapingItem(item: DeclarationItemVaping): HipDeclarationItemVaping =
+    HipDeclarationItemVaping(
       commodityDesc = item.commodityDescription,
       volume = item.volume,
       goodsValue = num(item.goodsValue),

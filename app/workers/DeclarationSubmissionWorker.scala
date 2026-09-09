@@ -16,7 +16,7 @@
 
 package workers
 
-import connectors.HODConnector
+import connectors.{HODConnector, HipConnector}
 import models.{CMASubmissionResponse, HipSubmissionResponse, Response, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
@@ -35,6 +35,7 @@ class DeclarationSubmissionWorker @Inject() (
   declarationsRepository: DeclarationsRepository,
   override protected val lockRepository: LockRepository,
   hodConnector: HODConnector,
+  hipConnector: HipConnector,
   config: Configuration,
   auditConnector: AuditConnector,
   auditingTools: AuditingTools
@@ -42,6 +43,11 @@ class DeclarationSubmissionWorker @Inject() (
     extends BaseDeclarationWorker {
 
   private val logger = Logger(this.getClass)
+
+  private val isUsingHip: Boolean = config.get[Boolean]("feature.isUsingHip")
+
+  private def submit(declaration: Declaration, isAmendment: Boolean): Future[Response] =
+    if (isUsingHip) hipConnector.submit(declaration, isAmendment) else hodConnector.submit(declaration, isAmendment)
 
   private val initialDelay: FiniteDuration =
     durationValueFromConfig("workers.declaration-submission-worker.initial-delay", config)
@@ -64,7 +70,7 @@ class DeclarationSubmissionWorker @Inject() (
       .mapConcat(lockSuccessful)
       .mapAsync(parallelism) { declaration =>
         for {
-          result <- hodConnector.submit(declaration, isAmendment = false)
+          result <- submit(declaration, isAmendment = false)
           _      <- result match {
                       case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted |
                           HipSubmissionResponse.Submitted =>

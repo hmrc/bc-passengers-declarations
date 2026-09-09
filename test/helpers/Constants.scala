@@ -85,6 +85,30 @@ trait Constants {
     )
   )
 
+  val declarationVaping: JsObject = Json.obj(
+    "totalExciseVaping"     -> "12.00",
+    "totalCustomsVaping"    -> "1.50",
+    "totalVATVaping"        -> "9.40",
+    "declarationItemVaping" -> Json.arr(
+      Json.obj(
+        "commodityDescription" -> "Vape liquid",
+        "volume"               -> "50",
+        "goodsValue"           -> "40.00",
+        "valueCurrency"        -> "USD",
+        "valueCurrencyName"    -> "USA dollars (USD)",
+        "originCountry"        -> "US",
+        "originCountryName"    -> "United States of America",
+        "exchangeRate"         -> "1.20",
+        "exchangeRateDate"     -> "2018-10-29",
+        "goodsValueGBP"        -> "30.41",
+        "VATRESClaimed"        -> false,
+        "exciseGBP"            -> "12.00",
+        "customsGBP"           -> "1.50",
+        "vatGBP"               -> "9.40"
+      )
+    )
+  )
+
   val declarationTobacco: JsObject = Json.obj(
     "totalExciseTobacco"     -> "100.54",
     "totalCustomsTobacco"    -> "192.94",
@@ -185,6 +209,16 @@ trait Constants {
     "simpleDeclarationRequest" -> Json.obj(
       "requestCommon" -> requestCommon,
       "requestDetail" -> requestDetail
+    )
+  )
+
+  val declarationDataWithVaping: JsObject = declarationData.deepMerge(
+    Json.obj(
+      "simpleDeclarationRequest" -> Json.obj(
+        "requestDetail" -> Json.obj(
+          "declarationVaping" -> declarationVaping
+        )
+      )
     )
   )
 

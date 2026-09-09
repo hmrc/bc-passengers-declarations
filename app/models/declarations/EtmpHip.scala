@@ -78,9 +78,6 @@ object HipAmendmentLiabilityDetails {
   implicit val writes: OWrites[HipAmendmentLiabilityDetails] = Json.writes
 }
 
-// additionalProperties: false, required: [customerReference, declarationHeader, liabilityDetails]
-// No top-level envelope (no requestCommon/requestDetail) - REGIME/SAP_NUMBER/acknowledgementReference
-// have no equivalent field here, see EtmpHipTransformer for how they're now carried (headers) or dropped.
 case class EtmpHip(
   customerReference: HipCustomerReference,
   personalDetails: Option[HipPersonalDetails],
@@ -173,9 +170,6 @@ case class HipDeclarationItemAlcohol(
   madeIn: Option[String]
 )
 
-// New duty category in EPID1778. Nothing currently populates this - bc-passengers-frontend
-// does not yet capture/journey vaping goods, so EtmpHipTransformer always emits None here.
-// Wire this up once the frontend starts sending a "declarationVaping" section inbound.
 case class HipDeclarationVaping(
   declItemVaping: Option[List[HipDeclarationItemVaping]],
   totalExciseGbp: Option[BigDecimal],

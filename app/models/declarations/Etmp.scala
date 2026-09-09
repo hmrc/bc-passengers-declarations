@@ -74,6 +74,14 @@ object DeclarationItemAlcohol {
   implicit val formats: OFormat[DeclarationItemAlcohol] = Json.format
 }
 
+object DeclarationVaping {
+  implicit val formats: OFormat[DeclarationVaping] = Json.format
+}
+
+object DeclarationItemVaping {
+  implicit val formats: OFormat[DeclarationItemVaping] = Json.format
+}
+
 object DeclarationOther {
   implicit val formats: OFormat[DeclarationOther] = Json.format
 }
@@ -117,6 +125,7 @@ case class RequestDetail(
   declarationHeader: DeclarationHeader,
   declarationTobacco: Option[DeclarationTobacco],
   declarationAlcohol: Option[DeclarationAlcohol],
+  declarationVaping: Option[DeclarationVaping],
   declarationOther: Option[DeclarationOther],
   liabilityDetails: LiabilityDetails,
   amendmentLiabilityDetails: Option[AmendmentLiabilityDetails]
@@ -186,6 +195,32 @@ case class DeclarationAlcohol(
 )
 
 case class DeclarationItemAlcohol(
+  commodityDescription: Option[String],
+  volume: Option[String],
+  goodsValue: Option[String],
+  valueCurrency: Option[String],
+  originCountry: Option[String],
+  exchangeRate: Option[String],
+  exchangeRateDate: Option[String],
+  goodsValueGBP: Option[String],
+  VATRESClaimed: Option[Boolean],
+  exciseGBP: Option[String],
+  customsGBP: Option[String],
+  vatGBP: Option[String],
+  ukVATPaid: Option[Boolean],
+  ukExcisePaid: Option[Boolean],
+  euCustomsRelief: Option[Boolean],
+  madeIn: Option[String]
+)
+
+case class DeclarationVaping(
+  totalExciseVaping: Option[String],
+  totalCustomsVaping: Option[String],
+  totalVATVaping: Option[String],
+  declarationItemVaping: Option[List[DeclarationItemVaping]]
+)
+
+case class DeclarationItemVaping(
   commodityDescription: Option[String],
   volume: Option[String],
   goodsValue: Option[String],

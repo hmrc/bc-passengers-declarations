@@ -67,6 +67,21 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
       result.amendmentLiabilityDetails.flatMap(_.additionalTotalGbp) shouldBe Some(BigDecimal("1362.46"))
     }
 
+    "map declarationVaping onto the EPID1778 shape when present" in {
+      val etmp   = declarationDataWithVaping.as[Etmp]
+      val result = EtmpHipTransformer.transform(etmp)
+
+      result.declarationVaping.flatMap(_.totalExciseGbp) shouldBe Some(BigDecimal("12.00"))
+      result.declarationVaping.flatMap(_.totalCustomsGbp) shouldBe Some(BigDecimal("1.50"))
+      result.declarationVaping.flatMap(_.totalVatGbp) shouldBe Some(BigDecimal("9.40"))
+      result.declarationVaping
+        .flatMap(_.declItemVaping.flatMap(_.headOption.map(_.commodityDesc))) shouldBe Some(Some("Vape liquid"))
+      result.declarationVaping
+        .flatMap(_.declItemVaping.flatMap(_.headOption.map(_.volume))) shouldBe Some(Some("50"))
+      result.declarationVaping
+        .flatMap(_.declItemVaping.flatMap(_.headOption.flatMap(_.exciseGbp))) shouldBe Some(BigDecimal("12.00"))
+    }
+
     "map travellingFrom \"EU Only\" to the \"EU\" enum value" in {
       val euEtmp = (declarationData deepMerge Json.obj(
         "simpleDeclarationRequest" -> Json.obj(
