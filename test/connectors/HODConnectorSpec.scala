@@ -21,9 +21,9 @@ import models.{CMASubmissionResponse, SubmissionResponse}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{mock, when}
 import play.api.Application
+import play.api.inject.*
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
-import play.api.inject.*
 import play.api.libs.ws.BodyWritable
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.http.HttpReads
@@ -199,5 +199,6 @@ class HODConnectorSpec extends BaseSpec with Constants {
           )
       ) shouldBe response
     }
+
   }
 }
