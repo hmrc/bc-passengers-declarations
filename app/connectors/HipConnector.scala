@@ -57,7 +57,6 @@ class HipConnector @Inject() (
   private val HIP_ORIGINATING_SYSTEM: String  = "X-Originating-System"
   private val HIP_RECEIPT_DATE: String        = "X-Receipt-Date"
   private val HIP_REGIME_TYPE: String         = "X-Regime-Type"
-  private val HIP_SAP_NUMBER: String          = "X-SAP-Number"
   private val HIP_TRANSMITTING_SYSTEM: String = "X-Transmitting-System"
 
   private def getCorrelationId(declaration: Declaration, isAmendment: Boolean): String =
@@ -92,8 +91,7 @@ class HipConnector @Inject() (
         .flatMap(_.simpleDeclarationRequest.requestCommon.requestParameters.find(_.paramName == paramName))
         .map(_.paramValue)
 
-    val regime    = requestParameter("REGIME").getOrElse("PNGR")
-    val sapNumber = requestParameter("SAP_NUMBER")
+    val regime = requestParameter("REGIME").getOrElse("PNGR")
 
     def getRefinedHipData: JsObject =
       parsedEtmp match {
@@ -127,7 +125,7 @@ class HipConnector @Inject() (
         HIP_RECEIPT_DATE          -> Instant.now().toString,
         HIP_REGIME_TYPE           -> regime,
         HIP_TRANSMITTING_SYSTEM   -> "HIP"
-      ) ++ sapNumber.map(HIP_SAP_NUMBER -> _)
+      )
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(headers*)
 

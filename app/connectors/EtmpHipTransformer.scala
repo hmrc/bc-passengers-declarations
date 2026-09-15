@@ -41,31 +41,13 @@ object EtmpHipTransformer {
     )
   }
 
-  /**
-   * TODO(DDCE-9115): Need a confirmation against bc-passengers-frontend's DeclarationService.getTravellingFrom,
-   * the only values ever sent inbound today are "EU Only", "NON_EU Only" and "Great Britain"
-   * (config keys declarations.euOnly/nonEuOnly/greatBritain). The new schema's enum is only
-   * "EU" | "ROW" | "EU & ROW" - there's no obvious mapping for a GB->NI domestic journey
-   * ("Great Britain"). Needs confirming with the HIP/ETMP team before this is safe to enable;
-   * until then this throws loudly instead of silently mis-declaring a customs journey.
-   */
-  private def mapTravellingFrom(travellingFrom: String): String =
-    travellingFrom match {
-      case "EU Only"     => "EU"
-      case "NON_EU Only" => "ROW"
-      case other         =>
-        throw new IllegalArgumentException(
-          s"[EtmpHipTransformer] No EPID1778 travellingFrom mapping for inbound value '$other'"
-        )
-    }
-
   private def transformHeader(header: DeclarationHeader): HipDeclarationHeader =
     HipDeclarationHeader(
       chargeReference = header.chargeReference,
       portOfEntry = header.portOfEntry,
       expectedDateOfTravel = header.expectedDateOfArrival,
       timeOfEntry = header.timeOfEntry,
-      travellingFrom = mapTravellingFrom(header.travellingFrom),
+      travellingFrom = header.travellingFrom,
       onwardTravel = header.onwardTravelGBNI
     )
 

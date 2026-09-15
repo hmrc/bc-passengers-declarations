@@ -20,7 +20,7 @@ import helpers.{BaseSpec, Constants}
 import models.HipSubmissionResponse
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{mock, never, verify, when}
+import org.mockito.Mockito.{mock, verify, when}
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
@@ -65,7 +65,12 @@ class HipConnectorSpec extends BaseSpec with Constants {
       await(connector.submit(declaration, isAmendment = false)) shouldBe HipSubmissionResponse.Submitted
     }
 
-    "return a ParsingException, not throw, when travellingFrom has no EPID1778 mapping (e.g. Great Britain)" in new Setup {
+    "forward travellingFrom unmapped (e.g. Great Britain), not throw, now that EPID1778 no longer enforces an enum" in new Setup {
+      val response: HipSubmissionResponse = HipSubmissionResponse.Submitted
+      when(mockRequestBuilder.execute(using any[HttpReads[HipSubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(mockHttpClientV2.post(any())(any())).thenReturn(mockRequestBuilder)
+
       val gbDeclaration = declaration.copy(data =
         declarationData deepMerge Json.obj(
           "simpleDeclarationRequest" -> Json.obj(
@@ -76,12 +81,16 @@ class HipConnectorSpec extends BaseSpec with Constants {
         )
       )
 
-      await(connector.submit(gbDeclaration, isAmendment = false)) shouldBe HipSubmissionResponse.ParsingException
+      await(connector.submit(gbDeclaration, isAmendment = false)) shouldBe HipSubmissionResponse.Submitted
 
-      verify(mockHttpClientV2, never()).post(any())(any())
+      val bodyCaptor: ArgumentCaptor[JsValue] = ArgumentCaptor.forClass(classOf[JsValue])
+      verify(mockRequestBuilder).withBody(bodyCaptor.capture())(using any[BodyWritable[JsValue]], any(), any())
+      (bodyCaptor.getValue \ "declarationHeader" \ "travellingFrom").as[String] shouldBe "Great Britain"
     }
 
-    "forward SAP_NUMBER as the X-SAP-Number header when requestCommon.requestParameters has one" in new Setup {
+    "not send an X-SAP-Number header, even when requestCommon.requestParameters has a SAP_NUMBER entry" in new Setup {
+      // EPID1778 v1.1.0 (11-09-2026) removed X-SAP-Number entirely from the header contract -
+      // it's no longer optional, it doesn't exist. This guards against ever re-adding it.
       val response: HipSubmissionResponse = HipSubmissionResponse.Submitted
       when(mockRequestBuilder.execute(using any[HttpReads[HipSubmissionResponse]], any()))
         .thenReturn(Future(response))
@@ -101,19 +110,6 @@ class HipConnectorSpec extends BaseSpec with Constants {
       )
 
       await(connector.submit(declarationWithSapNumber, isAmendment = false)) shouldBe HipSubmissionResponse.Submitted
-
-      val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
-      verify(mockHttpClientV2).post(any())(hcCaptor.capture())
-      hcCaptor.getValue.extraHeaders should contain("X-SAP-Number" -> "XA00008000")
-    }
-
-    "not send an X-SAP-Number header when requestCommon.requestParameters has no SAP_NUMBER entry" in new Setup {
-      val response: HipSubmissionResponse = HipSubmissionResponse.Submitted
-      when(mockRequestBuilder.execute(using any[HttpReads[HipSubmissionResponse]], any()))
-        .thenReturn(Future(response))
-      when(mockHttpClientV2.post(any())(any())).thenReturn(mockRequestBuilder)
-
-      await(connector.submit(declaration, isAmendment = false)) shouldBe HipSubmissionResponse.Submitted
 
       val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
       verify(mockHttpClientV2).post(any())(hcCaptor.capture())

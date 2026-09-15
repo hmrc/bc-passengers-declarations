@@ -106,8 +106,6 @@ case class HipContactDetails(
   emailAddress: Option[String]
 )
 
-// travellingFrom: enum "EU" | "ROW" | "EU & ROW". onwardTravel: enum "GB" | "NI".
-// messageTypes is gone - create/amend now comes from the X-Message-Type header (see HODConnector).
 case class HipDeclarationHeader(
   chargeReference: String,
   portOfEntry: Option[String],

@@ -36,7 +36,7 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
       result.personalDetails.map(_.lastName) shouldBe Some("Doe")
 
       result.declarationHeader.chargeReference shouldBe chargeReference.toString
-      result.declarationHeader.travellingFrom shouldBe "ROW"
+      result.declarationHeader.travellingFrom shouldBe "NON_EU Only"
       result.declarationHeader.onwardTravel shouldBe "GB"
       result.declarationHeader.expectedDateOfTravel shouldBe Some("2018-05-31")
 
@@ -82,7 +82,7 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
         .flatMap(_.declItemVaping.flatMap(_.headOption.flatMap(_.exciseGbp))) shouldBe Some(BigDecimal("12.00"))
     }
 
-    "map travellingFrom \"EU Only\" to the \"EU\" enum value" in {
+    "forward travellingFrom \"EU Only\" unmapped, as EPID1778 no longer enforces an enum" in {
       val euEtmp = (declarationData deepMerge Json.obj(
         "simpleDeclarationRequest" -> Json.obj(
           "requestDetail" -> Json.obj(
@@ -91,10 +91,10 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
         )
       )).as[Etmp]
 
-      EtmpHipTransformer.transform(euEtmp).declarationHeader.travellingFrom shouldBe "EU"
+      EtmpHipTransformer.transform(euEtmp).declarationHeader.travellingFrom shouldBe "EU Only"
     }
 
-    "throw for a travellingFrom value with no EPID1778 mapping (e.g. \"Great Britain\")" in {
+    "forward a travellingFrom value with no prior mapping (e.g. \"Great Britain\") unmapped, not throw" in {
       val gbEtmp = (declarationData deepMerge Json.obj(
         "simpleDeclarationRequest" -> Json.obj(
           "requestDetail" -> Json.obj(
@@ -103,7 +103,7 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
         )
       )).as[Etmp]
 
-      an[IllegalArgumentException] should be thrownBy EtmpHipTransformer.transform(gbEtmp)
+      EtmpHipTransformer.transform(gbEtmp).declarationHeader.travellingFrom shouldBe "Great Britain"
     }
   }
 }

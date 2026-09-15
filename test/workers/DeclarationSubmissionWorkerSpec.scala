@@ -51,10 +51,7 @@ class DeclarationSubmissionWorkerSpec
   val mockHipConnector: HipConnector                            = Mockito.mock(classOf[HipConnector])
   val mockAuditConnector: AuditConnector                        = Mockito.mock(classOf[AuditConnector])
   val mockAuditingTools: AuditingTools                          = Mockito.mock(classOf[AuditingTools])
-
-  // Pin the flag explicitly rather than trusting whatever this machine's local application.conf
-  // happens to have set for feature.isUsingHip (see HODConnectorSpec for the ambient-config bug
-  // this pattern avoids).
+  
   private def configWithHip(isUsingHip: Boolean): Configuration =
     Configuration(
       app.injector.instanceOf[Configuration].underlying.withValue(
