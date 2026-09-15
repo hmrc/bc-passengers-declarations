@@ -102,9 +102,9 @@ object HipSubmissionResponse {
     new HttpReads[HipSubmissionResponse] {
       override def read(method: String, url: String, response: HttpResponse): HipSubmissionResponse =
         response.status match {
-          case CREATED               =>
+          case CREATED                             =>
             Submitted
-          case UNPROCESSABLE_ENTITY  =>
+          case UNPROCESSABLE_ENTITY                =>
             val body      = safeJsonBody(response.body)
             val errorCode = (body \ "error" \ "code").asOpt[String].getOrElse("unknown")
             val errorText = (body \ "error" \ "text").asOpt[String].getOrElse(response.body)
@@ -122,7 +122,7 @@ object HipSubmissionResponse {
                 s"status=${response.status}, logId=$logId, message=$message"
             )
             Error
-          case SERVICE_UNAVAILABLE   =>
+          case SERVICE_UNAVAILABLE                 =>
             val body     = safeJsonBody(response.body)
             val origin   = (body \ "origin").asOpt[String].getOrElse("unknown")
             val failures = (body \ "response" \ "failures").toOption.map(Json.stringify).getOrElse(response.body)
@@ -131,7 +131,7 @@ object HipSubmissionResponse {
                 s"origin=$origin, failures=$failures"
             )
             Error
-          case _                     =>
+          case _                                   =>
             logger.error(
               s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE call to HIP failed, " +
                 s"Response Code is : ${response.status}"

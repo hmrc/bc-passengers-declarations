@@ -121,7 +121,8 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
 
       "set to an Error response from an INTERNAL_SERVER_ERROR HttpResponse (system error)" in {
         val body   = Json.obj(
-          "error" -> Json.obj("code" -> "500", "message" -> "SAP PI system is currently unavailable", "logId" -> "B" * 32)
+          "error" -> Json
+            .obj("code" -> "500", "message" -> "SAP PI system is currently unavailable", "logId" -> "B" * 32)
         )
         val result = hipReads.read("POST", "/", HttpResponse.apply(INTERNAL_SERVER_ERROR, body, Map.empty))
 

@@ -45,8 +45,8 @@ class HipConnector @Inject() (
   private val hipSubmissionUrl      = config.get[String]("microservice.services.des.hip.submissionUrl")
   private val hipDeclarationFullUrl = s"$hipBaseUrl/$hipSubmissionUrl"
 
-  private val hipClientId     = config.get[String]("microservice.services.des.hip.client-id")
-  private val hipClientSecret = config.get[String]("microservice.services.des.hip.client-secret")
+  private val hipClientId                   = config.get[String]("microservice.services.des.hip.client-id")
+  private val hipClientSecret               = config.get[String]("microservice.services.des.hip.client-secret")
   private val hipAuthorizationToken: String =
     Base64.getEncoder.encodeToString(s"$hipClientId:$hipClientSecret".getBytes("UTF-8"))
 
@@ -63,12 +63,6 @@ class HipConnector @Inject() (
     if (isAmendment) declaration.amendCorrelationId.getOrElse(throw new Exception(s"AmendCorrelation Id is empty"))
     else declaration.correlationId
 
-  /**
-   * EPID1778 requires "correlationid" to conform to the standard 36-character UUID format.
-   * Our stored correlationId originates from bc-passengers-frontend and isn't guaranteed to be
-   * one, so validate it and fall back to a freshly generated UUID rather than sending a value
-   * HIP will reject.
-   */
   private def getHIPCorrelationId(candidate: String): String =
     try {
       UUID.fromString(candidate)
@@ -102,7 +96,7 @@ class HipConnector @Inject() (
               s"CorrelationId: ${declaration.correlationId}, Exception: $exception"
           )
           JsObject.empty
-        case etmp                =>
+        case etmp               =>
           try Json.toJsObject(EtmpHipTransformer.transform(etmp.get))
           catch {
             case NonFatal(e) =>

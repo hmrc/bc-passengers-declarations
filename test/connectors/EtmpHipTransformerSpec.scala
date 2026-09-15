@@ -28,19 +28,19 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
       val etmp   = declarationData.as[Etmp]
       val result = EtmpHipTransformer.transform(etmp)
 
-      result.customerReference.idType shouldBe "passport"
-      result.customerReference.idValue shouldBe "SX12345"
+      result.customerReference.idType     shouldBe "passport"
+      result.customerReference.idValue    shouldBe "SX12345"
       result.customerReference.ukResident shouldBe false
 
       result.personalDetails.map(_.firstName) shouldBe Some("John")
-      result.personalDetails.map(_.lastName) shouldBe Some("Doe")
+      result.personalDetails.map(_.lastName)  shouldBe Some("Doe")
 
-      result.declarationHeader.chargeReference shouldBe chargeReference.toString
-      result.declarationHeader.travellingFrom shouldBe "NON_EU Only"
-      result.declarationHeader.onwardTravel shouldBe "GB"
+      result.declarationHeader.chargeReference      shouldBe chargeReference.toString
+      result.declarationHeader.travellingFrom       shouldBe "NON_EU Only"
+      result.declarationHeader.onwardTravel         shouldBe "GB"
       result.declarationHeader.expectedDateOfTravel shouldBe Some("2018-05-31")
 
-      result.declarationTobacco.flatMap(_.totalExciseGbp) shouldBe Some(BigDecimal("100.54"))
+      result.declarationTobacco.flatMap(_.totalExciseGbp)                                             shouldBe Some(BigDecimal("100.54"))
       result.declarationTobacco.flatMap(_.declItemTobacco.flatMap(_.headOption.map(_.commodityDesc))) shouldBe Some(
         Some("Cigarettes")
       )
@@ -49,11 +49,11 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
       )
 
       result.declarationAlcohol.flatMap(_.totalExciseGbp) shouldBe Some(BigDecimal("2.00"))
-      result.declarationOther.flatMap(_.totalCustomsGbp) shouldBe Some(BigDecimal("341.65"))
+      result.declarationOther.flatMap(_.totalCustomsGbp)  shouldBe Some(BigDecimal("341.65"))
 
       result.declarationVaping shouldBe None
 
-      result.liabilityDetails.grandTotalGbp shouldBe BigDecimal("1362.46")
+      result.liabilityDetails.grandTotalGbp  shouldBe BigDecimal("1362.46")
       result.liabilityDetails.totalExciseGbp shouldBe Some(BigDecimal("102.54"))
 
       result.amendmentLiabilityDetails shouldBe None
@@ -64,20 +64,20 @@ class EtmpHipTransformerSpec extends BaseSpec with Constants {
       val result = EtmpHipTransformer.transform(etmp)
 
       result.amendmentLiabilityDetails.flatMap(_.additionalExciseGbp) shouldBe Some(BigDecimal("102.54"))
-      result.amendmentLiabilityDetails.flatMap(_.additionalTotalGbp) shouldBe Some(BigDecimal("1362.46"))
+      result.amendmentLiabilityDetails.flatMap(_.additionalTotalGbp)  shouldBe Some(BigDecimal("1362.46"))
     }
 
     "map declarationVaping onto the EPID1778 shape when present" in {
       val etmp   = declarationDataWithVaping.as[Etmp]
       val result = EtmpHipTransformer.transform(etmp)
 
-      result.declarationVaping.flatMap(_.totalExciseGbp) shouldBe Some(BigDecimal("12.00"))
-      result.declarationVaping.flatMap(_.totalCustomsGbp) shouldBe Some(BigDecimal("1.50"))
-      result.declarationVaping.flatMap(_.totalVatGbp) shouldBe Some(BigDecimal("9.40"))
+      result.declarationVaping.flatMap(_.totalExciseGbp)                      shouldBe Some(BigDecimal("12.00"))
+      result.declarationVaping.flatMap(_.totalCustomsGbp)                     shouldBe Some(BigDecimal("1.50"))
+      result.declarationVaping.flatMap(_.totalVatGbp)                         shouldBe Some(BigDecimal("9.40"))
       result.declarationVaping
         .flatMap(_.declItemVaping.flatMap(_.headOption.map(_.commodityDesc))) shouldBe Some(Some("Vape liquid"))
       result.declarationVaping
-        .flatMap(_.declItemVaping.flatMap(_.headOption.map(_.volume))) shouldBe Some(Some("50"))
+        .flatMap(_.declItemVaping.flatMap(_.headOption.map(_.volume)))        shouldBe Some(Some("50"))
       result.declarationVaping
         .flatMap(_.declItemVaping.flatMap(_.headOption.flatMap(_.exciseGbp))) shouldBe Some(BigDecimal("12.00"))
     }

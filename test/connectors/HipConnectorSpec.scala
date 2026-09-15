@@ -101,7 +101,7 @@ class HipConnectorSpec extends BaseSpec with Constants {
           "simpleDeclarationRequest" -> Json.obj(
             "requestCommon" -> Json.obj(
               "requestParameters" -> Json.arr(
-                Json.obj("paramName" -> "REGIME", "paramValue" -> "PNGR"),
+                Json.obj("paramName" -> "REGIME", "paramValue"     -> "PNGR"),
                 Json.obj("paramName" -> "SAP_NUMBER", "paramValue" -> "XA00008000")
               )
             )
@@ -124,7 +124,7 @@ class HipConnectorSpec extends BaseSpec with Constants {
 
       await(connector.submit(declaration, isAmendment = false)) shouldBe HipSubmissionResponse.Submitted
 
-      val expectedToken = java.util.Base64.getEncoder.encodeToString("changeme:changeme".getBytes("UTF-8"))
+      val expectedToken                           = java.util.Base64.getEncoder.encodeToString("changeme:changeme".getBytes("UTF-8"))
       val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
       verify(mockHttpClientV2).post(any())(hcCaptor.capture())
       hcCaptor.getValue.extraHeaders should contain("Authorization" -> s"Basic $expectedToken")
@@ -142,7 +142,7 @@ class HipConnectorSpec extends BaseSpec with Constants {
 
       val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
       verify(mockHttpClientV2).post(any())(hcCaptor.capture())
-      val sentCorrelationId =
+      val sentCorrelationId                       =
         hcCaptor.getValue.extraHeaders.collectFirst { case ("correlationid", value) => value }.getOrElse("")
       sentCorrelationId should not be "not-a-uuid"
       noException should be thrownBy java.util.UUID.fromString(sentCorrelationId)

@@ -51,13 +51,16 @@ class DeclarationSubmissionWorkerSpec
   val mockHipConnector: HipConnector                            = Mockito.mock(classOf[HipConnector])
   val mockAuditConnector: AuditConnector                        = Mockito.mock(classOf[AuditConnector])
   val mockAuditingTools: AuditingTools                          = Mockito.mock(classOf[AuditingTools])
-  
+
   private def configWithHip(isUsingHip: Boolean): Configuration =
     Configuration(
-      app.injector.instanceOf[Configuration].underlying.withValue(
-        "feature.isUsingHip",
-        com.typesafe.config.ConfigValueFactory.fromAnyRef(isUsingHip)
-      )
+      app.injector
+        .instanceOf[Configuration]
+        .underlying
+        .withValue(
+          "feature.isUsingHip",
+          com.typesafe.config.ConfigValueFactory.fromAnyRef(isUsingHip)
+        )
     )
 
   val config: Configuration = configWithHip(isUsingHip = false)
