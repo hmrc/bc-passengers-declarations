@@ -147,5 +147,47 @@ class HipConnectorSpec extends BaseSpec with Constants {
       sentCorrelationId should not be "not-a-uuid"
       noException should be thrownBy java.util.UUID.fromString(sentCorrelationId)
     }
+
+    "return a submitted response when an amendment is submitted successfully" in new Setup {
+      val response: HipSubmissionResponse = HipSubmissionResponse.Submitted
+
+      when(mockRequestBuilder.execute(using any[HttpReads[HipSubmissionResponse]], any()))
+        .thenReturn(Future(response))
+      when(mockHttpClientV2.post(any())(any())).thenReturn(mockRequestBuilder)
+
+      await(connector.submit(amendment, isAmendment = true)) shouldBe HipSubmissionResponse.Submitted
+
+      val hcCaptor: ArgumentCaptor[HeaderCarrier] = ArgumentCaptor.forClass(classOf[HeaderCarrier])
+      verify(mockHttpClientV2).post(any())(hcCaptor.capture())
+      hcCaptor.getValue.extraHeaders should contain("X-Message-Type" -> "DeclarationAmend")
+    }
+
+    "return a ParsingException, not throw, when the declaration data doesn't parse as an Etmp at all" in new Setup {
+      await(
+        connector.submit(declaration.copy(data = Json.obj()), isAmendment = false)
+      ) shouldBe HipSubmissionResponse.ParsingException
+
+      verify(mockHttpClientV2, org.mockito.Mockito.never()).post(any())(any())
+    }
+
+    "return a ParsingException, not throw, when EtmpHipTransformer fails to convert a non-numeric monetary value" in new Setup {
+      val badDeclaration = declaration.copy(data =
+        declarationData deepMerge Json.obj(
+          "simpleDeclarationRequest" -> Json.obj(
+            "requestDetail" -> Json.obj(
+              "declarationTobacco" -> Json.obj(
+                "declarationItemTobacco" -> Json.arr(
+                  Json.obj("goodsValue" -> "not-a-number")
+                )
+              )
+            )
+          )
+        )
+      )
+
+      await(connector.submit(badDeclaration, isAmendment = false)) shouldBe HipSubmissionResponse.ParsingException
+
+      verify(mockHttpClientV2, org.mockito.Mockito.never()).post(any())(any())
+    }
   }
 }
