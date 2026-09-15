@@ -56,7 +56,11 @@ class CMADeclarationSubmissionWorkerISpec
     mongoComponent,
     chargeReferenceService,
     validationService,
-    Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false)))
+    Configuration(
+      ConfigFactory
+        .load(System.getProperty("config.resource"))
+        .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+    )
   )
 
   val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
@@ -64,6 +68,7 @@ class CMADeclarationSubmissionWorkerISpec
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
       "feature.isUsingCMA"                             -> true,
+      "feature.isUsingHip"                             -> false,
       "workers.declaration-submission-worker.interval" -> "1 second",
       "microservice.services.des.cma.port"             -> server.port(),
       "auditing.consumer.baseUri.port"                 -> server.port(),
@@ -248,7 +253,7 @@ class CMADeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
-        val hipConnector = app.injector.instanceOf[HipConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -262,7 +267,11 @@ class CMADeclarationSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -320,7 +329,7 @@ class CMADeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
-        val hipConnector = app.injector.instanceOf[HipConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -334,7 +343,11 @@ class CMADeclarationSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -409,7 +422,7 @@ class CMADeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
-        val hipConnector = app.injector.instanceOf[HipConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -423,7 +436,11 @@ class CMADeclarationSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -519,7 +536,7 @@ class CMADeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
-        val hipConnector = app.injector.instanceOf[HipConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -533,7 +550,11 @@ class CMADeclarationSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -604,7 +625,7 @@ class CMADeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
-        val hipConnector = app.injector.instanceOf[HipConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -618,7 +639,11 @@ class CMADeclarationSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -700,7 +725,7 @@ class CMADeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
-        val hipConnector = app.injector.instanceOf[HipConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -714,7 +739,11 @@ class CMADeclarationSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )

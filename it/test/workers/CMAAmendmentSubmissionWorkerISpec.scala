@@ -56,7 +56,11 @@ class CMAAmendmentSubmissionWorkerISpec
     mongoComponent,
     chargeReferenceService,
     validationService,
-    Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false)))
+    Configuration(
+      ConfigFactory
+        .load(System.getProperty("config.resource"))
+        .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+    )
   )
 
   val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
@@ -64,6 +68,7 @@ class CMAAmendmentSubmissionWorkerISpec
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
       "feature.isUsingCMA"                           -> true,
+      "feature.isUsingHip"                           -> false,
       "workers.amendment-submission-worker.interval" -> "1 second",
       "microservice.services.des.cma.port"           -> server.port(),
       "auditing.consumer.baseUri.port"               -> server.port(),
@@ -386,7 +391,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -479,7 +488,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -544,7 +557,7 @@ class CMAAmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector   = app.injector.instanceOf[HODConnector]
-        val hipConnector = app.injector.instanceOf[HipConnector]
+        val hipConnector   = app.injector.instanceOf[HipConnector]
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
@@ -555,7 +568,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -608,7 +625,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -687,7 +708,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -769,7 +794,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -838,7 +867,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -935,7 +968,11 @@ class CMAAmendmentSubmissionWorkerISpec
           lockRepository,
           hODConnector,
           hipConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource")).withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))),
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
