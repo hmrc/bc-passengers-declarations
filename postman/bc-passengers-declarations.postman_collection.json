@@ -1,0 +1,245 @@
+{
+	"info": {
+		"_postman_id": "9a1e5e2a-6c1b-4a2d-8e9b-2f1d4c6a7b3e",
+		"name": "bc-passengers-declarations",
+		"description": "Local requests for the bc-passengers-declarations backend microservice, run via service-manager (BC_PASSENGERS_DECLARATIONS, default port 9073, context path /bc-passengers-declarations, per ../service-manager-config). URLs are hardcoded to localhost:9073, no environment needed.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "correlationId",
+			"value": "fe28db96-d9db-4220-9e12-f2d267267c29",
+			"type": "string"
+		},
+		{
+			"key": "chargeReference",
+			"value": "XHPR1234567890",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Submit Declaration",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-Correlation-ID",
+						"value": "{{correlationId}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"journeyData\": {\n    \"euCountryCheck\": \"greatBritain\",\n    \"arrivingNICheck\": true,\n    \"isUKResident\": false,\n    \"bringingOverAllowance\": true,\n    \"privateCraft\": true,\n    \"ageOver17\": true,\n    \"userInformation\": {\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"identificationType\": \"passport\",\n      \"identificationNumber\": \"SX12345\",\n      \"emailAddress\": \"john.doe@example.com\",\n      \"selectPlaceOfArrival\": \"LHR\",\n      \"enterPlaceOfArrival\": \"Heathrow Airport\",\n      \"dateOfArrival\": \"2018-05-31\",\n      \"timeOfArrival\": \"13:20:00.000\"\n    },\n    \"purchasedProductInstances\": [\n      {\n        \"path\": \"other-goods/adult/adult-clothing\",\n        \"iid\": \"UCLFeP\",\n        \"country\": {\n          \"code\": \"IN\",\n          \"countryName\": \"title.india\",\n          \"alphaTwoCode\": \"IN\",\n          \"isEu\": false,\n          \"isCountry\": true,\n          \"countrySynonyms\": []\n        },\n        \"currency\": \"GBP\",\n        \"cost\": 500,\n        \"isVatPaid\": false,\n        \"isCustomPaid\": false,\n        \"isUccRelief\": false\n      }\n    ],\n    \"calculatorResponse\": {\n      \"calculation\": {\n        \"excise\": \"0.00\",\n        \"customs\": \"12.50\",\n        \"vat\": \"102.50\",\n        \"allTax\": \"115.00\"\n      }\n    }\n  },\n  \"simpleDeclarationRequest\": {\n    \"requestCommon\": {\n      \"receiptDate\": \"2020-12-29T14:00:08Z\",\n      \"requestParameters\": [\n        {\n          \"paramName\": \"REGIME\",\n          \"paramValue\": \"PNGR\"\n        }\n      ],\n      \"acknowledgementReference\": \"{{chargeReference}}0\"\n    },\n    \"requestDetail\": {\n      \"customerReference\": {\n        \"idType\": \"passport\",\n        \"idValue\": \"SX12345\",\n        \"ukResident\": false\n      },\n      \"personalDetails\": {\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\"\n      },\n      \"contactDetails\": {\n        \"emailAddress\": \"john.doe@example.com\"\n      },\n      \"declarationHeader\": {\n        \"travellingFrom\": \"NON_EU Only\",\n        \"expectedDateOfArrival\": \"2018-05-31\",\n        \"ukVATPaid\": false,\n        \"uccRelief\": false,\n        \"portOfEntryName\": \"Heathrow Airport\",\n        \"ukExcisePaid\": false,\n        \"chargeReference\": \"{{chargeReference}}\",\n        \"portOfEntry\": \"LHR\",\n        \"timeOfEntry\": \"13:20\",\n        \"onwardTravelGBNI\": \"GB\",\n        \"messageTypes\": {\n          \"messageType\": \"DeclarationCreate\"\n        }\n      },\n      \"declarationTobacco\": {\n        \"totalExciseTobacco\": \"100.54\",\n        \"totalCustomsTobacco\": \"192.94\",\n        \"totalVATTobacco\": \"149.92\",\n        \"declarationItemTobacco\": [\n          {\n            \"commodityDescription\": \"Cigarettes\",\n            \"quantity\": \"250\",\n            \"goodsValue\": \"400.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"304.11\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"74.00\",\n            \"customsGBP\": \"79.06\",\n            \"vatGBP\": \"91.43\"\n          }\n        ]\n      },\n      \"declarationAlcohol\": {\n        \"totalExciseAlcohol\": \"2.00\",\n        \"totalCustomsAlcohol\": \"0.30\",\n        \"totalVATAlcohol\": \"18.70\",\n        \"declarationItemAlcohol\": [\n          {\n            \"commodityDescription\": \"Cider\",\n            \"volume\": \"5\",\n            \"goodsValue\": \"120.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"91.23\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"2.00\",\n            \"customsGBP\": \"0.30\",\n            \"vatGBP\": \"18.70\"\n          }\n        ]\n      },\n      \"declarationOther\": {\n        \"totalExciseOther\": \"0.00\",\n        \"totalCustomsOther\": \"341.65\",\n        \"totalVATOther\": \"556.41\",\n        \"declarationItemOther\": [\n          {\n            \"commodityDescription\": \"Television\",\n            \"quantity\": \"1\",\n            \"goodsValue\": \"1500.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"1140.42\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"0.00\",\n            \"customsGBP\": \"159.65\",\n            \"vatGBP\": \"260.01\"\n          }\n        ]\n      },\n      \"liabilityDetails\": {\n        \"totalExciseGBP\": \"102.54\",\n        \"totalCustomsGBP\": \"534.89\",\n        \"totalVATGBP\": \"725.03\",\n        \"grandTotalGBP\": \"1362.46\"\n      }\n    }\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:9073/bc-passengers-declarations/submit-declaration",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9073",
+					"path": [
+						"bc-passengers-declarations",
+						"submit-declaration"
+					]
+				},
+				"description": "controllers.DeclarationController.submit() \u2014 stores the declaration as PendingPayment. X-Correlation-ID header is mandatory, missing it returns 400. The body must be top-level {journeyData, simpleDeclarationRequest} \u2014 DefaultDeclarationsRepository.insert (DeclarationsRepository.scala:85) does json(\"journeyData\").as[JsObject] and throws NoSuchElementException if journeyData is missing. Server also overwrites chargeReference/acknowledgementReference server-side (DeclarationsRepository.scala:320 toJson), so the chargeReference in the body is only a placeholder \u2014 read the real one back from the response."
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"const body = pm.response.json();",
+							"const chargeReference = body.simpleDeclarationRequest.requestDetail.declarationHeader.chargeReference;",
+							"pm.collectionVariables.set(\"chargeReference\", chargeReference);",
+							"console.log(\"chargeReference set to\", chargeReference);"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Submit Declaration (With Vape - new EPID1778 OAS)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-Correlation-ID",
+						"value": "{{correlationId}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"journeyData\": {\n    \"euCountryCheck\": \"greatBritain\",\n    \"arrivingNICheck\": true,\n    \"isUKResident\": false,\n    \"bringingOverAllowance\": true,\n    \"privateCraft\": true,\n    \"ageOver17\": true,\n    \"userInformation\": {\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"identificationType\": \"passport\",\n      \"identificationNumber\": \"SX12345\",\n      \"emailAddress\": \"john.doe@example.com\",\n      \"selectPlaceOfArrival\": \"LHR\",\n      \"enterPlaceOfArrival\": \"Heathrow Airport\",\n      \"dateOfArrival\": \"2018-05-31\",\n      \"timeOfArrival\": \"13:20:00.000\"\n    },\n    \"purchasedProductInstances\": [\n      {\n        \"path\": \"other-goods/adult/adult-clothing\",\n        \"iid\": \"UCLFeP\",\n        \"country\": {\n          \"code\": \"IN\",\n          \"countryName\": \"title.india\",\n          \"alphaTwoCode\": \"IN\",\n          \"isEu\": false,\n          \"isCountry\": true,\n          \"countrySynonyms\": []\n        },\n        \"currency\": \"GBP\",\n        \"cost\": 500,\n        \"isVatPaid\": false,\n        \"isCustomPaid\": false,\n        \"isUccRelief\": false\n      }\n    ],\n    \"calculatorResponse\": {\n      \"calculation\": {\n        \"excise\": \"0.00\",\n        \"customs\": \"12.50\",\n        \"vat\": \"102.50\",\n        \"allTax\": \"115.00\"\n      }\n    }\n  },\n  \"simpleDeclarationRequest\": {\n    \"requestCommon\": {\n      \"receiptDate\": \"2020-12-29T14:00:08Z\",\n      \"requestParameters\": [\n        {\n          \"paramName\": \"REGIME\",\n          \"paramValue\": \"PNGR\"\n        }\n      ],\n      \"acknowledgementReference\": \"{{chargeReference}}0\"\n    },\n    \"requestDetail\": {\n      \"customerReference\": {\n        \"idType\": \"passport\",\n        \"idValue\": \"SX12345\",\n        \"ukResident\": false\n      },\n      \"personalDetails\": {\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\"\n      },\n      \"contactDetails\": {\n        \"emailAddress\": \"john.doe@example.com\"\n      },\n      \"declarationHeader\": {\n        \"travellingFrom\": \"NON_EU Only\",\n        \"expectedDateOfArrival\": \"2018-05-31\",\n        \"ukVATPaid\": false,\n        \"uccRelief\": false,\n        \"portOfEntryName\": \"Heathrow Airport\",\n        \"ukExcisePaid\": false,\n        \"chargeReference\": \"{{chargeReference}}\",\n        \"portOfEntry\": \"LHR\",\n        \"timeOfEntry\": \"13:20\",\n        \"onwardTravelGBNI\": \"GB\",\n        \"messageTypes\": {\n          \"messageType\": \"DeclarationCreate\"\n        }\n      },\n      \"declarationTobacco\": {\n        \"totalExciseTobacco\": \"100.54\",\n        \"totalCustomsTobacco\": \"192.94\",\n        \"totalVATTobacco\": \"149.92\",\n        \"declarationItemTobacco\": [\n          {\n            \"commodityDescription\": \"Cigarettes\",\n            \"quantity\": \"250\",\n            \"goodsValue\": \"400.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"304.11\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"74.00\",\n            \"customsGBP\": \"79.06\",\n            \"vatGBP\": \"91.43\"\n          }\n        ]\n      },\n      \"declarationAlcohol\": {\n        \"totalExciseAlcohol\": \"2.00\",\n        \"totalCustomsAlcohol\": \"0.30\",\n        \"totalVATAlcohol\": \"18.70\",\n        \"declarationItemAlcohol\": [\n          {\n            \"commodityDescription\": \"Cider\",\n            \"volume\": \"5\",\n            \"goodsValue\": \"120.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"91.23\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"2.00\",\n            \"customsGBP\": \"0.30\",\n            \"vatGBP\": \"18.70\"\n          }\n        ]\n      },\n      \"declarationVaping\": {\n        \"totalExciseVaping\": \"12.00\",\n        \"totalCustomsVaping\": \"1.50\",\n        \"totalVATVaping\": \"9.40\",\n        \"declarationItemVaping\": [\n          {\n            \"commodityDescription\": \"Vape liquid\",\n            \"volume\": \"50\",\n            \"goodsValue\": \"40.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"30.41\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"12.00\",\n            \"customsGBP\": \"1.50\",\n            \"vatGBP\": \"9.40\"\n          }\n        ]\n      },\n      \"declarationOther\": {\n        \"totalExciseOther\": \"0.00\",\n        \"totalCustomsOther\": \"341.65\",\n        \"totalVATOther\": \"556.41\",\n        \"declarationItemOther\": [\n          {\n            \"commodityDescription\": \"Television\",\n            \"quantity\": \"1\",\n            \"goodsValue\": \"1500.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"1140.42\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"0.00\",\n            \"customsGBP\": \"159.65\",\n            \"vatGBP\": \"260.01\"\n          }\n        ]\n      },\n      \"liabilityDetails\": {\n        \"totalExciseGBP\": \"102.54\",\n        \"totalCustomsGBP\": \"534.89\",\n        \"totalVATGBP\": \"725.03\",\n        \"grandTotalGBP\": \"1362.46\"\n      }\n    }\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:9073/bc-passengers-declarations/submit-declaration",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9073",
+					"path": [
+						"bc-passengers-declarations",
+						"submit-declaration"
+					]
+				},
+				"description": "Same as Submit Declaration, but includes a declarationVaping section (DDCE-9338 / Vaping Products Duty) alongside declarationAlcohol/Tobacco/Other - same field-naming pattern (totalExciseVaping/totalCustomsVaping/totalVATVaping/declarationItemVaping), matching the shape added to conf/schemas/declarationsRequestSchema.json and Etmp.scala. This is still an assumption pending DDCE-9338 refinement - the real bc-passengers-frontend contract for vaping isn't confirmed yet. With feature.isUsingHip=true, EtmpHipTransformer maps this through to the new EPID1778 declarationVaping section unchanged (that part IS confirmed against the real HIP OAS)."
+			},
+			"response": [],
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"const body = pm.response.json();",
+							"const chargeReference = body.simpleDeclarationRequest.requestDetail.declarationHeader.chargeReference;",
+							"pm.collectionVariables.set(\"chargeReference\", chargeReference);",
+							"console.log(\"chargeReference set to\", chargeReference);"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Submit Amendment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-Correlation-ID",
+						"value": "{{correlationId}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"journeyData\": {\n    \"euCountryCheck\": \"greatBritain\",\n    \"arrivingNICheck\": true,\n    \"isUKResident\": false,\n    \"bringingOverAllowance\": true,\n    \"privateCraft\": true,\n    \"ageOver17\": true,\n    \"userInformation\": {\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"identificationType\": \"passport\",\n      \"identificationNumber\": \"SX12345\",\n      \"emailAddress\": \"john.doe@example.com\",\n      \"selectPlaceOfArrival\": \"LHR\",\n      \"enterPlaceOfArrival\": \"Heathrow Airport\",\n      \"dateOfArrival\": \"2018-05-31\",\n      \"timeOfArrival\": \"13:20:00.000\"\n    },\n    \"purchasedProductInstances\": [\n      {\n        \"path\": \"other-goods/adult/adult-clothing\",\n        \"iid\": \"UCLFeP\",\n        \"country\": {\n          \"code\": \"IN\",\n          \"countryName\": \"title.india\",\n          \"alphaTwoCode\": \"IN\",\n          \"isEu\": false,\n          \"isCountry\": true,\n          \"countrySynonyms\": []\n        },\n        \"currency\": \"GBP\",\n        \"cost\": 500,\n        \"isVatPaid\": false,\n        \"isCustomPaid\": false,\n        \"isUccRelief\": false\n      }\n    ],\n    \"calculatorResponse\": {\n      \"calculation\": {\n        \"excise\": \"0.00\",\n        \"customs\": \"12.50\",\n        \"vat\": \"102.50\",\n        \"allTax\": \"115.00\"\n      }\n    }\n  },\n  \"simpleDeclarationRequest\": {\n    \"requestCommon\": {\n      \"receiptDate\": \"2020-12-29T14:00:08Z\",\n      \"requestParameters\": [\n        {\n          \"paramName\": \"REGIME\",\n          \"paramValue\": \"PNGR\"\n        }\n      ],\n      \"acknowledgementReference\": \"{{chargeReference}}0\"\n    },\n    \"requestDetail\": {\n      \"customerReference\": {\n        \"idType\": \"passport\",\n        \"idValue\": \"SX12345\",\n        \"ukResident\": false\n      },\n      \"personalDetails\": {\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\"\n      },\n      \"contactDetails\": {\n        \"emailAddress\": \"john.doe@example.com\"\n      },\n      \"declarationHeader\": {\n        \"travellingFrom\": \"NON_EU Only\",\n        \"expectedDateOfArrival\": \"2018-05-31\",\n        \"ukVATPaid\": false,\n        \"uccRelief\": false,\n        \"portOfEntryName\": \"Heathrow Airport\",\n        \"ukExcisePaid\": false,\n        \"chargeReference\": \"{{chargeReference}}\",\n        \"portOfEntry\": \"LHR\",\n        \"timeOfEntry\": \"13:20\",\n        \"onwardTravelGBNI\": \"GB\",\n        \"messageTypes\": {\n          \"messageType\": \"DeclarationAmend\"\n        }\n      },\n      \"declarationTobacco\": {\n        \"totalExciseTobacco\": \"100.54\",\n        \"totalCustomsTobacco\": \"192.94\",\n        \"totalVATTobacco\": \"149.92\",\n        \"declarationItemTobacco\": [\n          {\n            \"commodityDescription\": \"Cigarettes\",\n            \"quantity\": \"250\",\n            \"goodsValue\": \"400.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"304.11\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"74.00\",\n            \"customsGBP\": \"79.06\",\n            \"vatGBP\": \"91.43\"\n          }\n        ]\n      },\n      \"declarationAlcohol\": {\n        \"totalExciseAlcohol\": \"2.00\",\n        \"totalCustomsAlcohol\": \"0.30\",\n        \"totalVATAlcohol\": \"18.70\",\n        \"declarationItemAlcohol\": [\n          {\n            \"commodityDescription\": \"Cider\",\n            \"volume\": \"5\",\n            \"goodsValue\": \"120.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"91.23\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"2.00\",\n            \"customsGBP\": \"0.30\",\n            \"vatGBP\": \"18.70\"\n          }\n        ]\n      },\n      \"declarationOther\": {\n        \"totalExciseOther\": \"0.00\",\n        \"totalCustomsOther\": \"341.65\",\n        \"totalVATOther\": \"556.41\",\n        \"declarationItemOther\": [\n          {\n            \"commodityDescription\": \"Television\",\n            \"quantity\": \"1\",\n            \"goodsValue\": \"1500.00\",\n            \"valueCurrency\": \"USD\",\n            \"valueCurrencyName\": \"USA dollars (USD)\",\n            \"originCountry\": \"US\",\n            \"originCountryName\": \"United States of America\",\n            \"exchangeRate\": \"1.20\",\n            \"exchangeRateDate\": \"2018-10-29\",\n            \"goodsValueGBP\": \"1140.42\",\n            \"VATRESClaimed\": false,\n            \"exciseGBP\": \"0.00\",\n            \"customsGBP\": \"159.65\",\n            \"vatGBP\": \"260.01\"\n          }\n        ]\n      },\n      \"liabilityDetails\": {\n        \"totalExciseGBP\": \"102.54\",\n        \"totalCustomsGBP\": \"534.89\",\n        \"totalVATGBP\": \"725.03\",\n        \"grandTotalGBP\": \"1362.46\"\n      },\n      \"amendmentLiabilityDetails\": {\n        \"additionalExciseGBP\": \"102.54\",\n        \"additionalCustomsGBP\": \"534.89\",\n        \"additionalVATGBP\": \"725.03\",\n        \"additionalTotalGBP\": \"1362.46\"\n      }\n    }\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:9073/bc-passengers-declarations/submit-amendment",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9073",
+					"path": [
+						"bc-passengers-declarations",
+						"submit-amendment"
+					]
+				},
+				"description": "controllers.DeclarationController.submitAmendment() \u2014 validates the payload against conf/schemas/declarationsRequestSchema.json, then stores it against the existing declaration found by declarationHeader.chargeReference. Requires an existing declaration created via Submit Declaration first (use the real chargeReference from that response, not this collection's placeholder), and the X-Correlation-ID header. Same {journeyData, simpleDeclarationRequest} top-level shape as Submit Declaration is required by the schema (maxProperties: 2)."
+			},
+			"response": []
+		},
+		{
+			"name": "Update Payment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"reference\": \"{{chargeReference}}\",\n  \"status\": \"Successful\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:9073/bc-passengers-declarations/update-payment",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9073",
+					"path": [
+						"bc-passengers-declarations",
+						"update-payment"
+					]
+				},
+				"description": "controllers.DeclarationController.update() \u2014 moves the declaration to Paid/PaymentFailed/PaymentCancelled depending on \"status\" (Successful | Failed | Cancelled). Needs a declaration already created via Submit Declaration for the given \"reference\" (chargeReference), otherwise returns 404."
+			},
+			"response": []
+		},
+		{
+			"name": "Retrieve Declaration",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"lastName\": \"Doe\",\n  \"referenceNumber\": \"{{chargeReference}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:9073/bc-passengers-declarations/retrieve-declaration",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9073",
+					"path": [
+						"bc-passengers-declarations",
+						"retrieve-declaration"
+					]
+				},
+				"description": "controllers.DeclarationController.retrieveDeclaration() \u2014 looks up a previously submitted declaration in this service's own MongoDB by lastName + referenceNumber (chargeReference); state must be \"paid\" (see DeclarationsRepository.get(PreviousDeclarationRequest)). The declarations-stub can't provide a ready-made reference here since it doesn't persist anything (SubmissionController.submit just returns 204). To make {{chargeReference}} / \"Doe\" resolve, run Submit Declaration then Update Payment (status=Successful) first with the same chargeReference \u2014 that's what puts the record in the \"paid\" state this endpoint requires."
+			},
+			"response": []
+		}
+	]
+}
