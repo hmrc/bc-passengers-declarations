@@ -33,6 +33,9 @@
 						"declarationAlcohol": {
 							"$ref": "#/definitions/declarationAlcohol"
 						},
+						"declarationVaping": {
+							"$ref": "#/definitions/declarationVaping"
+						},
 						"declarationOther": {
 							"$ref": "#/definitions/declarationOther"
 						},
@@ -162,7 +165,9 @@
 				}
 			},
 			"required": [
-				"idType", "idValue", "ukResident"
+				"idType",
+				"idValue",
+				"ukResident"
 			],
 			"additionalProperties": false
 		},
@@ -226,7 +231,13 @@
 				}
 			},
 			"required": [
-				"chargeReference", "travellingFrom", "onwardTravelGBNI", "uccRelief", "ukVATPaid", "ukExcisePaid", "messageTypes"
+				"chargeReference",
+				"travellingFrom",
+				"onwardTravelGBNI",
+				"uccRelief",
+				"ukVATPaid",
+				"ukExcisePaid",
+				"messageTypes"
 			],
 			"additionalProperties": false
 		},
@@ -272,6 +283,27 @@
 			},
 			"additionalProperties": false
 		},
+		"declarationVaping": {
+			"type": "object",
+			"properties": {
+				"totalExciseVaping": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"totalCustomsVaping": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"totalVATVaping": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"declarationItemVaping": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/declarationItemVapingObject"
+					}
+				}
+			},
+			"additionalProperties": false
+		},
 		"declarationOther": {
 			"type": "object",
 			"properties": {
@@ -299,6 +331,66 @@
 			"format": "date-time"
 		},
 		"declarationItemAlcoholObject": {
+			"type": "object",
+			"properties": {
+				"commodityDescription": {
+					"$ref": "#/definitions/String40"
+				},
+				"volume": {
+					"$ref": "#/definitions/StringInteger17"
+				},
+				"goodsValue": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"valueCurrency": {
+					"$ref": "#/definitions/String3"
+				},
+				"originCountry": {
+					"$ref": "#/definitions/String3"
+				},
+				"exchangeRate": {
+					"$ref": "#/definitions/DecimalString13.5"
+				},
+				"exchangeRateDate": {
+					"$ref": "#/definitions/DateType"
+				},
+				"goodsValueGBP": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"VATRESClaimed": {
+					"type": "boolean"
+				},
+				"exciseGBP": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"customsGBP": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"vatGBP": {
+					"$ref": "#/definitions/DecimalString13.2"
+				},
+				"valueCurrencyName": {
+					"$ref": "#/definitions/String40"
+				},
+				"originCountryName": {
+					"$ref": "#/definitions/String60"
+				},
+				"ukVATPaid": {
+					"type": "boolean"
+				},
+				"ukExcisePaid": {
+					"type": "boolean"
+				},
+				"madeIn": {
+					"$ref": "#/definitions/String40"
+				},
+				"euCustomsRelief": {
+					"type": "boolean"
+				}
+			},
+			"additionalProperties": false
+		},
+		"declarationItemVapingObject": {
 			"type": "object",
 			"properties": {
 				"commodityDescription": {
@@ -425,7 +517,10 @@
 					"maxLength": 30,
 					"minLength": 1,
 					"type": "string",
-					"enum": ["DeclarationCreate", "DeclarationAmend"]
+					"enum": [
+						"DeclarationCreate",
+						"DeclarationAmend"
+					]
 				}
 			},
 			"required": [

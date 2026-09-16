@@ -18,11 +18,15 @@ package models
 
 import play.api.i18n.Lang.logger.logger
 import play.api.http.Status.*
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
+
+import scala.util.Try
 
 sealed trait Response
 sealed trait SubmissionResponse extends Response
 sealed trait CMASubmissionResponse extends Response
+sealed trait HipSubmissionResponse extends Response
 
 object SubmissionResponse {
 
@@ -79,6 +83,58 @@ object CMASubmissionResponse {
           case _                     =>
             logger.error(
               s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] call to DES (EIS) is failed, Response Code is : ${response.status}"
+            )
+            Error
+        }
+    }
+}
+
+object HipSubmissionResponse {
+
+  case object Submitted extends HipSubmissionResponse
+  case object Failed extends HipSubmissionResponse
+  case object Error extends HipSubmissionResponse
+  case object ParsingException extends HipSubmissionResponse
+
+  private def safeJsonBody(body: String): JsValue = Try(Json.parse(body)).getOrElse(Json.obj())
+
+  implicit lazy val httpReads: HttpReads[HipSubmissionResponse] =
+    new HttpReads[HipSubmissionResponse] {
+      override def read(method: String, url: String, response: HttpResponse): HipSubmissionResponse =
+        response.status match {
+          case CREATED                             =>
+            Submitted
+          case UNPROCESSABLE_ENTITY                =>
+            val body      = safeJsonBody(response.body)
+            val errorCode = (body \ "error" \ "code").asOpt[String].getOrElse("unknown")
+            val errorText = (body \ "error" \ "text").asOpt[String].getOrElse(response.body)
+            logger.error(
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE ETMP rejected the passenger declaration, " +
+                s"code=$errorCode, text=$errorText"
+            )
+            Failed
+          case BAD_REQUEST | INTERNAL_SERVER_ERROR =>
+            val body    = safeJsonBody(response.body)
+            val logId   = (body \ "error" \ "logId").asOpt[String].getOrElse("unknown")
+            val message = (body \ "error" \ "message").asOpt[String].getOrElse(response.body)
+            logger.error(
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE system error from HIP, " +
+                s"status=${response.status}, logId=$logId, message=$message"
+            )
+            Error
+          case SERVICE_UNAVAILABLE                 =>
+            val body     = safeJsonBody(response.body)
+            val origin   = (body \ "origin").asOpt[String].getOrElse("unknown")
+            val failures = (body \ "response" \ "failures").toOption.map(Json.stringify).getOrElse(response.body)
+            logger.error(
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE HIP service unavailable, " +
+                s"origin=$origin, failures=$failures"
+            )
+            Error
+          case _                                   =>
+            logger.error(
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE call to HIP failed, " +
+                s"Response Code is : ${response.status}"
             )
             Error
         }

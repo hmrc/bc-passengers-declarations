@@ -16,25 +16,19 @@
 
 package connectors
 
-import com.typesafe.config.{Config, ConfigFactory}
 import helpers.{BaseSpec, Constants}
-import models.{CMASubmissionResponse, ChargeReference, SubmissionResponse}
-import models.declarations.State
-import org.mockito.ArgumentMatchers
+import models.{CMASubmissionResponse, SubmissionResponse}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{mock, when}
-import org.scalatest.matchers.should.Matchers.shouldBe
-import org.scalatest.wordspec.AnyWordSpec
 import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.inject.*
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.BodyWritable
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.http.HttpReads
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

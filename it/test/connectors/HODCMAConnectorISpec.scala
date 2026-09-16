@@ -48,6 +48,7 @@ class HODCMAConnectorISpec
     new GuiceApplicationBuilder()
       .configure(
         "feature.isUsingCMA"                                          -> true,
+        "feature.isUsingHip"                                          -> false,
         "microservice.services.des.cma.port"                          -> server.port(),
         "microservice.services.des.cma.circuit-breaker.max-failures"  -> 1,
         "microservice.services.des.cma.circuit-breaker.reset-timeout" -> "1 second"
