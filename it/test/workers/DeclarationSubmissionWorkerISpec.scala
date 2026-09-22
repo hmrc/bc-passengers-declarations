@@ -19,6 +19,7 @@ package workers
 import com.github.tomakehurst.wiremock.client.WireMock.{any => _, _}
 import com.typesafe.config.ConfigFactory
 import connectors.HODConnector
+import connectors.HipConnector
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, Etmp, State}
 import models.{ChargeReference, SubmissionResponse}
@@ -55,7 +56,11 @@ class DeclarationSubmissionWorkerISpec
     mongoComponent,
     chargeReferenceService,
     validationService,
-    Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+    Configuration(
+      ConfigFactory
+        .load(System.getProperty("config.resource"))
+        .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+    )
   )
 
   val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
@@ -63,6 +68,7 @@ class DeclarationSubmissionWorkerISpec
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
       "feature.isUsingCMA"                             -> false,
+      "feature.isUsingHip"                             -> false,
       "workers.declaration-submission-worker.interval" -> "1 second",
       "microservice.services.des.port"                 -> server.port(),
       "auditing.consumer.baseUri.port"                 -> server.port(),
@@ -247,6 +253,7 @@ class DeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -259,7 +266,12 @@ class DeclarationSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -317,6 +329,7 @@ class DeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -329,7 +342,12 @@ class DeclarationSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -404,6 +422,7 @@ class DeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -416,7 +435,12 @@ class DeclarationSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -512,6 +536,7 @@ class DeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -524,7 +549,12 @@ class DeclarationSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -595,6 +625,7 @@ class DeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -607,7 +638,12 @@ class DeclarationSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -689,6 +725,7 @@ class DeclarationSubmissionWorkerISpec
         val declarationsRepository = app.injector.instanceOf[DeclarationsRepository]
         val chargeReferenceService = app.injector.instanceOf[ChargeReferenceService]
         val hODConnector           = app.injector.instanceOf[HODConnector]
+        val hipConnector           = app.injector.instanceOf[HipConnector]
 
         val services = Seq(declarationsRepository.started, chargeReferenceService.started, lockRepository.started)
 
@@ -701,7 +738,12 @@ class DeclarationSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )

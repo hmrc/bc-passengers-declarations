@@ -40,6 +40,7 @@ class RequestDetailSpec extends AnyWordSpec with Matchers {
         ),
         declarationTobacco = None,
         declarationAlcohol = None,
+        declarationVaping = None,
         declarationOther = None,
         liabilityDetails = LiabilityDetails(
           totalExciseGBP = Some("100"),

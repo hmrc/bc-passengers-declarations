@@ -68,65 +68,120 @@ restart which will allow these records to be processed again.
 
 ## Endpoints
 
-### `POST /bc-passengers-declarations/submit`
+The four endpoints below all live under `/bc-passengers-declarations`, so for example `submit-declaration` is really `POST /bc-passengers-declarations/submit-declaration`.
 
-#### Request Headers
+### `POST /submit-declaration`
 
-| Header         | Value              |
-|----------------|--------------------|
-| `Content-Type` | `application/json` |
+Creates a new declaration. This is where a passenger's journey starts - before they've paid anything.
+
+#### Request headers
+
+| Header             | Required | Value |
+|--------------------|----------|-------|
+| `Content-Type`     | Yes      | `application/json` |
+| `X-Correlation-ID` | Yes      | Any string. Sent back on the response and stored against the declaration so the request can be traced end to end. |
 
 #### Request body
 
-Json payload to be sent to MDG.
+The declaration payload (see the schema at `conf/schemas/declarationsRequestSchema.json`, or just look at the `Submit Declaration` request in the [Postman collection](#postman-collection) below).
 
 #### Response statuses
 
-| Status | Meaning |
-|--------|---------|
-| `202`  | The request has been accepted for processing. |
-| `400`  | The request has failed schema validation. |
-| `500`  | Any server error will cause this status, most likely issue would be difficulty in connecting to MongoDB. |
+| Status | When |
+|--------|------|
+| `202`  | Accepted. A charge reference has been generated and the declaration is stored in Mongo with state `pending-payment`. |
+| `400`  | Either the `X-Correlation-ID` header was missing, or the body failed schema validation. |
+| `500`  | Something went wrong on our side - most likely we couldn't reach MongoDB. |
 
-#### Response body (202)
+On a `202`, the body is the stored declaration document, which includes the generated `chargeReference` you'll need for the next two calls. On a `400` from failed validation, the body is a JSON array of the individual validation errors, e.g. `"errors": ["object has missing required properties ([\"foo\"])"]`.
 
-The successful response body is json document which has been stored into mongo.
+### `POST /submit-amendment`
 
-This will include the following fields:
+Same idea as `submit-declaration`, but for amending a declaration that's already been submitted (typically because the passenger has more to declare after the fact).
 
-| Field | Example | Value |
-|-------|---------|-------|
-| `_id`             | `"XHPR1234567890"`  | This is the charge reference which has been generated for the request which should be used in the subsequent `update` call. |
-| `data`            | `{ ... }`           | This is the data which has been submitted, modified to add the charge reference into the place in the structure which MDG expects it. |
-| `lastUpdated`     | ???                 | This is the last updated time of the record, in this case it will have been the time at which the model was created. |
-| `state`           | `"pending-payment"` | All newly submitted declarations will have a `PendingPayment` state. |
+#### Request headers
 
-#### Response body (400)
+Same as `submit-declaration` - `Content-Type: application/json` and `X-Correlation-ID` are both required.
 
-The bad request response body will contain a list of validation errors. For example:
+#### Request body
 
-```$json
-"errors": [
-  "object has missing required properties ([\"foo\"])"
-]
+The amendment payload, containing the original `chargeReference` plus the revised declaration data.
+
+#### Response statuses
+
+| Status | When |
+|--------|------|
+| `202`  | Accepted. The amendment is stored against the existing declaration with amend-state `pending-payment`. |
+| `400`  | Either the `X-Correlation-ID` header was missing, or the body failed schema validation. |
+| `423`  | The declaration is currently locked by another request (e.g. a worker is processing it at the same moment). Safe to retry. |
+
+### `POST /update-payment`
+
+Called once the passenger has actually paid (or the payment failed/was cancelled), to move the declaration on to the next stage.
+
+#### Request body
+
+```json
+{
+  "reference": "XHPR1234567890",
+  "status": "Successful"
+}
 ```
 
-### `POST /bc-passengers-declarations/update/:chargeReference`
+`status` is one of `Successful`, `Failed` or `Cancelled`.
 
-#### Request
+#### Response statuses
 
-No headers are required, post body should be empty.
+| Status | When |
+|--------|------|
+| `202`  | The declaration's (or amendment's) state has been updated to reflect the payment outcome - `paid`, `payment-failed` or `payment-cancelled`. Calling this again on an already-`paid` declaration is harmless and still returns `202`. |
+| `400`  | The request body didn't match the expected shape. |
+| `404`  | No declaration exists for that `reference`. |
+| `409`  | The declaration is in a state that can't take a payment update right now - for example it's already `Failed`. |
+| `423`  | The declaration is locked by another request at the same moment (e.g. the `PaymentTimeoutWorker` is processing it). Safe to retry. |
 
-The `chargeReference` in the url should match one returned from a previous call to the `submit` endpoint.
+Once a declaration is marked `paid`, the `DeclarationSubmissionWorker` (or `AmendmentSubmissionWorker` for amendments) picks it up in the background and submits it to MDG/HIP - see the [Flow](#flow) section above.
 
-#### Response statuses  
+### `POST /retrieve-declaration`
 
-| Status | Meaning |
-|--------|---------|
-| `202`  | This means that the declaration identified by the `chargeReference` will have its `status` set to `Paid`. If a declaration is already in the `Paid` state then this will do nothing but still return `202` |
-| `404`  | This means that no declaration for the given charge reference exists in MongoDB. |
-| `409`  | This means that the declaration is not in a valid state to be set to `Paid`, for example, if a declaration is in a `Failed` state. |
-| `423`  | This means that the declaration is already locked for processing by another part of the system. This should only be able to happen if the `update` is submitted at the same time as the `PaymentTimeoutWorker` is attempting to process the record. |
+Looks up a previously submitted declaration by the passenger's last name and their reference number, mainly used for support/lookup purposes.
+
+#### Request body
+
+```json
+{
+  "lastName": "Doe",
+  "referenceNumber": "XHPR1234567890"
+}
+```
+
+#### Response statuses
+
+| Status | When |
+|--------|------|
+| `200`  | Found - the response body is the declaration. |
+| `400`  | The request body didn't match the expected shape. |
+| `404`  | No declaration matches that last name and reference number combination. |
+
+## Postman collection
+
+A Postman collection covering the service's endpoints lives at [`postman/bc-passengers-declarations.postman_collection.json`](postman/bc-passengers-declarations.postman_collection.json).
+
+It contains:
+
+| Request | Endpoint |
+|---------|----------|
+| `Submit Declaration` | `POST /bc-passengers-declarations/submit-declaration` |
+| `Submit Declaration (With Vape - new EPID1778 OAS)` | `POST /bc-passengers-declarations/submit-declaration` |
+| `Submit Amendment` | `POST /bc-passengers-declarations/submit-amendment` |
+| `Update Payment` | `POST /bc-passengers-declarations/update-payment` |
+| `Retrieve Declaration` | `POST /bc-passengers-declarations/retrieve-declaration` |
+
+URLs are hardcoded to `http://localhost:9073`, since Postman is only expected to be run locally against a service started with `sbt run`.
+
+`Submit Declaration` has a test script that captures the returned `chargeReference` into a collection variable, so it can be run before `Update Payment` or `Retrieve Declaration` without manually copying the value across.
+
+To exercise the HIP path (`feature.isUsingHip = true`), also run [`bc-passengers-declarations-stub`](../bc-passengers-declarations-stub) locally (its own `postman/` collection stubs the HIP responses) - see that repo's README for details.
 
 ### License
 

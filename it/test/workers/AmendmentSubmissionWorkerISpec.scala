@@ -19,6 +19,7 @@ package workers
 import com.github.tomakehurst.wiremock.client.WireMock.{any as _, *}
 import com.typesafe.config.ConfigFactory
 import connectors.HODConnector
+import connectors.HipConnector
 import helpers.IntegrationSpecCommonBase
 import models.declarations.{Declaration, State}
 import models.{ChargeReference, SubmissionResponse}
@@ -55,7 +56,11 @@ class AmendmentSubmissionWorkerISpec
     mongoComponent,
     chargeReferenceService,
     validationService,
-    Configuration(ConfigFactory.load(System.getProperty("config.resource")))
+    Configuration(
+      ConfigFactory
+        .load(System.getProperty("config.resource"))
+        .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+    )
   )
 
   val lockRepository: DefaultLockRepository = new DefaultLockRepository(mongoComponent)
@@ -63,6 +68,7 @@ class AmendmentSubmissionWorkerISpec
   lazy val builder: GuiceApplicationBuilder = new GuiceApplicationBuilder()
     .configure(
       "feature.isUsingCMA"                           -> false,
+      "feature.isUsingHip"                           -> false,
       "workers.amendment-submission-worker.interval" -> "1 second",
       "microservice.services.des.port"               -> server.port(),
       "auditing.consumer.baseUri.port"               -> server.port(),
@@ -375,6 +381,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector = app.injector.instanceOf[HODConnector]
+        val hipConnector = app.injector.instanceOf[HipConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
@@ -383,7 +390,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -466,6 +478,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector = app.injector.instanceOf[HODConnector]
+        val hipConnector = app.injector.instanceOf[HipConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
@@ -474,7 +487,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -539,6 +557,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector   = app.injector.instanceOf[HODConnector]
+        val hipConnector   = app.injector.instanceOf[HipConnector]
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
 
@@ -548,7 +567,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -591,6 +615,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector = app.injector.instanceOf[HODConnector]
+        val hipConnector = app.injector.instanceOf[HipConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
@@ -599,7 +624,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -668,6 +698,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector = app.injector.instanceOf[HODConnector]
+        val hipConnector = app.injector.instanceOf[HipConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
@@ -676,7 +707,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -748,6 +784,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector = app.injector.instanceOf[HODConnector]
+        val hipConnector = app.injector.instanceOf[HipConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
@@ -756,7 +793,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -784,6 +826,7 @@ class AmendmentSubmissionWorkerISpec
       running(app) {
 
         val hODConnector = app.injector.instanceOf[HODConnector]
+        val hipConnector = app.injector.instanceOf[HipConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
@@ -823,7 +866,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )
@@ -910,6 +958,7 @@ class AmendmentSubmissionWorkerISpec
         await(repository.collection.insertMany(declarations).toFuture())
 
         val hODConnector = app.injector.instanceOf[HODConnector]
+        val hipConnector = app.injector.instanceOf[HipConnector]
 
         val auditConnector = app.injector.instanceOf[AuditConnector]
         val auditingTools  = app.injector.instanceOf[AuditingTools]
@@ -918,7 +967,12 @@ class AmendmentSubmissionWorkerISpec
           repository.asInstanceOf[DeclarationsRepository],
           lockRepository,
           hODConnector,
-          Configuration(ConfigFactory.load(System.getProperty("config.resource"))),
+          hipConnector,
+          Configuration(
+            ConfigFactory
+              .load(System.getProperty("config.resource"))
+              .withValue("feature.isUsingHip", com.typesafe.config.ConfigValueFactory.fromAnyRef(false))
+          ),
           auditConnector,
           auditingTools
         )

@@ -16,8 +16,8 @@
 
 package workers
 
-import connectors.HODConnector
-import models.{CMASubmissionResponse, Response, SubmissionResponse}
+import connectors.{HODConnector, HipConnector}
+import models.{CMASubmissionResponse, HipSubmissionResponse, Response, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import org.apache.pekko.stream.{ActorAttributes, Materializer}
@@ -35,6 +35,7 @@ class AmendmentSubmissionWorker @Inject() (
   declarationsRepository: DeclarationsRepository,
   override protected val lockRepository: LockRepository,
   hodConnector: HODConnector,
+  hipConnector: HipConnector,
   config: Configuration,
   auditConnector: AuditConnector,
   auditingTools: AuditingTools
@@ -42,6 +43,11 @@ class AmendmentSubmissionWorker @Inject() (
     extends BaseDeclarationWorker {
 
   private val logger = Logger(this.getClass)
+
+  private val isUsingHip: Boolean = config.get[Boolean]("feature.isUsingHip")
+
+  private def submit(declaration: Declaration, isAmendment: Boolean): Future[Response] =
+    if (isUsingHip) hipConnector.submit(declaration, isAmendment) else hodConnector.submit(declaration, isAmendment)
 
   private val initialDelay: FiniteDuration =
     durationValueFromConfig("workers.amendment-submission-worker.initial-delay", config)
@@ -62,15 +68,16 @@ class AmendmentSubmissionWorker @Inject() (
       .mapConcat(lockSuccessful)
       .mapAsync(parallelism) { declaration =>
         for {
-          result <- hodConnector.submit(declaration, isAmendment = true)
+          result <- submit(declaration, isAmendment = true)
           _      <- result match {
-                      case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted               =>
+                      case SubmissionResponse.Submitted | CMASubmissionResponse.Submitted |
+                          HipSubmissionResponse.Submitted =>
                         auditConnector.sendExtendedEvent(
                           auditingTools
                             .buildDeclarationSubmittedDataEvent(declaration.amendData.get, declaration.journeyData)
                         )
                         declarationsRepository.setAmendSentToEtmp(declaration.chargeReference, amendSentToEtmp = true)
-                      case SubmissionResponse.Error | CMASubmissionResponse.Error                       =>
+                      case SubmissionResponse.Error | CMASubmissionResponse.Error | HipSubmissionResponse.Error    =>
                         logger.error(
                           s"""[AmendmentSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
                               |ChargeReference:  ${declaration.chargeReference},
@@ -78,9 +85,10 @@ class AmendmentSubmissionWorker @Inject() (
                               .getOrElse("amendCorrelationId is not available in Mongo")}""".stripMargin.replace("\n", " ")
                         )
                         Future.successful(())
-                      case SubmissionResponse.ParsingException | CMASubmissionResponse.ParsingException =>
+                      case SubmissionResponse.ParsingException | CMASubmissionResponse.ParsingException |
+                          HipSubmissionResponse.ParsingException =>
                         Future.successful(())
-                      case SubmissionResponse.Failed | CMASubmissionResponse.Failed                     =>
+                      case SubmissionResponse.Failed | CMASubmissionResponse.Failed | HipSubmissionResponse.Failed =>
                         logger.error(
                           s"""[AmendmentSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS)
                               |ChargeReference:  ${declaration.chargeReference},

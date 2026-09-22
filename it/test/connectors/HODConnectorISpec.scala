@@ -48,6 +48,7 @@ class HODConnectorISpec
     new GuiceApplicationBuilder()
       .configure(
         "feature.isUsingCMA"                                      -> false,
+        "feature.isUsingHip"                                      -> false,
         "microservice.services.des.port"                          -> server.port(),
         "microservice.services.des.circuit-breaker.max-failures"  -> 1,
         "microservice.services.des.circuit-breaker.reset-timeout" -> "1 second"

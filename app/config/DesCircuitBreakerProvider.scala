@@ -29,8 +29,15 @@ class DesCircuitBreakerProvider @Inject() (config: Configuration)(implicit ec: E
     extends Provider[CircuitBreaker] {
 
   lazy val isUsingCMA: Boolean = config.get[Boolean]("feature.isUsingCMA")
+  lazy val isUsingHip: Boolean = config.get[Boolean]("feature.isUsingHip")
 
-  private val (maxFailures, callTimeout, resetTimeout) = if (isUsingCMA) {
+  private val (maxFailures, callTimeout, resetTimeout) = if (isUsingHip) {
+    (
+      config.get[Int]("microservice.services.des.hip.circuit-breaker.max-failures"),
+      config.get[FiniteDuration]("microservice.services.des.hip.circuit-breaker.call-timeout"),
+      config.get[FiniteDuration]("microservice.services.des.hip.circuit-breaker.reset-timeout")
+    )
+  } else if (isUsingCMA) {
     (
       config.get[Int]("microservice.services.des.cma.circuit-breaker.max-failures"),
       config.get[FiniteDuration]("microservice.services.des.cma.circuit-breaker.call-timeout"),

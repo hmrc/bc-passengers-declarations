@@ -16,9 +16,9 @@
 
 package workers
 
-import connectors.HODConnector
+import connectors.{HODConnector, HipConnector}
 import helpers.Constants
-import models.SubmissionResponse
+import models.{HipSubmissionResponse, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
@@ -48,10 +48,22 @@ class DeclarationSubmissionWorkerSpec
   val mockDeclarationsRepository: DefaultDeclarationsRepository = Mockito.mock(classOf[DefaultDeclarationsRepository])
   val mockLockRepository: DefaultLockRepository                 = Mockito.mock(classOf[DefaultLockRepository])
   val mockHodConnector: HODConnector                            = Mockito.mock(classOf[HODConnector])
+  val mockHipConnector: HipConnector                            = Mockito.mock(classOf[HipConnector])
   val mockAuditConnector: AuditConnector                        = Mockito.mock(classOf[AuditConnector])
   val mockAuditingTools: AuditingTools                          = Mockito.mock(classOf[AuditingTools])
 
-  val config: Configuration = app.injector.instanceOf[Configuration]
+  private def configWithHip(isUsingHip: Boolean): Configuration =
+    Configuration(
+      app.injector
+        .instanceOf[Configuration]
+        .underlying
+        .withValue(
+          "feature.isUsingHip",
+          com.typesafe.config.ConfigValueFactory.fromAnyRef(isUsingHip)
+        )
+    )
+
+  val config: Configuration = configWithHip(isUsingHip = false)
 
   implicit val materializer: Materializer = app.injector.instanceOf[Materializer]
 
@@ -60,7 +72,20 @@ class DeclarationSubmissionWorkerSpec
       declarationsRepository = mockDeclarationsRepository,
       lockRepository = mockLockRepository,
       hodConnector = mockHodConnector,
+      hipConnector = mockHipConnector,
       config = config,
+      auditConnector = mockAuditConnector,
+      auditingTools = mockAuditingTools
+    )
+  }
+
+  trait HipSetup {
+    lazy val declarationSubmissionWorker = new DeclarationSubmissionWorker(
+      declarationsRepository = mockDeclarationsRepository,
+      lockRepository = mockLockRepository,
+      hodConnector = mockHodConnector,
+      hipConnector = mockHipConnector,
+      config = configWithHip(isUsingHip = true),
       auditConnector = mockAuditConnector,
       auditingTools = mockAuditingTools
     )
@@ -69,6 +94,8 @@ class DeclarationSubmissionWorkerSpec
   override def beforeEach(): Unit = {
     reset(mockDeclarationsRepository)
     reset(mockLockRepository)
+    reset(mockHodConnector)
+    reset(mockHipConnector)
   }
 
   "DeclarationSubmissionWorker" when {
@@ -182,6 +209,22 @@ class DeclarationSubmissionWorkerSpec
 
         declarationSubmissionWorker.tap.pull().failed.map(_ shouldBe an[ControlThrowable])
 
+      }
+
+      "submit via the HipConnector instead of the HODConnector when feature.isUsingHip is true" in new HipSetup {
+
+        when(mockDeclarationsRepository.paidDeclarationsForEtmp).thenReturn(Source(Vector(declaration)))
+
+        when(mockLockRepository.lock(declaration.chargeReference.value)).thenReturn(Future.successful(true))
+        when(mockHipConnector.submit(declaration, isAmendment = false))
+          .thenReturn(Future.successful(HipSubmissionResponse.Submitted))
+        when(mockDeclarationsRepository.setSentToEtmp(declaration.chargeReference, sentToEtmp = true))
+          .thenReturn(Future.successful(declaration))
+        when(mockLockRepository.release(declaration.chargeReference.value)).thenReturn(Future.unit)
+
+        await(declarationSubmissionWorker.tap.pull()) shouldBe Some((declaration, HipSubmissionResponse.Submitted))
+
+        org.mockito.Mockito.verifyNoInteractions(mockHodConnector)
       }
     }
   }
