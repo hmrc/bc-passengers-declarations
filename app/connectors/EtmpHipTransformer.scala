@@ -46,7 +46,7 @@ object EtmpHipTransformer {
       chargeReference = header.chargeReference,
       portOfEntry = header.portOfEntry,
       expectedDateOfTravel = header.expectedDateOfArrival,
-      timeOfEntry = header.timeOfEntry,
+      timeOfEntry = header.timeOfEntry.map(time => s"$time:00"),
       travellingFrom = header.travellingFrom,
       onwardTravel = header.onwardTravelGBNI
     )
