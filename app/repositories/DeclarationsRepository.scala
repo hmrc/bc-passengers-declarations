@@ -254,21 +254,25 @@ class DefaultDeclarationsRepository @Inject() (
       )
     }
 
+  private val paidDeclarationsForEtmpFilter =
+    and(equal("state", "paid"), equal("sentToEtmp", false))
+
+  private val paidAmendmentsForEtmpFilter =
+    and(
+      equal("state", "paid"),
+      equal("sentToEtmp", true),
+      equal("amendState", "paid"),
+      equal("amendSentToEtmp", false)
+    )
+
   override def paidDeclarationsForEtmp: Source[Declaration, NotUsed] =
     Source.fromPublisher {
-      collection.find(and(equal("state", "paid"), equal("sentToEtmp", false)))
+      collection.find(paidDeclarationsForEtmpFilter)
     }
 
   override def paidAmendmentsForEtmp: Source[Declaration, NotUsed] =
     Source.fromPublisher {
-      collection.find(
-        and(
-          equal("state", "paid"),
-          equal("sentToEtmp", true),
-          equal("amendState", "paid"),
-          equal("amendSentToEtmp", false)
-        )
-      )
+      collection.find(paidAmendmentsForEtmpFilter)
     }
 
   override def paidDeclarationsForDeletion: Source[Declaration, NotUsed] = {
@@ -317,6 +321,14 @@ class DefaultDeclarationsRepository @Inject() (
       case false => Future.successful(None)
     }
   }
+
+  override def declarationsCount: Future[DeclarationsCount] =
+    for {
+      total                   <- collection.countDocuments().toFuture()
+      paidDeclarationsNotSent <- collection.countDocuments(paidDeclarationsForEtmpFilter).toFuture()
+      paidAmendmentsNotSent   <- collection.countDocuments(paidAmendmentsForEtmpFilter).toFuture()
+    } yield DeclarationsCount(total, paidDeclarationsNotSent, paidAmendmentsNotSent)
+
   private implicit def toJson(chargeReference: ChargeReference): JsObject =
     Json.obj(
       "simpleDeclarationRequest" -> Json.obj(
@@ -352,4 +364,5 @@ trait DeclarationsRepository {
   def failedDeclarations: Source[Declaration, NotUsed]
   def failedAmendments: Source[Declaration, NotUsed]
   def metricsCount: Source[DeclarationsStatus, NotUsed]
+  def declarationsCount: Future[DeclarationsCount]
 }
