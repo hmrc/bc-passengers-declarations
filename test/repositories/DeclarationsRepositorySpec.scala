@@ -19,7 +19,7 @@ package repositories
 import helpers.Constants
 import helpers.MongoTestUtils.{beEquivalentTo, givenAnExistingDocument, givenExistingDocuments}
 import models.declarations.{Declaration, State}
-import models.{ChargeReference, DeclarationResponse, DeclarationsStatus, PreviousDeclarationRequest}
+import models.{ChargeReference, DeclarationResponse, DeclarationsCount, DeclarationsStatus, PreviousDeclarationRequest}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.mockito.Mockito
@@ -382,6 +382,29 @@ class DeclarationsRepositorySpec
         result.head shouldBe DeclarationsStatus(0, 0, 1, 1, 1)
       }
 
+    }
+
+    ".declarationsCount" must {
+      "return the total count and the counts of paid declarations and amendments not yet sent to ETMP" in {
+        val paidNotSent        = declaration.copy(randomChargeReference(), state = State.Paid, sentToEtmp = false)
+        val paidSent           = declaration.copy(randomChargeReference(), state = State.Paid, sentToEtmp = true)
+        val pendingPayment     = declaration.copy(randomChargeReference(), state = State.PendingPayment)
+        val amendNotSentToEtmp = amendment.copy(
+          randomChargeReference(),
+          state = State.Paid,
+          sentToEtmp = true,
+          amendState = Some(State.Paid),
+          amendSentToEtmp = Some(false)
+        )
+
+        givenExistingDocuments(List(paidNotSent, paidSent, pendingPayment, amendNotSentToEtmp))
+
+        await(repository.declarationsCount) shouldBe DeclarationsCount(4, 1, 1)
+      }
+
+      "return zero counts when there are no declarations" in {
+        await(repository.declarationsCount) shouldBe DeclarationsCount(0, 0, 0)
+      }
     }
   }
 }

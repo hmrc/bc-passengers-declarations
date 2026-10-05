@@ -51,7 +51,8 @@ class HmrcModuleSpec extends AnyWordSpec with Matchers {
         ("DeclarationDeletionWorker", classOf[DeclarationDeletionWorker]),
         ("FailedSubmissionWorker", classOf[FailedSubmissionWorker]),
         ("AmendmentFailedSubmissionWorker", classOf[AmendmentFailedSubmissionWorker]),
-        ("MetricsWorker", classOf[MetricsWorker])
+        ("MetricsWorker", classOf[MetricsWorker]),
+        ("DeclarationsCountWorker", classOf[DeclarationsCountWorker])
       )
       input.foreach(args => test.tupled(args))
 
