@@ -102,6 +102,7 @@ class DeclarationSubmissionWorker @Inject() (
         lockRepository.release(response._1.chargeReference.value)
         Future.successful(response)
       }
+      .via(logIfStopped)
       .wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))

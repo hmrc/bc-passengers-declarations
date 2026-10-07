@@ -47,6 +47,7 @@ class AmendmentFailedSubmissionWorker @Inject() (
       .mapAsync(parallelism) { declaration =>
         declarationsRepository.setAmendState(declaration.chargeReference, State.Paid)
       }
+      .via(logIfStopped)
       .wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
