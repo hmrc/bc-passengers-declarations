@@ -23,6 +23,7 @@ import models.declarations.{Declaration, State}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
+import org.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates.{`match`, group}
 import org.mongodb.scala.model.Filters.*
 import org.mongodb.scala.model.Indexes.ascending
@@ -265,14 +266,23 @@ class DefaultDeclarationsRepository @Inject() (
       equal("amendSentToEtmp", false)
     )
 
+  private val holdVapingSubmissions: Boolean = config.get[Boolean]("feature.holdVapingSubmissions")
+
+  private def excludingVapingIfHeld(filter: Bson, dataField: String): Bson =
+    if (holdVapingSubmissions) {
+      and(filter, exists(s"$dataField.simpleDeclarationRequest.requestDetail.declarationVaping", exists = false))
+    } else {
+      filter
+    }
+
   override def paidDeclarationsForEtmp: Source[Declaration, NotUsed] =
     Source.fromPublisher {
-      collection.find(paidDeclarationsForEtmpFilter)
+      collection.find(excludingVapingIfHeld(paidDeclarationsForEtmpFilter, "data"))
     }
 
   override def paidAmendmentsForEtmp: Source[Declaration, NotUsed] =
     Source.fromPublisher {
-      collection.find(paidAmendmentsForEtmpFilter)
+      collection.find(excludingVapingIfHeld(paidAmendmentsForEtmpFilter, "amendData"))
     }
 
   override def paidDeclarationsForDeletion: Source[Declaration, NotUsed] = {

@@ -55,6 +55,23 @@ class DeclarationsRepositorySpec
     config = config
   )
 
+  private def repositoryWithVapingHeld(held: Boolean): DefaultDeclarationsRepository =
+    new DefaultDeclarationsRepository(
+      mongoComponent,
+      chargeReferenceService = mockChargeReferenceService,
+      validationService = validationService,
+      config = Configuration("feature.holdVapingSubmissions" -> held).withFallback(config)
+    )
+
+  private lazy val vapingHeldRepository: DefaultDeclarationsRepository    = repositoryWithVapingHeld(held = true)
+  private lazy val vapingNotHeldRepository: DefaultDeclarationsRepository = repositoryWithVapingHeld(held = false)
+
+  private val amendmentDataWithVaping: JsObject = amendmentData.deepMerge(
+    Json.obj(
+      "simpleDeclarationRequest" -> Json.obj("requestDetail" -> Json.obj("declarationVaping" -> declarationVaping))
+    )
+  )
+
   implicit val inCollection: MongoCollection[Declaration] = repository.collection
 
   implicit lazy val materializer: Materializer = app.injector.instanceOf[Materializer]
@@ -273,6 +290,29 @@ class DeclarationsRepositorySpec
         result should contain theSameElementsAs Seq(notSentToEtmp)
 
       }
+
+      "return paid declarations containing vaping when vaping submissions are not held" in {
+        val withVaping    =
+          declaration.copy(randomChargeReference(), state = State.Paid, data = declarationDataWithVaping)
+        val withoutVaping = declaration.copy(randomChargeReference(), state = State.Paid)
+
+        givenExistingDocuments(List(withVaping, withoutVaping))
+
+        val result = await(vapingNotHeldRepository.paidDeclarationsForEtmp.runWith(Sink.seq))
+        result should contain theSameElementsAs Seq(withVaping, withoutVaping)
+      }
+
+      "not return paid declarations containing vaping when vaping submissions are held" in {
+        val withVaping    =
+          declaration.copy(randomChargeReference(), state = State.Paid, data = declarationDataWithVaping)
+        val withoutVaping = declaration.copy(randomChargeReference(), state = State.Paid)
+        val alreadySent   = declaration.copy(randomChargeReference(), state = State.Paid, sentToEtmp = true)
+
+        givenExistingDocuments(List(withVaping, withoutVaping, alreadySent))
+
+        val result = await(vapingHeldRepository.paidDeclarationsForEtmp.runWith(Sink.seq))
+        result should contain theSameElementsAs Seq(withoutVaping)
+      }
     }
 
     ".paidAmendmentsForEtmp" must {
@@ -304,6 +344,42 @@ class DeclarationsRepositorySpec
 
         result should contain theSameElementsAs Seq(amendNotSentToEtmp)
 
+      }
+
+      "return paid amendments containing vaping when vaping submissions are not held" in {
+        val withVaping    = amendment.copy(
+          randomChargeReference(),
+          sentToEtmp = true,
+          amendState = Some(State.Paid),
+          amendData = Some(amendmentDataWithVaping)
+        )
+        val withoutVaping = amendment.copy(randomChargeReference(), sentToEtmp = true, amendState = Some(State.Paid))
+
+        givenExistingDocuments(List(withVaping, withoutVaping))
+
+        val result = await(vapingNotHeldRepository.paidAmendmentsForEtmp.runWith(Sink.seq))
+        result should contain theSameElementsAs Seq(withVaping, withoutVaping)
+      }
+
+      "not return paid amendments containing vaping when vaping submissions are held" in {
+        val withVaping    = amendment.copy(
+          randomChargeReference(),
+          sentToEtmp = true,
+          amendState = Some(State.Paid),
+          amendData = Some(amendmentDataWithVaping)
+        )
+        val withoutVaping = amendment.copy(randomChargeReference(), sentToEtmp = true, amendState = Some(State.Paid))
+        val alreadySent   = amendment.copy(
+          randomChargeReference(),
+          sentToEtmp = true,
+          amendState = Some(State.Paid),
+          amendSentToEtmp = Some(true)
+        )
+
+        givenExistingDocuments(List(withVaping, withoutVaping, alreadySent))
+
+        val result = await(vapingHeldRepository.paidAmendmentsForEtmp.runWith(Sink.seq))
+        result should contain theSameElementsAs Seq(withoutVaping)
       }
     }
 
