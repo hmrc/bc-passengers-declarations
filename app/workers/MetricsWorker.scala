@@ -54,6 +54,7 @@ class MetricsWorker @Inject() (
         metricsOperator.setFailedSubmissionCounter(status.failedSubmissionCount)
         status
       }
+      .via(logIfStopped)
       .wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))

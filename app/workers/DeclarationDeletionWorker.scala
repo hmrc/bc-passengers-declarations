@@ -64,6 +64,7 @@ class DeclarationDeletionWorker @Inject() (
         declarationsRepository.remove(declaration.chargeReference)
         declaration
       }
+      .via(logIfStopped)
       .wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))

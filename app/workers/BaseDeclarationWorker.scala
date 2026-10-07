@@ -17,7 +17,9 @@
 package workers
 
 import models.declarations.Declaration
-import org.apache.pekko.stream.Supervision
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.{Materializer, Supervision}
 import play.api.Configuration
 import play.api.i18n.Lang.logger
 import repositories.LockRepository
@@ -54,6 +56,17 @@ trait WorkerConfig {
       logger.error(s"[${this.getClass.getName}][supervisionStrategy] Fatal exception returned, $e")
       Supervision.stop
   }
+
+  def logIfStopped[T](implicit mat: Materializer): Flow[T, T, NotUsed] =
+    Flow[T].watchTermination() { (_, done) =>
+      done.failed.foreach { e =>
+        logger.error(
+          s"[${this.getClass.getSimpleName}][logIfStopped] Worker stream stopped with an error and will not run again until restart",
+          e
+        )
+      }(mat.executionContext)
+      NotUsed
+    }
 
   def durationValueFromConfig(value: String, config: Configuration): FiniteDuration = {
     val valueFromConfigFiniteDuration = config.get[FiniteDuration](value)
