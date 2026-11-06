@@ -17,15 +17,16 @@
 package workers
 
 import models.declarations.Declaration
-import org.apache.pekko.stream.Supervision
-import play.api.Configuration
-import play.api.i18n.Lang.logger
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.{AbruptStageTerminationException, AbruptTerminationException, Materializer, Supervision}
+import play.api.{Configuration, Logger}
 import repositories.LockRepository
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 trait BaseDeclarationWorker extends WorkerConfig {
   protected def lockRepository: LockRepository
@@ -46,14 +47,41 @@ trait BaseDeclarationWorker extends WorkerConfig {
 
 trait WorkerConfig {
 
+  private lazy val workerLogger: Logger = Logger(this.getClass)
+
+  // Workers that process their records once at startup (no Source.tick) are expected to complete.
+  protected def runsOnce: Boolean = false
+
   val supervisionStrategy: Supervision.Decider = {
     case NonFatal(e) =>
-      logger.warn(s"[${this.getClass.getName}][supervisionStrategy] NonFatal exception returned, $e")
+      workerLogger.warn(s"[${this.getClass.getName}][supervisionStrategy] NonFatal exception returned", e)
       Supervision.resume
     case e           =>
-      logger.error(s"[${this.getClass.getName}][supervisionStrategy] Fatal exception returned, $e")
+      workerLogger.error(s"[${this.getClass.getName}][supervisionStrategy] Fatal exception returned", e)
       Supervision.stop
   }
+
+  def logIfStopped[T](implicit mat: Materializer): Flow[T, T, NotUsed] =
+    Flow[T].watchTermination() { (_, done) =>
+      val name = this.getClass.getSimpleName
+      done.onComplete {
+        case Failure(_: AbruptStageTerminationException | _: AbruptTerminationException) =>
+          workerLogger.info(s"[$name][logIfStopped] Worker stream stopped due to application shutdown")
+        case Failure(e)                                                                  =>
+          workerLogger.error(
+            s"[$name][logIfStopped] Worker stream stopped with an error and will not run again until restart: " +
+              e.getClass.getSimpleName,
+            e
+          )
+        case Success(_) if runsOnce                                                      =>
+          workerLogger.info(s"[$name][logIfStopped] Worker stream finished processing")
+        case Success(_)                                                                  =>
+          workerLogger.warn(
+            s"[$name][logIfStopped] Worker stream completed unexpectedly and will not run again until restart"
+          )
+      }(mat.executionContext)
+      NotUsed
+    }
 
   def durationValueFromConfig(value: String, config: Configuration): FiniteDuration = {
     val valueFromConfigFiniteDuration = config.get[FiniteDuration](value)
