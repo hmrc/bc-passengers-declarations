@@ -33,7 +33,8 @@ class AmendmentFailedSubmissionWorker @Inject() (
 )(implicit ec: ExecutionContext, mat: Materializer)
     extends BaseDeclarationWorker {
 
-  private val logger = Logger(this.getClass)
+  private val logger                       = Logger(this.getClass)
+  override protected def runsOnce: Boolean = true
 
   private val parallelism: Int = config.get[Int]("workers.amendment-failed-submission-worker.parallelism")
 
