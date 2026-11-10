@@ -49,7 +49,7 @@ trait WorkerConfig {
 
   private lazy val workerLogger: Logger = Logger(this.getClass)
 
-  // Workers that process their records once at startup (no Source.tick) are expected to complete.
+  // Workers that process their records once at startup (no source tick) are expected to complete.
   protected def runsOnce: Boolean = false
 
   val supervisionStrategy: Supervision.Decider = {
