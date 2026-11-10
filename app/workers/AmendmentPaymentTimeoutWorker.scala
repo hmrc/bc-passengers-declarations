@@ -69,6 +69,7 @@ class AmendmentPaymentTimeoutWorker @Inject() (
 
         declaration
       }
+      .via(logIfStopped)
       .wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))

@@ -33,7 +33,8 @@ class AmendmentFailedSubmissionWorker @Inject() (
 )(implicit ec: ExecutionContext, mat: Materializer)
     extends BaseDeclarationWorker {
 
-  private val logger = Logger(this.getClass)
+  private val logger                       = Logger(this.getClass)
+  override protected def runsOnce: Boolean = true
 
   private val parallelism: Int = config.get[Int]("workers.amendment-failed-submission-worker.parallelism")
 
@@ -47,6 +48,7 @@ class AmendmentFailedSubmissionWorker @Inject() (
       .mapAsync(parallelism) { declaration =>
         declarationsRepository.setAmendState(declaration.chargeReference, State.Paid)
       }
+      .via(logIfStopped)
       .wireTapMat(Sink.queue())(Keep.right)
       .toMat(Sink.ignore)(Keep.left)
       .withAttributes(ActorAttributes.supervisionStrategy(supervisionStrategy))
