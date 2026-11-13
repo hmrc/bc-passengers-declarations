@@ -93,7 +93,7 @@ class HODConnector @Inject() (
       dataOrAmendData.validate(Etmp.formats) match {
         case exception: JsError =>
           logger.error(
-            s"[HODConnector][submit] PNGRS_DES_SUBMISSION_FAILURE There is problem with parsing declaration, " +
+            s"PNGRS_DES_SUBMISSION_FAILURE There is problem with parsing declaration, " +
               s"Parsing failed for this ChargeReference :  ${declaration.chargeReference}, " +
               s"CorrelationId :  ${declaration.correlationId}, Exception : $exception"
           )
