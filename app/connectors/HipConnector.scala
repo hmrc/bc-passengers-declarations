@@ -70,7 +70,7 @@ class HipConnector @Inject() (
     } catch {
       case _: IllegalArgumentException =>
         logger.warn(
-          s"[HipConnector][getHIPCorrelationId] '$candidate' is not a valid UUID - generating a replacement"
+          s"'$candidate' is not a valid UUID - generating a replacement"
         )
         UUID.randomUUID().toString
     }
@@ -91,7 +91,7 @@ class HipConnector @Inject() (
       parsedEtmp match {
         case exception: JsError =>
           logger.error(
-            s"[HipConnector][submit] PNGRS_DES_SUBMISSION_FAILURE There is problem with parsing declaration, " +
+            s"PNGRS_DES_SUBMISSION_FAILURE There is problem with parsing declaration, " +
               s"Parsing failed for this ChargeReference: ${declaration.chargeReference}, " +
               s"CorrelationId: ${declaration.correlationId}, Exception: $exception"
           )
@@ -101,7 +101,7 @@ class HipConnector @Inject() (
           catch {
             case NonFatal(e) =>
               logger.error(
-                s"[HipConnector][submit] PNGRS_DES_SUBMISSION_FAILURE HIP transform failed for ChargeReference: " +
+                s"PNGRS_DES_SUBMISSION_FAILURE HIP transform failed for ChargeReference: " +
                   s"${declaration.chargeReference}, CorrelationId: ${declaration.correlationId}, Exception: $e"
               )
               JsObject.empty

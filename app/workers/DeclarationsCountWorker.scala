@@ -41,14 +41,14 @@ class DeclarationsCountWorker @Inject() (
 
   val tap: SinkQueueWithCancel[DeclarationsCount] = {
 
-    logger.info("[DeclarationsCountWorker][tap] Declarations count worker started")
+    logger.info("Declarations count worker started")
 
     Source
       .tick(initialDelay, interval, ())
       .mapAsync(1)(_ => declarationsRepository.declarationsCount)
       .map { count =>
         logger.info(
-          s"[DeclarationsCountWorker][tap] Declarations in DB - total: ${count.totalCount}, " +
+          s"Declarations in DB - total: ${count.totalCount}, " +
             s"paid declarations not sent to ETMP: ${count.paidDeclarationsNotSentToEtmpCount}, " +
             s"paid amendments not sent to ETMP: ${count.paidAmendmentsNotSentToEtmpCount}"
         )

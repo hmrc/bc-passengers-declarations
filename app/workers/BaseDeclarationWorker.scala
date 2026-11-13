@@ -54,30 +54,29 @@ trait WorkerConfig {
 
   val supervisionStrategy: Supervision.Decider = {
     case NonFatal(e) =>
-      workerLogger.warn(s"[${this.getClass.getName}][supervisionStrategy] NonFatal exception returned", e)
+      workerLogger.warn("NonFatal exception returned", e)
       Supervision.resume
     case e           =>
-      workerLogger.error(s"[${this.getClass.getName}][supervisionStrategy] Fatal exception returned", e)
+      workerLogger.error("Fatal exception returned", e)
       Supervision.stop
   }
 
   def logIfStopped[T](implicit mat: Materializer): Flow[T, T, NotUsed] =
     Flow[T].watchTermination() { (_, done) =>
-      val name = this.getClass.getSimpleName
       done.onComplete {
         case Failure(_: AbruptStageTerminationException | _: AbruptTerminationException) =>
-          workerLogger.info(s"[$name][logIfStopped] Worker stream stopped due to application shutdown")
+          workerLogger.info("Worker stream stopped due to application shutdown")
         case Failure(e)                                                                  =>
           workerLogger.error(
-            s"[$name][logIfStopped] Worker stream stopped with an error and will not run again until restart: " +
+            "Worker stream stopped with an error and will not run again until restart: " +
               e.getClass.getSimpleName,
             e
           )
         case Success(_) if runsOnce                                                      =>
-          workerLogger.info(s"[$name][logIfStopped] Worker stream finished processing")
+          workerLogger.info("Worker stream finished processing")
         case Success(_)                                                                  =>
           workerLogger.warn(
-            s"[$name][logIfStopped] Worker stream completed unexpectedly and will not run again until restart"
+            "Worker stream completed unexpectedly and will not run again until restart"
           )
       }(mat.executionContext)
       NotUsed
