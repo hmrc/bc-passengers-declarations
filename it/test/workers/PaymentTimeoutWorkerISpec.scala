@@ -174,9 +174,9 @@ class PaymentTimeoutWorkerISpec
       )
 
       logEvents.map(_.getMessage) should contain.allOf(
-        "[PaymentTimeoutWorker][tap] Declaration 2 is stale, deleting",
-        "[PaymentTimeoutWorker][tap] Declaration 1 is stale, deleting",
-        "[PaymentTimeoutWorker][tap] Declaration 0 is stale, deleting"
+        "Declaration 2 is stale, deleting",
+        "Declaration 1 is stale, deleting",
+        "Declaration 0 is stale, deleting"
       )
 
       val remaining = repository.collection.find()

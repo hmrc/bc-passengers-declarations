@@ -48,7 +48,7 @@ class AmendmentPaymentTimeoutWorker @Inject() (
 
   val tap: SinkQueueWithCancel[Declaration] = {
 
-    logger.info("[AmendmentPaymentTimeoutWorker][tap] Amendment payment timeout worker started")
+    logger.info("Amendment payment timeout worker started")
 
     def timeout: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC).minus(paymentTimeout.toMillis, ChronoUnit.MILLIS)
 
@@ -62,7 +62,7 @@ class AmendmentPaymentTimeoutWorker @Inject() (
       .mapConcat(lockSuccessful)
       .map { declaration =>
         logger.info(
-          s"[AmendmentPaymentTimeoutWorker][tap] Declaration ${declaration.chargeReference.value} is stale, deleting"
+          s"Declaration ${declaration.chargeReference.value} is stale, deleting"
         )
 
         declarationsRepository.remove(declaration.chargeReference)

@@ -44,12 +44,12 @@ object SubmissionResponse {
             Submitted
           case BAD_REQUEST =>
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] BAD Request is received from DES (EIS), Response Code from EIS is : ${response.status}"
+              s"PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS), Response Code from EIS is : ${response.status}"
             )
             Failed
           case _           =>
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] call to DES (EIS) is failed, Response Code is : ${response.status}"
+              s"PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed, Response Code is : ${response.status}"
             )
             Error
         }
@@ -72,17 +72,17 @@ object CMASubmissionResponse {
             Submitted
           case BAD_REQUEST           =>
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}. Body: ${response.body}"
+              s"PNGRS_DES_SUBMISSION_FAILURE bad request from DES (EIS); status=${response.status}. Body: ${response.body}"
             )
             Failed
           case INTERNAL_SERVER_ERROR =>
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  internal server error from DES (EIS), status=${response.status}. Body: ${response.body}"
+              s"PNGRS_DES_SUBMISSION_FAILURE internal server error from DES (EIS), status=${response.status}. Body: ${response.body}"
             )
             Error
           case _                     =>
             logger.error(
-              s"[SubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE  [SubmissionResponse] call to DES (EIS) is failed, Response Code is : ${response.status}"
+              s"PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed, Response Code is : ${response.status}"
             )
             Error
         }
@@ -109,7 +109,7 @@ object HipSubmissionResponse {
             val errorCode = (body \ "error" \ "code").asOpt[String].getOrElse("unknown")
             val errorText = (body \ "error" \ "text").asOpt[String].getOrElse(response.body)
             logger.error(
-              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE ETMP rejected the passenger declaration, " +
+              s"PNGRS_DES_SUBMISSION_FAILURE ETMP rejected the passenger declaration, " +
                 s"code=$errorCode, text=$errorText"
             )
             Failed
@@ -118,7 +118,7 @@ object HipSubmissionResponse {
             val logId   = (body \ "error" \ "logId").asOpt[String].getOrElse("unknown")
             val message = (body \ "error" \ "message").asOpt[String].getOrElse(response.body)
             logger.error(
-              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE system error from HIP, " +
+              s"PNGRS_DES_SUBMISSION_FAILURE system error from HIP, " +
                 s"status=${response.status}, logId=$logId, message=$message"
             )
             Error
@@ -127,13 +127,13 @@ object HipSubmissionResponse {
             val origin   = (body \ "origin").asOpt[String].getOrElse("unknown")
             val failures = (body \ "response" \ "failures").toOption.map(Json.stringify).getOrElse(response.body)
             logger.error(
-              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE HIP service unavailable, " +
+              s"PNGRS_DES_SUBMISSION_FAILURE HIP service unavailable, " +
                 s"origin=$origin, failures=$failures"
             )
             Error
           case _                                   =>
             logger.error(
-              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE call to HIP failed, " +
+              s"PNGRS_DES_SUBMISSION_FAILURE call to HIP failed, " +
                 s"Response Code is : ${response.status}"
             )
             Error

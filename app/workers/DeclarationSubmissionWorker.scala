@@ -60,7 +60,7 @@ class DeclarationSubmissionWorker @Inject() (
 
   val tap: SinkQueueWithCancel[(Declaration, Response)] = {
 
-    logger.info("[DeclarationSubmissionWorker][tap] Declaration submission worker started")
+    logger.info("Declaration submission worker started")
 
     Source
       .tick(initialDelay, interval, declarationsRepository.paidDeclarationsForEtmp)
@@ -80,7 +80,7 @@ class DeclarationSubmissionWorker @Inject() (
                         declarationsRepository.setSentToEtmp(declaration.chargeReference, sentToEtmp = true)
                       case SubmissionResponse.Error | CMASubmissionResponse.Error | HipSubmissionResponse.Error    =>
                         logger.error(
-                          s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
+                          s"""PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
                              |ChargeReference:  ${declaration.chargeReference},
                              |CorrelationId:  ${declaration.correlationId}""".stripMargin.replace("\n", " ")
                         )
@@ -90,7 +90,7 @@ class DeclarationSubmissionWorker @Inject() (
                         Future.successful(())
                       case SubmissionResponse.Failed | CMASubmissionResponse.Failed | HipSubmissionResponse.Failed =>
                         logger.error(
-                          s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS).
+                          s"""PNGRS_DES_SUBMISSION_FAILURE BAD Request is received from DES (EIS).
                              |ChargeReference:  ${declaration.chargeReference},
                              |CorrelationId:  ${declaration.correlationId}""".stripMargin.replace("\n", " ")
                         )

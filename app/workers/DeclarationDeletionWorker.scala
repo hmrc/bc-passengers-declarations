@@ -48,7 +48,7 @@ class DeclarationDeletionWorker @Inject() (
   private val parallelism: Int             = config.get[Int]("workers.declaration-deletion-worker.parallelism")
 
   val tap: SinkQueueWithCancel[Declaration]                   = {
-    logger.info("[DeclarationDeletionWorker][tap] Declaration deletion worker started")
+    logger.info("Declaration deletion worker started")
     Source
       .tick(initialDelay, interval, declarationsRepository.paidDeclarationsForDeletion)
       .flatMapConcat(identity)
@@ -59,7 +59,7 @@ class DeclarationDeletionWorker @Inject() (
       .mapConcat(lockSuccessful)
       .map { declaration =>
         logger.info(
-          s"[DeclarationDeletionWorker][tap] Declaration ${declaration.chargeReference.value} is Paid, sent to ETMP, and crossed the time to hold, hence deleting"
+          s"Declaration ${declaration.chargeReference.value} is Paid, sent to ETMP, and crossed the time to hold, hence deleting"
         )
         declarationsRepository.remove(declaration.chargeReference)
         declaration

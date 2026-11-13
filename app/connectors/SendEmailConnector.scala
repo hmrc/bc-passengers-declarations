@@ -49,7 +49,7 @@ trait SendEmailConnector extends HttpErrorFunctions {
   )(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[Boolean] = {
     def errorMsg(status: String, ex: HttpException): Nothing = {
       logger.error(
-        s"[EmailErrorResponse][requestEmail] PNGRS_EMAIL_FAILURE request to send email returned a $status - email not sent - reason = ${ex.getMessage}"
+        s"PNGRS_EMAIL_FAILURE request to send email returned a $status - email not sent - reason = ${ex.getMessage}"
       )
       throw new EmailErrorResponse()
     }
@@ -61,11 +61,11 @@ trait SendEmailConnector extends HttpErrorFunctions {
       .map { r =>
         r.status match {
           case ACCEPTED =>
-            logger.debug("[SendEmailConnector][sendEmail] request to email service was successful")
+            logger.debug("request to email service was successful")
             true
           case _        =>
             logger.error(
-              s"[SendEmailConnector][sendEmail] PNGRS_EMAIL_FAILURE request to email service was unsuccessful with ${r.status}"
+              s"PNGRS_EMAIL_FAILURE request to email service was unsuccessful with ${r.status}"
             )
             false
         }
