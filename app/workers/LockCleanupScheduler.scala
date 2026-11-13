@@ -39,10 +39,10 @@ class LockCleanupScheduler @Inject() (
     lockRepository.removeLegacyLocksOlderThanTtl(ttlSeconds).onComplete {
       case Success(deletedCount) =>
         logger.info(
-          s"[LockCleanupScheduler][cleanup] LockCleanupScheduler: Removed $deletedCount legacy locks older than TTL."
+          s"LockCleanupScheduler: Removed $deletedCount legacy locks older than TTL."
         )
       case Failure(ex)           =>
-        logger.info(s"[LockCleanupScheduler][cleanup] LockCleanupScheduler: Error during cleanup: ${ex.getMessage}")
+        logger.info(s"LockCleanupScheduler: Error during cleanup: ${ex.getMessage}")
     }
 
   actorSystem.scheduler.scheduleOnce(6.minutes)(cleanup())

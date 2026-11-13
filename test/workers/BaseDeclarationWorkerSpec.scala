@@ -73,8 +73,8 @@ class BaseDeclarationWorkerSpec
     finally logger.detachAppender(appender)
   }
 
-  private def logOf(appender: ListAppender[ILoggingEvent]): Option[ILoggingEvent] =
-    appender.list.asScala.find(_.getFormattedMessage.contains("[logIfStopped]"))
+  private def logOf(appender: ListAppender[ILoggingEvent], filter: String): Option[ILoggingEvent] =
+    appender.list.asScala.find(_.getFormattedMessage.contains(filter))
 
   object RunOnceWorkerTest extends WorkerConfig {
     override protected def runsOnce: Boolean = true
@@ -122,7 +122,7 @@ class BaseDeclarationWorkerSpec
         Source.failed[Int](exception).via(BaseDeclarationWorkerTest.logIfStopped).runWith(Sink.ignore)
 
         eventually {
-          val log = logOf(appender).get
+          val log = logOf(appender, "IllegalStateException").get
           log.getLevel                     shouldBe Level.ERROR
           log.getFormattedMessage            should include("will not run again until restart: IllegalStateException")
           log.getThrowableProxy.getMessage shouldBe "broken declaration"
@@ -133,7 +133,7 @@ class BaseDeclarationWorkerSpec
         Source.single(1).via(BaseDeclarationWorkerTest.logIfStopped).runWith(Sink.ignore)
 
         eventually {
-          val log = logOf(appender).get
+          val log = logOf(appender, "completed unexpectedly").get
           log.getLevel          shouldBe Level.WARN
           log.getFormattedMessage should include("Worker stream completed unexpectedly")
         }
@@ -144,7 +144,7 @@ class BaseDeclarationWorkerSpec
           Source.single(1).via(RunOnceWorkerTest.logIfStopped).runWith(Sink.ignore)
 
           eventually {
-            val log = logOf(appender).get
+            val log = logOf(appender, "stream finished").get
             log.getLevel          shouldBe Level.INFO
             log.getFormattedMessage should include("Worker stream finished processing")
           }
@@ -163,7 +163,7 @@ class BaseDeclarationWorkerSpec
 
           try
             eventually {
-              val log = logOf(appender).get
+              val log = logOf(appender, "application shutdown").get
               log.getLevel          shouldBe Level.INFO
               log.getFormattedMessage should include("Worker stream stopped due to application shutdown")
             }
