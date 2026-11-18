@@ -169,9 +169,9 @@ class AmendmentPaymentTimeoutWorkerISpec
       )
 
       logEvents.map(_.getMessage) should contain.allOf(
-        "[AmendmentPaymentTimeoutWorker][tap] Declaration 2 is stale, deleting",
-        "[AmendmentPaymentTimeoutWorker][tap] Declaration 1 is stale, deleting",
-        "[AmendmentPaymentTimeoutWorker][tap] Declaration 0 is stale, deleting"
+        "Declaration 2 is stale, deleting",
+        "Declaration 1 is stale, deleting",
+        "Declaration 0 is stale, deleting"
       )
 
       val remaining = await(repository.collection.find().toFuture().map(_.toList))
