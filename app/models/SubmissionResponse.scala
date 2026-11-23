@@ -109,7 +109,7 @@ object HipSubmissionResponse {
             val errorCode = (body \ "error" \ "code").asOpt[String].getOrElse("unknown")
             val errorText = (body \ "error" \ "text").asOpt[String].getOrElse(response.body)
             logger.error(
-              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE ETMP rejected the passenger declaration, " +
+              s"[HipSubmissionResponse][read] PNGRS_DES_UNPROCESSABLE_SUBMISSION ETMP rejected the passenger declaration, " +
                 s"code=$errorCode, text=$errorText"
             )
             Error
