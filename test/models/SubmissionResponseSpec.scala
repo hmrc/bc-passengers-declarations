@@ -97,7 +97,7 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
         result shouldBe HipSubmissionResponse.Submitted
       }
 
-      "set to a Error response from an UNPROCESSABLE_ENTITY HttpResponse (ETMP business error)" in {
+      "set to a Failed response from an UNPROCESSABLE_ENTITY HttpResponse (ETMP business error)" in {
         val body   = Json.obj(
           "error" -> Json.obj(
             "processingDate" -> "2026-07-31T09:26:17Z",
@@ -107,16 +107,16 @@ class SubmissionResponseSpec extends AnyWordSpec with Matchers {
         )
         val result = hipReads.read("POST", "/", HttpResponse.apply(UNPROCESSABLE_ENTITY, body, Map.empty))
 
-        result shouldBe HipSubmissionResponse.Error
+        result shouldBe HipSubmissionResponse.Failed
       }
 
-      "set to an Failed response from a BAD_REQUEST HttpResponse (system error)" in {
+      "set to an Error response from a BAD_REQUEST HttpResponse (system error)" in {
         val body   = Json.obj(
           "error" -> Json.obj("code" -> "400", "message" -> "Invalid request payload", "logId" -> "A" * 32)
         )
         val result = hipReads.read("POST", "/", HttpResponse.apply(BAD_REQUEST, body, Map.empty))
 
-        result shouldBe HipSubmissionResponse.Failed
+        result shouldBe HipSubmissionResponse.Error
       }
 
       "set to an Error response from an INTERNAL_SERVER_ERROR HttpResponse (system error)" in {
