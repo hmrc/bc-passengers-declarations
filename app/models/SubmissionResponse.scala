@@ -102,18 +102,18 @@ object HipSubmissionResponse {
     new HttpReads[HipSubmissionResponse] {
       override def read(method: String, url: String, response: HttpResponse): HipSubmissionResponse =
         response.status match {
-          case CREATED                                     =>
+          case CREATED                             =>
             Submitted
-          case UNPROCESSABLE_ENTITY                        =>
+          case UNPROCESSABLE_ENTITY                =>
             val body      = safeJsonBody(response.body)
             val errorCode = (body \ "error" \ "code").asOpt[String].getOrElse("unknown")
             val errorText = (body \ "error" \ "text").asOpt[String].getOrElse(response.body)
             logger.error(
-              s"[HipSubmissionResponse][read] PNGRS_DES_UNPROCESSABLE_SUBMISSION ETMP rejected the passenger declaration, " +
+              s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE ETMP rejected the passenger declaration, " +
                 s"code=$errorCode, text=$errorText"
             )
-            Error
-          case BAD_REQUEST                                 =>
+            Failed
+          case BAD_REQUEST | INTERNAL_SERVER_ERROR =>
             val body    = safeJsonBody(response.body)
             val logId   = (body \ "error" \ "logId").asOpt[String].getOrElse("unknown")
             val message = (body \ "error" \ "message").asOpt[String].getOrElse(response.body)
@@ -121,8 +121,8 @@ object HipSubmissionResponse {
               s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE system error from HIP, " +
                 s"status=${response.status}, logId=$logId, message=$message"
             )
-            Failed
-          case SERVICE_UNAVAILABLE | INTERNAL_SERVER_ERROR =>
+            Error
+          case SERVICE_UNAVAILABLE                 =>
             val body     = safeJsonBody(response.body)
             val origin   = (body \ "origin").asOpt[String].getOrElse("unknown")
             val failures = (body \ "response" \ "failures").toOption.map(Json.stringify).getOrElse(response.body)
@@ -131,7 +131,7 @@ object HipSubmissionResponse {
                 s"origin=$origin, failures=$failures"
             )
             Error
-          case _                                           =>
+          case _                                   =>
             logger.error(
               s"[HipSubmissionResponse][read] PNGRS_DES_SUBMISSION_FAILURE call to HIP failed, " +
                 s"Response Code is : ${response.status}"

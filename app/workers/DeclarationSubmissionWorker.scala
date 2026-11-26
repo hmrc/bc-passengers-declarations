@@ -80,7 +80,7 @@ class DeclarationSubmissionWorker @Inject() (
                         declarationsRepository.setSentToEtmp(declaration.chargeReference, sentToEtmp = true)
                       case SubmissionResponse.Error | CMASubmissionResponse.Error | HipSubmissionResponse.Error    =>
                         logger.error(
-                          s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_ERROR call to DES (EIS) is failed.
+                          s"""[DeclarationSubmissionWorker][tap] PNGRS_DES_SUBMISSION_FAILURE call to DES (EIS) is failed.
                              |ChargeReference:  ${declaration.chargeReference},
                              |CorrelationId:  ${declaration.correlationId}""".stripMargin.replace("\n", " ")
                         )
