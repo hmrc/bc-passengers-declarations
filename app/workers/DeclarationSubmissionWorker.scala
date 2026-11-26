@@ -17,7 +17,7 @@
 package workers
 
 import connectors.{HODConnector, HipConnector}
-import models.{CMASubmissionResponse, HipSubmissionResponse, Response, SubmissionResponse}
+import models.{CMASubmissionResponse, ChargeReference, HipSubmissionResponse, Response, SubmissionResponse}
 import models.declarations.{Declaration, State}
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source}
 import org.apache.pekko.stream.{ActorAttributes, Materializer}
@@ -58,12 +58,43 @@ class DeclarationSubmissionWorker @Inject() (
   private val parallelism: Int             = config.get[Int]("workers.declaration-submission-worker.parallelism")
   private val elements: Int                = config.get[Int]("workers.declaration-submission-worker.throttle.elements")
 
+  private val declarationsToMarkAsSent: Seq[ChargeReference] =
+    config
+      .getOptional[Seq[String]](
+        "workers.declaration-submission-worker.declarations-to-mark-sent"
+      )
+      .getOrElse(Seq.empty)
+      .map { ref =>
+        ChargeReference(ref).getOrElse {
+          throw new IllegalArgumentException(
+            s"Invalid charge reference '$ref' in declarations-to-mark-sent"
+          )
+        }
+      }
+
+  private def markDeclarationsAsSent(): Future[Unit] =
+    Future
+      .traverse(declarationsToMarkAsSent) { chargeReference =>
+        logger.info(
+          s"[DeclarationSubmissionWorker] Marking ${chargeReference.value} as already sent to ETMP"
+        )
+
+        declarationsRepository.setSentToEtmp(
+          chargeReference,
+          sentToEtmp = true
+        )
+      }
+      .map(_ => ())
+
   val tap: SinkQueueWithCancel[(Declaration, Response)] = {
 
     logger.info("[DeclarationSubmissionWorker][tap] Declaration submission worker started")
 
     Source
-      .tick(initialDelay, interval, declarationsRepository.paidDeclarationsForEtmp)
+      .future(markDeclarationsAsSent())
+      .flatMapConcat { _ =>
+        Source.tick(initialDelay, interval, declarationsRepository.paidDeclarationsForEtmp)
+      }
       .flatMapConcat(identity)
       .throttle(elements, per)
       .mapAsync(parallelism)(getLock)
