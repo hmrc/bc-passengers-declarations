@@ -40,7 +40,7 @@ class AmendmentFailedSubmissionWorker @Inject() (
 
   val tap: SinkQueueWithCancel[Declaration] = {
 
-    logger.info("[AmendmentFailedSubmissionWorker][tap] Amendment failed submission worker started")
+    logger.info("Amendment failed submission worker started")
 
     declarationsRepository.failedAmendments
       .mapAsync(parallelism)(getLock)
