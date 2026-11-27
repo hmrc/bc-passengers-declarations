@@ -67,7 +67,18 @@ class DeclarationSubmissionWorker @Inject() (
       .flatMapConcat(identity)
       .throttle(elements, per)
       .mapAsync(parallelism)(getLock)
-      .mapConcat(lockSuccessful)
+      .mapConcat { lockResult =>
+        val (lockAcquired, declaration) = lockResult
+
+        logger.info(
+          s"[DeclarationSubmissionWorker] Paid declaration selected for ETMP. " +
+            s"ChargeReference: ${declaration.chargeReference}, " +
+            s"CorrelationId: ${declaration.correlationId}, " +
+            s"LockAcquired: $lockAcquired"
+        )
+
+        lockSuccessful(lockResult)
+      }
       .mapAsync(parallelism) { declaration =>
         for {
           result <- submit(declaration, isAmendment = false)
